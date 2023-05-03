@@ -26,7 +26,18 @@ Eagle is an on-device speaker recognition engine. Eagle is:
   - [Overview](#overview)
   - [AccessKey](#accesskey)
   - [Demos](#demos)
+    - [Python Demos](#python-demos)
+      - [Speaker Enrollment](#speaker-enrollment)
+      - [Speaker Recognition](#speaker-recognition)
+    - [Android Demo](#android-demo)
+    - [iOS Demo](#ios-demo)
+    - [C Demos](#c-demos)
+      - [Speaker Enrollment](#speaker-enrollment-1)
+      - [Speaker Recognition](#speaker-recognition-1)
+    - [Web Demo](#web-demo)
+  - [SDKs](#sdks)
     - [Python](#python)
+<<<<<<< HEAD
       - [Speaker Enrollment](#speaker-enrollment)
       - [Speaker Recognition](#speaker-recognition)
     - [Android](#android)
@@ -48,6 +59,20 @@ Eagle is an on-device speaker recognition engine. Eagle is:
       - [Speaker Recognition](#speaker-recognition-4)
   - [Releases](#releases)
     - [v1.0.0 - May x, 2023](#v100---may-x-2023)
+=======
+      - [Speaker Enrollment](#speaker-enrollment-2)
+      - [Speaker Recognition](#speaker-recognition-2)
+    - [Android](#android)
+    - [iOS](#ios)
+    - [C](#c)
+      - [Speaker Enrollment](#speaker-enrollment-3)
+      - [Speaker Recognition](#speaker-recognition-3)
+    - [Web](#web)
+      - [Speaker Enrollment](#speaker-enrollment-4)
+    - [Speaker Recognition](#speaker-recognition-4)
+  - [Releases](#releases)
+    - [v0.1.0 - May x, 2023](#v010---may-x-2023)
+>>>>>>> wip
   - [FAQ](#faq)
 
 ## Overview
@@ -71,7 +96,7 @@ AccessKey also verifies that your usage is within the limits of your account. Ev
 
 ## Demos
 
-### Python
+### Python Demos
 
 Install the demo package:
 
@@ -119,14 +144,14 @@ Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console.
 
 For more information about Python demos go to [demo/python](./demo/python).
 
-### Android
+### Android Demo
 
 Using Android Studio, open [demo/android/EagleDemo](./demo/android/EagleDemo) as an Android project and then run the application.
 
 Open the file [MainActivity.java](./demo/android/EagleDemo/eagle-demo-app/src/main/java/ai/picovoice/eagledemo/MainActivity.java) and replace `"${YOUR_ACCESS_KEY_HERE}"` in with your `AccessKey`.
 
 
-### iOS
+### iOS Demo
 
 To run the demo, go to [demo/ios/EagleDemo](./demo/ios/EagleDemo) and run:
 
@@ -138,7 +163,7 @@ Replace `let accessKey = "${YOUR_ACCESS_KEY_HERE}"` in the file [ViewModel.swift
 
 Then, using [Xcode](https://developer.apple.com/xcode/), open the generated `EagleDemo.xcworkspace` and run the application.
 
-### C
+### C Demos
 
 Build the demo:
 
@@ -177,7 +202,24 @@ profile to be tested.
 
 For more information about C demos go to [demo/c](./demo/c).
 
-### Web
+### Web Demo
+
+From [demo/web](./demo/web) run the following in the terminal:
+
+```console
+yarn
+yarn start
+```
+
+(or)
+
+```console
+npm install
+npm run start
+```
+
+Open `http://localhost:5000` in your browser to try the demo.
+
 
 ## SDKs
 
@@ -326,7 +368,7 @@ Process incoming audio frames:
 
 ```java
 public short[] getNextAudioFrame() {
-    // get audio frame    
+    // get audio frame
 }
 
 
@@ -521,11 +563,83 @@ Finally, when done be sure to release the acquired resources:
 pv_eagle_delete(handle);
 ```
 
+### Web
+
+Install the Eagle package with `yarn` (or `npm`):
+
+```console
+yarn add @picovoice/eagle-web
+```
+
+#### Speaker Enrollment
+
+Create an instance of the `EagleProfiler`:
+
+```typescript
+const eagleModel = {
+  publicPath: ${MODEL_RELATIVE_PATH},
+  // or
+  base64: ${MODEL_BASE64_STRING},
+}
+
+const eagleProfiler = await EagleProfiler.create(
+        ${ACCESS_KEY},
+        eagleModel);
+```
+
+Replace `${ACCESS_KEY}` with the AccessKey obtained from Picovoice Console, and the model options with the path to the model file available under [lib/common](./lib/common) or a base64 string of it.
+
+Use `EagleProfiler` to create a new speaker profile:
+```typescript
+function getAudioData(numSamples): Int16Array {
+  // get audio frame of size `numSamples`
+}
+
+let percentage = 0;
+while (percentage < 100) {
+  const audioData = getAudioData(eagleProfiler.minEnrollSamples);
+
+  const result: EagleProfilerEnrollResult = await eagleProfiler.enroll(audioData);
+  if (result.feedback === EagleProfilerEnrollFeedback.AUDIO_OK) {
+      // audio is good!
+  } else {
+      // feedback code will tell you why audio was not used in enrollment
+  }
+  percentage = result.percentage;
+}
+
+// export profile
+const speakerProfile: Uint8Array = eagleProfiler.export();
+```
+
+### Speaker Recognition
+
+Create an instance of the engine with one or more speaker profiles created by the `EagleProfiler`:
+
+```typescript
+const eagle = await Eagle.create(
+        ${ACCESS_KEY},
+        eagleModel,
+        speakerProfile);
+```
+
+Process audio frames and get speaker scores (i.e. likelihood they are speaking) in real-time:
+```typescript
+function getAudioData(numSamples): Int16Array {
+  // get audio frame of size `numSamples`
+}
+
+while (true) {
+  const audioData = getAudioData(eagle.frameLength);
+  const scores: number[] = await eagle.process(audioData);
+}
+```
+
 ## Releases
 
-### v1.0.0 - May x, 2023
+### v0.1.0 - May x, 2023
 
-- Initial release.
+- Beta release.
 
 ## FAQ
 

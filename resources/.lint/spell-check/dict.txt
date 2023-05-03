@@ -1,7 +1,13 @@
 aarch
 armv
+camelcase
 cocoapods
+copywasm
+downsample
+downsampled
 drwav
+iife
+IIFE
 jetson
 Jetson
 JETSON
@@ -13,8 +19,10 @@ malloc
 MODEL
 Picovoice
 PICOVOICE
+pluginutils
 Podfile
 pthread
+pvbase
 pveagle
 pveagledemo
 pvrecorder

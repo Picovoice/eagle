@@ -411,7 +411,11 @@ void speaker_recognition(
     int input_profile_path_wchars_num = MultiByteToWideChar(CP_UTF8, UTF8_COMPOSITION_FLAG, input_profile_path, NULL_TERMINATED, NULL, 0);
         wchar_t input_profile_path_wchars[input_profile_path_wchars_num];
         MultiByteToWideChar(CP_UTF8, UTF8_COMPOSITION_FLAG, input_profile_path, NULL_TERMINATED, input_profile_path_wchars, input_profile_path_wchars_num);
+<<<<<<< HEAD
         input_profile_file = _wfopen(input_profile_path_wchars, L"rb");
+=======
+        input_profile_file = _wfopen(input_profile_path_wchars, "rb")
+>>>>>>> 4243f78 (wip)
 
 #else
 
