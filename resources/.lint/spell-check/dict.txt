@@ -24,3 +24,10 @@ wchars
 wfopen
 xcframework
 xcworkspace
+malloc
+constraintlayout
+androidx
+appcompat
+appbar
+eagledemo
+gradlew

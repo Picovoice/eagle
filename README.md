@@ -27,16 +27,27 @@ Eagle is an on-device speaker recognition engine. Eagle is:
   - [AccessKey](#accesskey)
   - [Demos](#demos)
     - [Python](#python)
+      - [Speaker Enrollment](#speaker-enrollment)
+      - [Speaker Recognition](#speaker-recognition)
     - [Android](#android)
     - [iOS](#ios)
     - [C](#c)
+      - [Speaker Enrollment](#speaker-enrollment-1)
+      - [Speaker Recognition](#speaker-recognition-1)
     - [Web](#web)
   - [SDKs](#sdks)
     - [Python](#python-1)
+      - [Speaker Enrollment](#speaker-enrollment-2)
+      - [Speaker Recognition](#speaker-recognition-2)
     - [Android](#android-1)
+      - [Speaker Enrollment](#speaker-enrollment-3)
+      - [Speaker Recognition](#speaker-recognition-3)
     - [iOS](#ios-1)
     - [C](#c-1)
+      - [Speaker Enrollment](#speaker-enrollment-4)
+      - [Speaker Recognition](#speaker-recognition-4)
   - [Releases](#releases)
+    - [v1.0.0 - May x, 2023](#v100---may-x-2023)
   - [FAQ](#faq)
 
 ## Overview
@@ -109,6 +120,11 @@ Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console.
 For more information about Python demos go to [demo/python](./demo/python).
 
 ### Android
+
+Using Android Studio, open [demo/android/EagleDemo](./demo/android/EagleDemo) as an Android project and then run the application.
+
+Open the file [MainActivity.java](./demo/android/EagleDemo/eagle-demo-app/src/main/java/ai/picovoice/eagledemo/MainActivity.java) and replace `"${YOUR_ACCESS_KEY_HERE}"` in with your `AccessKey`.
+
 
 ### iOS
 
@@ -235,6 +251,97 @@ eagle.delete()
 ```
 
 ### Android
+
+To include the package in your Android project, ensure you have included `mavenCentral()` in your top-level `build.gradle` file and then add the following to your app's `build.gradle`:
+
+```groovy
+dependencies {
+    implementation 'ai.picovoice:eagle-android:${LATEST_VERSION}'
+}
+```
+
+#### Speaker Enrollment
+
+Create an instance of the profiler:
+
+```java
+import ai.picovoice.eagle.*;
+
+final String accessKey = "${ACCESS_KEY}";
+
+try {
+    EagleProfiler eagleProfiler = new EagleProfiler.Builder()
+            .setAccessKey(accessKey)
+            .build();
+} catch (EagleException e) { }
+```
+
+Create a new speaker profile:
+
+```java
+public short[] getNextEnrollAudioData() {
+    // get audio data
+}
+
+EagleProfilerEnrollResult result = null;
+try {
+    while (result != null && result.getPercentage() < 100.0) {
+        result = eagleProfiler.enroll(getNextEnrollAudioData());
+    }
+} catch (EagleException e) { }
+```
+
+Export the speaker profile once enrollment is complete:
+
+```java
+try {
+    EagleProfile speakerProfile = eagleProfiler.export();
+} catch (EagleException e) { }
+```
+
+Release the resources acquired by the profiler:
+
+```java
+eagleProfiler.delete();
+```
+
+#### Speaker Recognition
+
+Create an instance of the engine using the speaker profile exported before:
+
+```java
+import ai.picovoice.eagle.*;
+
+final String accessKey = "${ACCESS_KEY}";
+
+try {
+    Eagle eagle = new Eagle.Builder()
+        .setAccessKey(accessKey)
+        .setSpeakerProfile(speakerProfile)
+        .build();
+} catch (EagleException e) { }
+```
+
+Process incoming audio frames:
+
+```java
+public short[] getNextAudioFrame() {
+    // get audio frame    
+}
+
+
+try {
+    while (true) {
+        float[] scores = eagle.process(getNextAudioFrame());
+    }
+} catch (EagleException e) { }
+```
+
+Finally, when done be sure to explicitly release the resources:
+
+```java
+eagle.delete()
+```
 
 ### iOS
 
