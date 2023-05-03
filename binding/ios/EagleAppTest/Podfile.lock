@@ -1,0 +1,16 @@
+PODS:
+  - Eagle-iOS (0.1.0)
+
+DEPENDENCIES:
+  - Eagle-iOS (from `../../../`)
+
+EXTERNAL SOURCES:
+  Eagle-iOS:
+    :path: "../../../"
+
+SPEC CHECKSUMS:
+  Eagle-iOS: a18f5d5d9c771e001803cd35f0a7e79c3d625ff9
+
+PODFILE CHECKSUM: 1b42e70c613349cf68f7960b9724c41558074c88
+
+COCOAPODS: 1.12.0

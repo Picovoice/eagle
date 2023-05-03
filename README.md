@@ -27,16 +27,27 @@ Eagle is an on-device speaker recognition engine. Eagle is:
   - [AccessKey](#accesskey)
   - [Demos](#demos)
     - [Python](#python)
+      - [Speaker Enrollment](#speaker-enrollment)
+      - [Speaker Recognition](#speaker-recognition)
     - [Android](#android)
     - [iOS](#ios)
     - [C](#c)
+      - [Speaker Enrollment](#speaker-enrollment-1)
+      - [Speaker Recognition](#speaker-recognition-1)
     - [Web](#web)
   - [SDKs](#sdks)
     - [Python](#python-1)
+      - [Speaker Enrollment](#speaker-enrollment-2)
+      - [Speaker Recognition](#speaker-recognition-2)
     - [Android](#android-1)
     - [iOS](#ios-1)
+      - [Speaker Enrollment](#speaker-enrollment-3)
+      - [Speaker Recognition](#speaker-recognition-3)
     - [C](#c-1)
+      - [Speaker Enrollment](#speaker-enrollment-4)
+      - [Speaker Recognition](#speaker-recognition-4)
   - [Releases](#releases)
+    - [v1.0.0 - May x, 2023](#v100---may-x-2023)
   - [FAQ](#faq)
 
 ## Overview
@@ -111,6 +122,16 @@ For more information about Python demos go to [demo/python](./demo/python).
 ### Android
 
 ### iOS
+
+To run the demo, go to [demo/ios/EagleDemo](./demo/ios/EagleDemo) and run:
+
+```console
+pod install
+```
+
+Replace `let accessKey = "${YOUR_ACCESS_KEY_HERE}"` in the file [ViewModel.swift](./demo/ios/EagleDemo/EagleDemo/ViewModel.swift) with your `AccessKey`.
+
+Then, using [Xcode](https://developer.apple.com/xcode/), open the generated `EagleDemo.xcworkspace` and run the application.
 
 ### C
 
@@ -227,6 +248,80 @@ eagle.delete()
 ### Android
 
 ### iOS
+
+The Eagle iOS binding is available via [CocoaPods](https://cocoapods.org/pods/Eagle-iOS). To import it into your iOS project, add the following line to your Podfile and run `pod install`:
+
+```ruby
+pod 'Eagle-iOS'
+```
+
+#### Speaker Enrollment
+
+Create an instance of the profiler:
+
+```swift
+import pveagle
+
+let accessKey : String = // .. AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)
+let eagleProfiler = try EagleProfiler(accessKey: accessKey)
+```
+
+Create a new speaker profile:
+
+```swift
+func get_next_enroll_audio_data(numSamples: Int) -> [Int16] {
+    // ...
+}
+
+do {
+    let numSamples = eagleProfiler.minEnrollSamples()
+
+    var percentage = 0.0
+    var feedback: EagleProfilerEnrollFeedback?
+
+    while (percentage < 100.0) {
+        (percentage, feedback) = try eagleProfiler.enroll(pcm: get_next_enroll_audio_data(numSamples: numSamples))
+    }
+} catch { }
+```
+
+Export the speaker profile once enrollment is complete:
+
+```swift
+let speakerProfile = try eagleProfiler.export()
+```
+
+Release the resources acquired by the profiler:
+
+```swift
+eagleProfiler.delete()
+```
+
+#### Speaker Recognition
+
+Create an instance of the engine using the speaker profile exported before:
+
+```swift
+let eagle = Eagle(accessKey: accessKey, speakerProfiles: [speakerProfile])
+```
+
+Process incoming audio frames:
+
+```swift
+func get_next_audio_frame() -> [Int16] {
+    // ...
+}
+
+do {
+    let profileScores = try eagle.process(pcm: get_next_audio_frame())
+} catch { }
+```
+
+Finally, when done be sure to explicitly release the resources:
+
+```swift
+eagle.delete()
+```
 
 ### C
 
