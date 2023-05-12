@@ -19,3 +19,4 @@ pvrecorder
 wargv
 wchars
 wfopen
+malloc
