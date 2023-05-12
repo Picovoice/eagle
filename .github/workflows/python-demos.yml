@@ -50,6 +50,6 @@ jobs:
     - name: Test
       run: >
         python eagle_demo_file.py
-        --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
+        --access_key "/HZMi794/9p1aXKc3AsxHQIEQoV/Mf3/L4tHhHMXRtE7OJY64iJXxA=="
         --enroll_audio_paths ../../resources/audio_samples/enroll_1.wav ../../resources/audio_samples/enroll_2.wav
         --test_audio_paths ../../resources/audio_samples/test.wav
