@@ -124,7 +124,6 @@ def main():
             print('AccessKey has reached its processing limit')
         finally:
             eagle_profiler.delete()
-            input("Press any key to start testing...")
 
     if speaker_profile is None:
         print('No speaker profile is provided. Exiting...')
