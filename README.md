@@ -37,7 +37,7 @@ Eagle is an on-device speaker recognition engine. Eagle is:
 
 AccessKey is your authentication and authorization token for deploying Picovoice SDKs, including Eagle. Anyone who is
 using Picovoice needs to have a valid AccessKey. You must keep your AccessKey secret. You would need internet
-connectivity to validate your AccessKey with Picovoice license servers even though the noise suppression is running 100%
+connectivity to validate your AccessKey with Picovoice license servers even though the speaker recognition is running 100%
 offline.
 
 AccessKey also verifies that your usage is within the limits of your account. Everyone who signs up for
@@ -176,6 +176,8 @@ eagle.delete()
 
 [include/pv_eagle.h](./include/pv_eagle.h) header file contains relevant information.
 
+#### Speaker Enrollment
+
 Build an instance of the profiler:
 
 ```c
@@ -195,7 +197,7 @@ pv_status_t status = pv_eagle_profiler_init_func(
 Replace `${ACCESS_KEY}` with the AccessKey obtained from Picovoice Console, and `${MODEL_PATH}` with the path to the
 model file available under [lib/common](./lib/common).
 
-Now the `eagle_profiler` can be used to create a new speaker profile:
+Use `eagle_profiler` to create a new speaker profile:
 
 ```c
 extern const int16_t *get_next_enroll_audio_frame(void);
@@ -232,6 +234,8 @@ Once the speaker profile is exported, the resources acquired by the profiler can
 ```c
 pv_eagle_profiler_delete(eagle_profiler);
 ```
+
+#### Speaker Recognition
 
 Create an instance of the engine using the speaker profile exported before:
 

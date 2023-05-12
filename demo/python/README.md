@@ -63,9 +63,10 @@ eagle_demo_mic.py --help
 
 This file demo can be run in two modes: with and without a speaker profile.
 
-If enrollment_audio_paths are pass to the demo, it does an enrollment step to create a speaker profile. Then, it does a
-recognition step to identify the speaker. If no enrollment_audio_paths are passed to the demo, it does a recognition
-step to identify the speaker. The demo prints the result of the recognition step to the console.
+If `enrollment_audio_paths` are pass to the demo, it does an enrollment step to create a speaker profile. Then, it does
+a recognition step to identify the speaker. If no `enrollment_audio_paths` are passed to the demo, it bypasses the
+enrollment step and goes directly to the recognition step to identify the speaker. The demo prints the result of the
+recognition step to the console.
 
 ```console
 eagle_demo_file.py --access_key ${ACCESS_KEY} --test_audio_paths ${TEST_AUDIO_PATHS} --enroll_audio_paths ${ENROLL_AUDIO_PATHS}

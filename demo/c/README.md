@@ -62,9 +62,10 @@ default recording device.
 
 This file demo can be run in two modes: with and without a speaker profile.
 
-If `enroll_audio_path` are pass to the demo, it does an enrollment step to create a speaker profile. Then, it does a
-recognition step to identify the speaker. If no `enroll_audio_path` are passed to the demo, it does a recognition
-step to identify the speaker. The demo prints the result of the recognition step to the console.
+If `enroll_audio_path` are pass to the demo, it does an enrollment step to create a speaker profile. Then, it does
+a recognition step to identify the speaker. If no `enroll_audio_path` are passed to the demo, it bypasses the
+enrollment step and goes directly to the recognition step to identify the speaker. The demo prints the result of the
+recognition step to the console.
 
 This demo expects a single-channel WAV file with a sampling rate of 16000 and 16-bit linear PCM encoding.
 
