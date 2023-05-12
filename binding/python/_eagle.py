@@ -203,10 +203,11 @@ class EagleProfiler(object):
             POINTER(c_int32)]
         eagle_profiler_speaker_profile_size_func.restype = PicovoiceStatuses
 
-        self._profile_size = c_int32()
-        status = eagle_profiler_speaker_profile_size_func(self._eagle_profiler, byref(self._profile_size))
+        profile_size = c_int32()
+        status = eagle_profiler_speaker_profile_size_func(self._eagle_profiler, byref(profile_size))
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
+        self._profile_size = profile_size.value
 
         pv_eagle_profiler_enrollment_min_audio_length_sample_func = \
             library.pv_eagle_profiler_enrollment_min_audio_length_sample
@@ -263,30 +264,40 @@ class EagleProfiler(object):
         The audio data used for enrollment should satisfy the following requirements:
             - only one speaker should be present in the audio
             - the speaker should be speaking in a normal voice
-            - the audio should contain no speech from other speakers and no other sounds (e.g. music),
-            - it should be captured in a quiet environment with no background noise,
+            - the audio should contain no speech from other speakers and no other sounds (e.g. music)
+            - it should be captured in a quiet environment with no background noise
 
         :param pcm: Audio data. The audio needs to have a sample rate equal to `.sample_rate` and be
         16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
         :return: The percentage of completeness of the speaker enrollment process along with the error code
-        corresponding to the last enrollment attempt.
+        corresponding to the last enrollment attempt:
+            - `NO_ERROR`: No error occurred.
+            - `AUDIO_TOO_SHORT`: Audio length is insufficient for enrollment,
+            i.e. it is shorter than`.min_enroll_audio_length()`.
+            - `UNKNOWN_SPEAKER`: There is another speaker in the audio that is different from the speaker
+            being enrolled. Too much background noise may cause this error as well.
+            - `NO_VOICE_FOUND`: The audio does not contain any voice, i.e. it is silent or
+            has a low signal-to-noise ratio.
+            - `QUALITY_ISSUE`: The audio quality is too low for enrollment due to a bad microphone
+            or recording environment.
         """
 
         frame_type = c_int16 * len(pcm)
         c_pcm = frame_type(*pcm)
 
-        error = c_int()
+        error_code = c_int()
         percentage = c_float()
         status = self._eagle_profiler_enroll_func(
             self._eagle_profiler,
             c_pcm,
             len(c_pcm),
-            byref(error),
+            byref(error_code),
             byref(percentage))
-        if (status is not PicovoiceStatuses.SUCCESS) and (status is not PicovoiceStatuses.INVALID_ARGUMENT and error.value is not EagleProfilerEnrollmentErrors.NO_ERROR): # noqa
+        error = EagleProfilerEnrollmentErrors(error_code.value)
+        if status is not PicovoiceStatuses.SUCCESS and not (status is PicovoiceStatuses.INVALID_ARGUMENT and error.value is not EagleProfilerEnrollmentErrors.NO_ERROR):  # noqa
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
 
-        return percentage.value, EagleProfilerEnrollmentErrors(error.value)
+        return percentage.value, error
 
     def export(self) -> EagleProfile:
         """
@@ -296,7 +307,7 @@ class EagleProfiler(object):
         :return: An immutable EagleProfile object.
         """
 
-        profile = (c_byte * self._profile_size.value)()
+        profile = (c_byte * self._profile_size)()
         status = self._eagle_profiler_export_func(
             self._eagle_profiler,
             byref(profile)
@@ -304,7 +315,7 @@ class EagleProfiler(object):
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
 
-        return EagleProfile(cast(profile, c_void_p), self._profile_size.value)
+        return EagleProfile(cast(profile, c_void_p), self._profile_size)
 
     def reset(self) -> None:
         """
@@ -352,6 +363,7 @@ class Eagle(object):
     """
     Python binding for Eagle Speaker Recognition engine.
     """
+
     class CEagle(Structure):
         pass
 
@@ -462,6 +474,7 @@ class Eagle(object):
     def reset(self) -> None:
         """
         Resets the internal state of the engine.
+        It must be called before processing a new sequence of audio frames.
         """
 
         status = self._eagle_reset_func(self._eagle)

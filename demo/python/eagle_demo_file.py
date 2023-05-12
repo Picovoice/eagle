@@ -148,6 +148,8 @@ def main():
                 score = eagle.process(frame)
                 print_score_bar(i, score[0])
 
+            eagle.reset()
+
     except pveagle.EagleActivationLimitError:
         print('AccessKey has reached its processing limit.')
     except pveagle.EagleError as e:

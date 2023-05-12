@@ -18,6 +18,7 @@ Eagle is an on-device speaker recognition engine. Eagle is:
 
 - [Eagle](#eagle)
     - [Table of Contents](#table-of-contents)
+    - [Overview](#overview)
     - [AccessKey](#accesskey)
     - [Demos](#demos)
       - [Python](#python-demos)
@@ -32,6 +33,14 @@ Eagle is an on-device speaker recognition engine. Eagle is:
       - [C](#c)
       - [Web](#web)
     - [Releases](#releases)
+
+## Overview
+
+Eagle consists of two distinct steps: Profiling and Recognition. In the Profiling step, Eagle analyzes a series of
+utterances from a particular speaker to learn their unique voiceprint. This step results in a `Profile`,
+which can be stored and utilized in the next step. During the Recognition step, Eagle registers speakers using
+the `Profile`s generated in the Profiling phase. Then, Eagle compares the incoming frames of audio to the voiceprints of
+all enrolled speakers in real-time to determine the similarity between them.
 
 ## AccessKey
 
@@ -66,6 +75,8 @@ eagle_demo_file \
 ```
 
 Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console.
+
+For more information about Python demos go to [demo/python](./demo/python).
 
 ### Android
 
