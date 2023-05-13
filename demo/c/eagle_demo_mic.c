@@ -9,10 +9,7 @@
     specific language governing permissions and limitations under the License.
 */
 
-#include <float.h>
 #include <getopt.h>
-#include <limits.h>
-#include <math.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -137,7 +134,7 @@ int picovoice_main(int argc, char *argv[]) {
     int32_t device_index = -1;
 
     int c;
-    while ((c = getopt_long(argc, argv, "sa:d:l:m:i:o:s:", long_options, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "sa:d:l:m:i:o:", long_options, NULL)) != -1) {
         switch (c) {
             case 's':
                 show_audio_devices();
