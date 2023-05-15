@@ -54,8 +54,8 @@ class EagleCTestCase(unittest.TestCase):
             "-a", self._access_key,
             "-l", self._get_library_file(),
             "-m", self._get_model_path(),
+            "-w", self._get_audio_file(audio_file_name),
             "-e" if is_enroll else "-t", "tmp_profile.egl",
-            "-t", self._get_audio_file(audio_file_name),
         ]
         process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf-8')
         stdout, stderr = process.communicate()
