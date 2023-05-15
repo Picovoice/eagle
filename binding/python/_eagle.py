@@ -137,9 +137,9 @@ class EagleProfile(object):
         return bytes(cast(ptr, POINTER(c_byte * size)).contents)
 
 
-class EagleProfilerEnrollmentErrors(Enum):
+class EagleProfilerEnrollmentFeedbacks(Enum):
     """
-    Enumeration of possible errors during enrollment.
+    Enumeration of possible enrollment feedbacks.
     """
 
     NO_ERROR = 0
@@ -197,7 +197,7 @@ class EagleProfiler(object):
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
 
-        eagle_profiler_speaker_profile_size_func = library.pv_eagle_profiler_speaker_profile_size
+        eagle_profiler_speaker_profile_size_func = library.pv_eagle_profiler_export_size
         eagle_profiler_speaker_profile_size_func.argtypes = [
             POINTER(self.CEagleProfiler),
             POINTER(c_int32)]
@@ -210,19 +210,19 @@ class EagleProfiler(object):
         self._profile_size = profile_size.value
 
         pv_eagle_profiler_enrollment_min_audio_length_sample_func = \
-            library.pv_eagle_profiler_enrollment_min_audio_length_sample
+            library.pv_eagle_profiler_enrollment_min_audio_length_samples
         pv_eagle_profiler_enrollment_min_audio_length_sample_func.argtypes = [
             POINTER(self.CEagleProfiler),
             POINTER(c_int32)]
         pv_eagle_profiler_enrollment_min_audio_length_sample_func.restype = PicovoiceStatuses
 
-        min_enroll_audio_length = c_int32()
+        min_enroll_audio_len_samples = c_int32()
         status = pv_eagle_profiler_enrollment_min_audio_length_sample_func(
             self._eagle_profiler,
-            byref(min_enroll_audio_length))
+            byref(min_enroll_audio_len_samples))
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
-        self._min_enroll_audio_length = min_enroll_audio_length.value
+        self._min_enroll_audio_len_samples = min_enroll_audio_len_samples.value
 
         self._eagle_profiler_delete_func = library.pv_eagle_profiler_delete
         self._eagle_profiler_delete_func.argtypes = [POINTER(self.CEagleProfiler)]
@@ -256,11 +256,11 @@ class EagleProfiler(object):
         version_func.restype = c_char_p
         self._version = version_func().decode('utf-8')
 
-    def enroll(self, pcm: Sequence[int]) -> Tuple[float, EagleProfilerEnrollmentErrors]:
+    def enroll(self, pcm: Sequence[int]) -> Tuple[float, EagleProfilerEnrollmentFeedbacks]:
         """
         Enrolls a speaker. This function should be called multiple times with different utterances of the same speaker
         until `percentage` reaches `100.0`. Any further enrollment can be used to improve the speaker voice profile.
-        The minimum number of required samples can be obtained by calling `.min_enroll_audio_length()`.
+        The minimum number of required samples can be obtained by calling `.min_enroll_audio_len_samples()`.
         The audio data used for enrollment should satisfy the following requirements:
             - only one speaker should be present in the audio
             - the speaker should be speaking in a normal voice
@@ -269,11 +269,11 @@ class EagleProfiler(object):
 
         :param pcm: Audio data. The audio needs to have a sample rate equal to `.sample_rate` and be
         16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
-        :return: The percentage of completeness of the speaker enrollment process along with the error code
+        :return: The percentage of completeness of the speaker enrollment process along with the feedback code
         corresponding to the last enrollment attempt:
             - `NO_ERROR`: No error occurred.
             - `AUDIO_TOO_SHORT`: Audio length is insufficient for enrollment,
-            i.e. it is shorter than`.min_enroll_audio_length()`.
+            i.e. it is shorter than`.min_enroll_audio_len_samples()`.
             - `UNKNOWN_SPEAKER`: There is another speaker in the audio that is different from the speaker
             being enrolled. Too much background noise may cause this error as well.
             - `NO_VOICE_FOUND`: The audio does not contain any voice, i.e. it is silent or
@@ -285,19 +285,19 @@ class EagleProfiler(object):
         frame_type = c_int16 * len(pcm)
         c_pcm = frame_type(*pcm)
 
-        error_code = c_int()
+        feedback_code = c_int()
         percentage = c_float()
         status = self._eagle_profiler_enroll_func(
             self._eagle_profiler,
             c_pcm,
             len(c_pcm),
-            byref(error_code),
+            byref(feedback_code),
             byref(percentage))
-        error = EagleProfilerEnrollmentErrors(error_code.value)
-        if status is not PicovoiceStatuses.SUCCESS and not (status is PicovoiceStatuses.INVALID_ARGUMENT and error.value is not EagleProfilerEnrollmentErrors.NO_ERROR):  # noqa
+        feedback = EagleProfilerEnrollmentFeedbacks(feedback_code.value)
+        if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
 
-        return percentage.value, error
+        return percentage.value, feedback
 
     def export(self) -> EagleProfile:
         """
@@ -335,12 +335,12 @@ class EagleProfiler(object):
         self._eagle_profiler_delete_func(self._eagle_profiler)
 
     @property
-    def min_enroll_audio_length(self) -> int:
+    def min_enroll_audio_len_samples(self) -> int:
         """
         the minimum number of samples in an audio data required for enrollment.
         """
 
-        return self._min_enroll_audio_length
+        return self._min_enroll_audio_len_samples
 
     @property
     def sample_rate(self) -> int:
@@ -517,7 +517,7 @@ __all__ = [
     'Eagle',
     'EagleProfile',
     'EagleProfiler',
-    'EagleProfilerEnrollmentErrors',
+    'EagleProfilerEnrollmentFeedbacks',
     'EagleActivationError',
     'EagleActivationLimitError',
     'EagleActivationRefusedError',

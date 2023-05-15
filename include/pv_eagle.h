@@ -51,23 +51,23 @@ PV_API pv_status_t pv_eagle_profiler_init(
 PV_API void pv_eagle_profiler_delete(pv_eagle_profiler_t *object);
 
 /**
- * Enrollment error codes.
+ * Enrollment feedback codes.
  */
 typedef enum {
-    PV_EAGLE_PROFILER_ENROLLMENT_ERROR_NONE = 0,
-    PV_EAGLE_PROFILER_ENROLLMENT_ERROR_AUDIO_TOO_SHORT,
-    PV_EAGLE_PROFILER_ENROLLMENT_ERROR_UNKNOWN_SPEAKER,
-    PV_EAGLE_PROFILER_ENROLLMENT_ERROR_NO_VOICE_FOUND,
-    PV_EAGLE_PROFILER_ENROLLMENT_ERROR_QUALITY_ISSUE,
-} pv_eagle_profiler_enrollment_error_t;
+    PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_NONE = 0,
+    PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_AUDIO_TOO_SHORT,
+    PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_UNKNOWN_SPEAKER,
+    PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_NO_VOICE_FOUND,
+    PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_QUALITY_ISSUE,
+} pv_eagle_profiler_enrollment_feedback_t;
 
 /**
- * Provides string representations of EagleProfiler enrollment error codes.
+ * Provides string representations of EagleProfiler enrollment feedback codes.
  *
- * @param error Error code.
+ * @param feedback Feedback code.
  * @return String representation.
  */
-PV_API const char *pv_eagle_profiler_enrollment_error_to_string(pv_eagle_profiler_enrollment_error_t error);
+PV_API const char *pv_eagle_profiler_enrollment_feedback_to_string(pv_eagle_profiler_enrollment_feedback_t feedback);
 
 /**
  * Enrolls a speaker. This function should be called multiple times with different utterances of the same speaker
@@ -82,10 +82,18 @@ PV_API const char *pv_eagle_profiler_enrollment_error_to_string(pv_eagle_profile
  * @param object EagleProfiler object.
  * @param pcm Audio data. The required sample rate can be attained by calling `pv_sample_rate()`. The required audio
  * format is 16-bit linearly-encoded single-channel PCM. The minimum audio length required for enrollment can be attained
- * by calling `pv_eagle_profiler_enrollment_min_audio_length_sample()`.
+ * by calling `pv_eagle_profiler_enrollment_min_audio_length_samples()`.
  * @param num_samples Number of audio samples in `pcm`.
- * @param[out] error Error code. If the return value is `PV_STATUS_INVALID_ARGUMENT`, this will be set to
- * a proper error code indicating the cause of failure.
+ * @param[out] feedback Feedback code. If enrollment process fails because of a bad input audio, this will be set to
+ * a proper feedback code indicating the cause of failure:
+ * - `PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_AUDIO_TOO_SHORT`: The audio is too short,
+ * i.e. it contains less than the minimum number of required samples.
+ * - `PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_UNKNOWN_SPEAKER`: The speaker is unknown,
+ * i.e. the speaker is not the same as the one enrolled in the previous enrollment.
+ * - `PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_NO_VOICE_FOUND`: The audio does not contain any speech.
+ * - `PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_QUALITY_ISSUE`:
+ * The audio is too noisy or the speaker is speaking in a low voice.
+* Otherwise, it will be set to `PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_NONE`
  * @param[out] percentage Percentage of enrollment completed.
  * @return Status code. Returns `PV_STATUS_OUT_OF_MEMORY`, `PV_STATUS_INVALID_ARGUMENT`,
  * `PV_STATUS_RUNTIME_ERROR`, `PV_STATUS_ACTIVATION_ERROR`, `PV_STATUS_ACTIVATION_LIMIT_REACHED`,
@@ -95,7 +103,7 @@ PV_API pv_status_t pv_eagle_profiler_enroll(
         pv_eagle_profiler_t *object,
         const int16_t *pcm,
         int32_t num_samples,
-        pv_eagle_profiler_enrollment_error_t *error,
+        pv_eagle_profiler_enrollment_feedback_t *feedback,
         float *percentage);
 
 /**
@@ -105,7 +113,7 @@ PV_API pv_status_t pv_eagle_profiler_enroll(
  * @param[out] num_samples Number of samples.
  * @return Status code. Returns `PV_STATUS_INVALID_ARGUMENT` on failure.
  */
-PV_API pv_status_t pv_eagle_profiler_enrollment_min_audio_length_sample(
+PV_API pv_status_t pv_eagle_profiler_enrollment_min_audio_length_samples(
         const pv_eagle_profiler_t *object,
         int32_t *num_samples);
 
@@ -115,7 +123,7 @@ PV_API pv_status_t pv_eagle_profiler_enrollment_min_audio_length_sample(
  *
  * @param object EagleProfiler object.
  * @param[out] speaker_profile Buffer where the speaker profile will be stored. Must be pre-allocated with a size
- * obtained by calling `pv_eagle_profiler_speaker_profile_size()`.
+ * obtained by calling `pv_eagle_profiler_export_size()`.
  * @return Status code. Returns `PV_STATUS_OUT_OF_MEMORY`, `PV_STATUS_INVALID_ARGUMENT`,
  * or `PV_STATUS_RUNTIME_ERROR` on failure. It returns `PV_STATUS_INVALID_STATE` if enrollment is not complete.
  */
@@ -130,7 +138,7 @@ PV_API pv_status_t pv_eagle_profiler_export(
  * @param[out] speaker_profile_size_bytes Size of the serialized speaker profile in bytes.
  * @return Status code. Returns `PV_STATUS_INVALID_ARGUMENT` on failure
  */
-PV_API pv_status_t pv_eagle_profiler_speaker_profile_size(
+PV_API pv_status_t pv_eagle_profiler_export_size(
         const pv_eagle_profiler_t *object,
         int32_t *speaker_profile_size_bytes);
 

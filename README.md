@@ -159,7 +159,7 @@ eagle_profiler.delete()
 Create an instance of the engine using the speaker profile exported before:
 
 ```python
-eagle = pveagle.create(access_key, speaker_profile)
+eagle = pveagle.create_recognizer(access_key, speaker_profile)
 ```
 
 Process incoming audio frames:

@@ -19,7 +19,7 @@ from ._eagle import (
 from ._util import default_library_path, default_model_path
 
 
-def create(
+def create_recognizer(
         access_key: str,
         speaker_profiles: Union[Sequence[EagleProfile], EagleProfile],
         model_path: Optional[str] = None,
@@ -57,6 +57,6 @@ def create_profiler(
 
 
 __all__ = [
-    'create',
+    'create_recognizer',
     'create_profiler'
 ]

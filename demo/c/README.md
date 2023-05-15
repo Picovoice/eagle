@@ -16,11 +16,17 @@ Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get you
 - The demo requires [CMake](https://cmake.org/) version 3.4 or higher.
 - **For Windows Only**: [MinGW](https://www.mingw-w64.org/) is required to build the demo.
 
+## Overview
+
+Eagle consists of two distinct steps: Profiling and Recognition. In the Profiling step, Eagle analyzes a series of
+utterances from a particular speaker to learn their unique voiceprint. This step results in a `Profile` object,
+which can be stored and utilized during inference. During the Recognition step, Eagle compares the incoming frames of
+audio to the voiceprints of all enrolled speakers in real-time to determine the similarity between them.
+
 # Microphone Demo
 
-The microphone demo records audio input from a connected microphone. If a speaker profile isn't provided to the demo, it
-performs an enrollment step to create a new speaker profile. Once this is complete, it proceeds to a recognition step to
-identify the speaker.
+The microphone demo records audio input from a connected microphone. It has two modes, `enroll` and `test`,
+which can be selected based on the input arguments.
 
 **Note**: the following commands are run from the root of the repo.
 
@@ -37,7 +43,7 @@ cmake -S demo/c/ -B demo/c/build && cmake --build demo/c/build --target eagle_de
 Running the executable without any command-line arguments prints the usage info to the console:
 
 ```console
-Usage: eagle_demo_mic [-s] [-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY -d AUDIO_DEVICE_INDEX -i PROFILE_INPUT_PATH -o PROFILE_OUTPUT_PATH]
+Usage: ./demo/c/build/eagle_demo_mic [-s] [-e OUTPUT_PROFILE_PATH | -t INPUT_PROFILE_PATH] [-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY -d AUDIO_DEVICE_INDEX]
 ```
 
 To list the available audio input devices:
@@ -46,26 +52,38 @@ To list the available audio input devices:
 ./demo/c/build/eagle_demo_mic -s
 ```
 
-To run the Eagle microphone demo:
+### Speaker Recognition
+
+To run the Eagle microphone demo in the enrollment mode, pass the `-e` argument with the path to the output file
+where the speaker profile will be stored:
 
 ```console
-./demo/c/build/eagle_demo_mic -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -d ${AUDIO_DEVICE_INDEX}
+./demo/c/build/eagle_demo_mic -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -d ${AUDIO_DEVICE_INDEX} -e ${OUTPUT_PROFILE_PATH}
 ```
 
 Replace `${LIBRARY_PATH}` with path to appropriate library available under [lib](../../lib), `${MODEL_PATH}` with path
 to the model file available under [lib/common](../../lib/common), `${ACCESS_KEY}` with AccessKey
 obtained from [Picovoice Console](https://console.picovoice.ai/), `${AUDIO_DEVICE_INDEX}` with the index of the
 audio device you wish to capture audio with. An `${AUDIO_DEVICE_INDEX}` of -1 will provide you with your system's
-default recording device.
+default recording device. Lastly, `${OUTPUT_PROFILE_PATH}` with the path to the output file where the speaker profile
+will be stored.
+
+### Speaker Recognition
+
+To run the Eagle microphone demo in the test mode, pass the `-t` argument with the path to the input file
+where the speaker profile is stored:
+
+```console
+./demo/c/build/eagle_demo_mic -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -d ${AUDIO_DEVICE_INDEX} -t ${INPUT_PROFILE_PATH}
+```
+
+All arguments are the same as the enrollment mode, except `${INPUT_PROFILE_PATH}` should be the path to the speaker
+profile file.
 
 # File Demo
 
-This file demo can be run in two modes: with and without a speaker profile.
-
-If `enroll_audio_path` are pass to the demo, it does an enrollment step to create a speaker profile. Then, it does
-a recognition step to identify the speaker. If no `enroll_audio_path` are passed to the demo, it bypasses the
-enrollment step and goes directly to the recognition step to identify the speaker. The demo prints the result of the
-recognition step to the console.
+Similar to the mic demo, the file demo can be run in two modes: `enroll` and `test`, which can be selected based on the
+input arguments.
 
 This demo expects a single-channel WAV file with a sampling rate of 16000 and 16-bit linear PCM encoding.
 
@@ -81,15 +99,36 @@ cmake -S demo/c/ -B demo/c/build && cmake --build demo/c/build --target eagle_de
 
 ## Usage
 
-Run the demo:
+Running the executable without any command-line arguments prints the usage info to the console:
 
 ```console
-Usage: eagle_demo_file [-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY -e ENROLL_AUDIO_PATH -t TEST_AUDIO_PATH -i PROFILE_INPUT_PATH -o PROFILE_OUTPUT_PATH]
+Usage: ./demo/c/build/eagle_demo_file [-e OUTPUT_PROFILE_PATH | -t INPUT_PROFILE_PATH] [-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY -w WAV_AUDIO_PATH]
 ```
 
-Replace `${LIBRARY_PATH}` with the path to the appropriate Eagle library available
-under [lib](../../lib), `${MODEL_PATH}` with the path to the model file available under [lib/common](../../lib/common),
-`${ACCESS_KEY}` with a Picovoice AccessKey obtained from
-the [Picovoice Console](https://console.picovoice.ai/), `${ENROLL_AUDIO_PATH}` with a path to a single-channel WAV file 
-that will be used to create a speaker profile, `${TEST_AUDIO_PATH}` with a path to a single-channel WAV file that will 
-be used to test the speaker profile.
+### Speaker Enrollment
+
+To run the Eagle file demo in the enrollment mode, pass the `-e` argument with the path to the output file
+where the speaker profile will be stored:
+
+```console
+./demo/c/build/eagle_demo_file -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -w ${WAV_AUDIO_PATH} -e ${OUTPUT_PROFILE_PATH}
+```
+
+Replace `${LIBRARY_PATH}` with the path to the appropriate Eagle library available under [lib](../../lib), 
+`${MODEL_PATH}` with the path to the model file available under [lib/common](../../lib/common), `${ACCESS_KEY}` with a
+Picovoice AccessKey obtained from the [Picovoice Console](https://console.picovoice.ai/), `${WAV_AUDIO_PATH}` with a
+path to a single-channel WAV file that will be used to create a speaker profile, and `${OUTPUT_PROFILE_PATH}` with the
+path to the output file where the speaker profile will be stored.
+
+### Speaker Recognition
+
+To run the Eagle file demo in the test mode, pass the `-t` argument with the path to the input file
+where the speaker profile is stored:
+
+```console
+./demo/c/build/eagle_demo_file -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -w ${WAV_AUDIO_PATH} -t ${INPUT_PROFILE_PATH}
+```
+
+All arguments are the same as the enrollment mode, except `${INPUT_PROFILE_PATH}` should be the path to the speaker
+profile file. `${WAV_AUDIO_PATH}` should be a path to a single-channel WAV file that will be used to test the speaker
+profile.

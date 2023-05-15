@@ -10,39 +10,39 @@
 #
 
 import argparse
+import csv
 import struct
 import wave
 
 import pveagle
 
-SCORE_BAR_LENGTH = 30
-
 
 def read_file(file_name, sample_rate):
-    wav_file = wave.open(file_name, mode="rb")
-    channels = wav_file.getnchannels()
-    sample_width = wav_file.getsampwidth()
-    num_frames = wav_file.getnframes()
+    with wave.open(file_name, mode="rb") as wav_file:
+        channels = wav_file.getnchannels()
+        sample_width = wav_file.getsampwidth()
+        num_frames = wav_file.getnframes()
 
-    if wav_file.getframerate() != sample_rate:
-        raise ValueError("Audio file should have a sample rate of %d. got %d" % (sample_rate, wav_file.getframerate()))
-    if sample_width != 2:
-        raise ValueError("Audio file should be 16-bit. got %d" % sample_width)
-    if channels == 2:
-        print("Eagle processes single-channel audio but stereo file is provided. Processing left channel only.")
+        if wav_file.getframerate() != sample_rate:
+            raise ValueError(
+                "Audio file should have a sample rate of %d. got %d" % (sample_rate, wav_file.getframerate()))
+        if sample_width != 2:
+            raise ValueError("Audio file should be 16-bit. got %d" % sample_width)
+        if channels == 2:
+            print("Eagle processes single-channel audio but stereo file is provided. Processing left channel only.")
 
-    samples = wav_file.readframes(num_frames)
-    wav_file.close()
+        samples = wav_file.readframes(num_frames)
 
     frames = struct.unpack('h' * num_frames * channels, samples)
 
     return frames[::channels]
 
 
-def print_score_bar(iteration, score):
-    bar_length = int(score * SCORE_BAR_LENGTH)
-    empty_length = SCORE_BAR_LENGTH - bar_length
-    print("[frame: %3d, score: %3.2f]|%s%s|" % (iteration, score, '#' * bar_length, ' ' * empty_length))
+def print_result(time, scores):
+    result = 'time: %4.2f sec | scores -> ' % time
+    for i, score in enumerate(scores):
+        result += 'speaker[%d]: %.3f, ' % (i, score)
+    print(result)
 
 
 def main():
@@ -52,43 +52,41 @@ def main():
         required=True,
         help='AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)')
     parser.add_argument(
-        '--test_audio_paths',
-        required=True,
-        nargs='+',
-        help='Absolute path to test audio files')
-    parser.add_argument(
-        '--profile_output_path',
-        default=None,
-        help='If provided, creates a profile file at the given path')
-    parser.add_argument(
         '--library_path',
         help='Absolute path to dynamic library. Default: using the library provided by `pveagle`')
     parser.add_argument(
         '--model_path',
-        help='Absolute path to Koala model. Default: using the model provided by `pveagle`')
+        help='Absolute path to Eagle model. Default: using the model provided by `pveagle`')
+    subparsers = parser.add_subparsers(dest='command', required=True)
 
-    enroll = parser.add_mutually_exclusive_group(required=True)
+    enroll = subparsers.add_parser('enroll')
     enroll.add_argument(
         '--enroll_audio_paths',
-        default=None,
+        required=True,
         nargs='+',
-        help='Absolute path to enrollment audio files')
+        help='Absolute path(s) to enrollment audio files')
     enroll.add_argument(
-        '--profile_input_path',
-        default=None,
-        help='If provided, Eagle will load the profile from this path and skip enrollment')
+        '--output_profile_path',
+        required=True,
+        help='Absolute path to save the speaker profile')
+
+    test = subparsers.add_parser('test')
+    test.add_argument(
+        '--input_profile_paths',
+        required=True,
+        nargs='+',
+        help='Absolute path(s) to speaker profile(s)')
+    test.add_argument(
+        '--test_audio_path',
+        required=True,
+        help='Absolute path to test audio file')
+    test.add_argument(
+        '--csv_output_path',
+        help='Optional absolute path to save the test result in CSV format')
+
     args = parser.parse_args()
 
-    for audio_path in args.test_audio_paths:
-        if not audio_path.lower().endswith('.wav'):
-            raise ValueError('Given argument --test_audio_paths must have WAV file extension')
-
-    speaker_profile = None
-    if args.profile_input_path is not None:
-        with open(args.profile_input_path, 'rb') as f:
-            speaker_profile = pveagle.EagleProfile.from_bytes(f.read())
-
-    else:
+    if args.command == 'enroll':
         for audio_path in args.enroll_audio_paths:
             if not audio_path.lower().endswith('.wav'):
                 raise ValueError('Given argument --enroll_audio_paths must have WAV file extension')
@@ -98,66 +96,84 @@ def main():
                 access_key=args.access_key,
                 model_path=args.model_path,
                 library_path=args.library_path)
-        except pveagle.EagleInvalidArgumentError as e:
+        except pveagle.EagleInvalidArgumentError:
             print("One or more arguments provided to Eagle is invalid: ", args)
             print("If all other arguments seem valid, ensure that '%s' is a valid AccessKey" % args.access_key)
-            raise e
+            raise
         except pveagle.EagleError as e:
-            print("Failed to initialize Eagle")
-            raise e
+            print("Failed to initialize EagleProfiler: ", e)
+            raise
+
+        print('Eagle version: %s' % eagle_profiler.version)
 
         try:
             for audio_path in args.enroll_audio_paths:
                 audio = read_file(audio_path, eagle_profiler.sample_rate)
                 enroll_percentage, error = eagle_profiler.enroll(audio)
-                if error is pveagle.EagleProfilerEnrollmentErrors.NO_ERROR:
+                if error is pveagle.EagleProfilerEnrollmentFeedbacks.NO_ERROR:
                     print('Enrolled audio file %s (Enrollment percentage: %.2f%%)' % (audio_path, enroll_percentage))
                 else:
                     print('Failed to enroll audio file %s (Error: %s)' % (audio_path, error.name))
 
             speaker_profile = eagle_profiler.export()
-            if args.profile_output_path is not None:
-                with open(args.profile_output_path, 'wb') as f:
+            if args.output_profile_path is not None:
+                with open(args.output_profile_path, 'wb') as f:
                     f.write(speaker_profile.to_bytes())
-                print('Speaker profile is saved to %s' % args.profile_output_path)
+                print('Speaker profile is saved to %s' % args.output_profile_path)
         except pveagle.EagleActivationLimitError:
             print('AccessKey has reached its processing limit')
+        except pveagle.EagleError as e:
+            print('Failed to perform enrollment: ', e)
         finally:
             eagle_profiler.delete()
 
-    if speaker_profile is None:
-        print('No speaker profile is provided. Exiting...')
-        return
+    elif args.command == 'test':
+        speaker_profiles = []
+        for input_profile_path in args.input_profile_paths:
+            with open(input_profile_path, 'rb') as f:
+                speaker_profiles.append(pveagle.EagleProfile.from_bytes(f.read()))
 
-    eagle = None
-    try:
-        eagle = pveagle.create(
-            access_key=args.access_key,
-            model_path=args.model_path,
-            library_path=args.library_path,
-            speaker_profiles=[speaker_profile])
+        eagle = None
+        try:
+            eagle = pveagle.create(
+                access_key=args.access_key,
+                model_path=args.model_path,
+                library_path=args.library_path,
+                speaker_profiles=speaker_profiles)
+        except pveagle.EagleActivationLimitError:
+            print('AccessKey has reached its processing limit.')
+        except pveagle.EagleError as e:
+            print("Failed to initialize Eagle: ", e)
+            raise
 
         print('Eagle version: %s' % eagle.version)
 
-        for audio_path in args.test_audio_paths:
-            audio = read_file(audio_path, eagle.sample_rate)
+        output_result = None
+        result_writer = None
+        if args.csv_output_path is not None:
+            output_result = open(args.csv_output_path, mode='w')
+            result_writer = csv.writer(output_result, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            result_writer.writerow(['time', *['Speaker_%d' % i for i in range(len(speaker_profiles))]])
+        try:
+            audio = read_file(args.test_audio_path, eagle.sample_rate)
             num_frames = len(audio) // eagle.frame_length
-
+            frame_to_second = eagle.frame_length / eagle.sample_rate
             for i in range(num_frames):
                 frame = audio[i * eagle.frame_length:(i + 1) * eagle.frame_length]
-                score = eagle.process(frame)
-                print_score_bar(i, score[0])
+                scores = eagle.process(frame)
+                if output_result is not None:
+                    result_writer.writerow([i, *scores])
+                print_result(i * frame_to_second, scores)
 
-            eagle.reset()
-
-    except pveagle.EagleActivationLimitError:
-        print('AccessKey has reached its processing limit.')
-    except pveagle.EagleError as e:
-        print("Failed to initialize Eagle")
-        raise e
-    finally:
-        if eagle is not None:
+        except pveagle.EagleActivationLimitError:
+            print('AccessKey has reached its processing limit.')
+        except pveagle.EagleError as e:
+            print("Failed to process audio: ", e)
+            raise
+        finally:
             eagle.delete()
+            if output_result is not None:
+                output_result.close()
 
 
 if __name__ == '__main__':

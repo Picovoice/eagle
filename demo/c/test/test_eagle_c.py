@@ -57,11 +57,11 @@ class EagleCTestCase(unittest.TestCase):
             "-e", self._get_audio_file(audio_file_name),
             "-t", self._get_audio_file("test.wav"),
         ]
-        process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf-8')
         stdout, stderr = process.communicate()
         self.assertEqual(process.poll(), 0)
-        self.assertEqual(stderr.decode('utf-8'), '')
-        self.assertTrue("real time factor" in stdout.decode('utf-8'))
+        self.assertEqual(stderr, '')
+        self.assertTrue("real time factor" in stdout)
 
     def test_eagle(self):
         self.run_eagle("enroll_3.wav")
