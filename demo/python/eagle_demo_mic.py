@@ -195,7 +195,7 @@ def main():
         eagle = None
         recorder = None
         try:
-            eagle = pveagle.create(
+            eagle = pveagle.create_recognizer(
                 access_key=args.access_key,
                 model_path=args.model_path,
                 library_path=args.library_path,
