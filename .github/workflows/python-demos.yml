@@ -47,9 +47,18 @@ jobs:
     - name: Install dependencies
       run: pip install -r requirements.txt
 
-    - name: Test
+    - name: Test enroll
       run: >
         python eagle_demo_file.py
         --access_key "/HZMi794/9p1aXKc3AsxHQIEQoV/Mf3/L4tHhHMXRtE7OJY64iJXxA=="
+        enroll
         --enroll_audio_paths ../../resources/audio_samples/enroll_1.wav ../../resources/audio_samples/enroll_2.wav
-        --test_audio_paths ../../resources/audio_samples/test.wav
+        --profile_output_path test.egl
+
+    - name: Test inference
+      run: >
+        python eagle_demo_file.py
+        --access_key "/HZMi794/9p1aXKc3AsxHQIEQoV/Mf3/L4tHhHMXRtE7OJY64iJXxA=="
+        test
+        --profile_input_paths test.egl
+        --test_audio_path ../../resources/audio_samples/test.wav
