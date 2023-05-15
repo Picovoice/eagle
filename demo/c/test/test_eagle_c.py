@@ -48,14 +48,14 @@ class EagleCTestCase(unittest.TestCase):
     def _get_audio_file(self, audio_file_name):
         return os.path.join(self._root_dir, 'resources/audio_samples', audio_file_name)
 
-    def run_eagle(self, audio_file_name):
+    def run_eagle(self, audio_file_name, is_enroll=False):
         args = [
             os.path.join(os.path.dirname(__file__), "../build/eagle_demo_file"),
             "-a", self._access_key,
             "-l", self._get_library_file(),
             "-m", self._get_model_path(),
-            "-e", self._get_audio_file(audio_file_name),
-            "-t", self._get_audio_file("test.wav"),
+            "-e" if is_enroll else "-t", "tmp_profile.egl",
+            "-t", self._get_audio_file(audio_file_name),
         ]
         process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf-8')
         stdout, stderr = process.communicate()
@@ -63,8 +63,11 @@ class EagleCTestCase(unittest.TestCase):
         self.assertEqual(stderr, '')
         self.assertTrue("real time factor" in stdout)
 
-    def test_eagle(self):
-        self.run_eagle("enroll_3.wav")
+    def test_eagle_enroll(self):
+        self.run_eagle("enroll_3.wav", is_enroll=True)
+
+    def test_eagle_test(self):
+        self.run_eagle("test.wav", is_enroll=False)
 
 
 if __name__ == '__main__':

@@ -344,6 +344,12 @@ int picovoice_main(int argc, char *argv[]) {
             exit(EXIT_FAILURE);
         }
 
+        double total_cpu_time_usec = 0;
+        double total_processed_time_usec = 0;
+
+        struct timeval before;
+        gettimeofday(&before, NULL);
+
         float enroll_percentage = 0.0f;
         pv_eagle_profiler_enrollment_feedback_t feedback = PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_NONE;
         eagle_profiler_status = pv_eagle_profiler_enroll_func(
@@ -358,10 +364,26 @@ int picovoice_main(int argc, char *argv[]) {
             exit(EXIT_FAILURE);
         }
 
+        fprintf(stdout, "Enrollment is complete. Enrollment percentage: %.2f\n", enroll_percentage);
+
         if (enroll_percentage < 100.0f) {
             fprintf(stderr, "Enrollment is not complete. Enrollment percentage: %.2f\n", enroll_percentage);
             exit(EXIT_FAILURE);
         }
+
+        struct timeval after;
+        gettimeofday(&after, NULL);
+
+        total_cpu_time_usec += (double) (after.tv_sec - before.tv_sec) * 1e6 +
+                               (double) (after.tv_usec - before.tv_usec);
+        total_processed_time_usec +=
+                (num_enroll_samples * 1e6) / pv_sample_rate_func();
+
+        const double real_time_factor =
+                total_cpu_time_usec / total_processed_time_usec;
+        fprintf(stdout, "real time factor : %.3f\n", real_time_factor);
+
+        fprintf(stdout, "\n");
 
         int32_t profile_size_bytes = 0;
         eagle_profiler_status = pv_eagle_profiler_export_size_func(eagle_profiler, &profile_size_bytes);
