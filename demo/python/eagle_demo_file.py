@@ -16,6 +16,14 @@ import wave
 
 import pveagle
 
+FEEDBACK_TO_DESCRIPTIVE_MSG = {
+    pveagle.EagleProfilerEnrollmentFeedback.AUDIO_OK: 'Good audio',
+    pveagle.EagleProfilerEnrollmentFeedback.AUDIO_TOO_SHORT: 'Insufficient audio length',
+    pveagle.EagleProfilerEnrollmentFeedback.UNKNOWN_SPEAKER: 'Different speaker in audio',
+    pveagle.EagleProfilerEnrollmentFeedback.NO_VOICE_FOUND: 'No voice found in audio',
+    pveagle.EagleProfilerEnrollmentFeedback.QUALITY_ISSUE: 'Low audio quality due to bad microphone or environment'
+}
+
 
 def read_file(file_name, sample_rate):
     with wave.open(file_name, mode="rb") as wav_file:
@@ -40,8 +48,7 @@ def read_file(file_name, sample_rate):
 
 def print_result(time, scores):
     result = 'time: %4.2f sec | scores -> ' % time
-    for i, score in enumerate(scores):
-        result += 'speaker[%d]: %.3f, ' % (i, score)
+    result += ', '.join('speaker[%d]: %.3f, ' % (i, score) for i, score in enumerate(scores))
     print(result)
 
 
@@ -82,7 +89,8 @@ def main():
         help='Absolute path to test audio file')
     test.add_argument(
         '--csv_output_path',
-        help='Optional absolute path to save the test result in CSV format')
+        help='Optional if provided the test result will be saved to the given path in CSV format instead of printing '
+             'to the terminal')
 
     args = parser.parse_args()
 
@@ -109,11 +117,8 @@ def main():
         try:
             for audio_path in args.enroll_audio_paths:
                 audio = read_file(audio_path, eagle_profiler.sample_rate)
-                enroll_percentage, error = eagle_profiler.enroll(audio)
-                if error is pveagle.EagleProfilerEnrollmentFeedbacks.NO_ERROR:
-                    print('Enrolled audio file %s (Enrollment percentage: %.2f%%)' % (audio_path, enroll_percentage))
-                else:
-                    print('Failed to enroll audio file %s (Error: %s)' % (audio_path, error.name))
+                enroll_percentage, feedback = eagle_profiler.enroll(audio)
+                print('Enrolled audio file %s [Enrollment percentage: %.2f%% - Enrollment feedback: %s]' % (audio_path, enroll_percentage, FEEDBACK_TO_DESCRIPTIVE_MSG[feedback]))
 
             speaker_profile = eagle_profiler.export()
             if args.output_profile_path is not None:
@@ -163,7 +168,8 @@ def main():
                 scores = eagle.process(frame)
                 if output_result is not None:
                     result_writer.writerow([i, *scores])
-                print_result(i * frame_to_second, scores)
+                else:
+                    print_result(i * frame_to_second, scores)
 
         except pveagle.EagleActivationLimitError:
             print('AccessKey has reached its processing limit.')

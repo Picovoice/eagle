@@ -32,7 +32,7 @@ which can be selected based on the input arguments.
 
 ## Build
 
-Use CMake to build the Koala microphone demo target:
+Use CMake to build the Eagle microphone demo target:
 
 ```console
 cmake -S demo/c/ -B demo/c/build && cmake --build demo/c/build --target eagle_demo_mic
@@ -52,7 +52,7 @@ To list the available audio input devices:
 ./demo/c/build/eagle_demo_mic -s
 ```
 
-### Speaker Recognition
+### Speaker Enrollment
 
 To run the Eagle microphone demo in the enrollment mode, pass the `-e` argument with the path to the output file
 where the speaker profile will be stored:
@@ -91,7 +91,7 @@ This demo expects a single-channel WAV file with a sampling rate of 16000 and 16
 
 ## Build
 
-Use CMake to build the Koala file demo target:
+Use CMake to build the Eagle file demo target:
 
 ```console
 cmake -S demo/c/ -B demo/c/build && cmake --build demo/c/build --target eagle_demo_file

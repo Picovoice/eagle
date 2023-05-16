@@ -51,9 +51,9 @@ eagle_profiler = pveagle.create_profiler(access_key)
 by `eagle_profiler.sample_rate`. The audio data must be 16-bit linearly-encoded and single-channel.
 
 When passing samples to `eagle_profiler.enroll`, the number of samples must be at
-least `eagle_profiler.min_enroll_audio_len_samples` to ensure sufficient data for enrollment. The resulting percentage value
-indicates the progress of the enrollment process, while the error value returns an error code if any issues arise due to
-the quality of the audio data.
+least `eagle_profiler.min_enroll_audio_len_samples` to ensure sufficient data for enrollment. The percentage value
+obtained from this process indicates the progress of enrollment, while the feedback value can be utilized to determine
+the status of the enrollment process.
 
 ```python
 def get_next_enroll_audio_data():
@@ -62,16 +62,14 @@ def get_next_enroll_audio_data():
 
 percentage = 0.0
 while percentage < 100.0:
-    percentage, error = eagle_profiler.enroll(get_next_enroll_audio_data())
-    print(error.name)
+    percentage, feedback = eagle_profiler.enroll(get_next_enroll_audio_data())
+    print(feedback.name)
 ```
 
 After the percentage reaches 100%, the enrollment process is considered complete. While it is possible to continue
 providing additional audio data to the profiler to improve the accuracy of the voiceprint, it is not necessary to do so.
-At the conclusion of the enrollment process, the `eagle_profiler.export()` method can be called to obtain the speaker's
-profile. This method generates a `speaker_profile` object that is essential for initializing the Eagle engine.
-Additionally, the `speaker_profile` object can be serialized using the `speaker_profile.to_bytes()` function and stored
-for later use.
+Moreover, if the audio data submitted is unsuitable for enrollment, the feedback value will indicate the reason, and the
+enrollment progress will remain unchanged.
 
 ```python
 speaker_profile = eagle_profiler.export()

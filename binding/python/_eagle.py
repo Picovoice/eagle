@@ -137,12 +137,12 @@ class EagleProfile(object):
         return bytes(cast(ptr, POINTER(c_byte * size)).contents)
 
 
-class EagleProfilerEnrollmentFeedbacks(Enum):
+class EagleProfilerEnrollmentFeedback(Enum):
     """
-    Enumeration of possible enrollment feedbacks.
+    Enumeration of possible enrollment feedback codes.
     """
 
-    NO_ERROR = 0
+    AUDIO_OK = 0
     AUDIO_TOO_SHORT = 1
     UNKNOWN_SPEAKER = 2
     NO_VOICE_FOUND = 3
@@ -256,7 +256,7 @@ class EagleProfiler(object):
         version_func.restype = c_char_p
         self._version = version_func().decode('utf-8')
 
-    def enroll(self, pcm: Sequence[int]) -> Tuple[float, EagleProfilerEnrollmentFeedbacks]:
+    def enroll(self, pcm: Sequence[int]) -> Tuple[float, EagleProfilerEnrollmentFeedback]:
         """
         Enrolls a speaker. This function should be called multiple times with different utterances of the same speaker
         until `percentage` reaches `100.0`. Any further enrollment can be used to improve the speaker voice profile.
@@ -271,7 +271,7 @@ class EagleProfiler(object):
         16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
         :return: The percentage of completeness of the speaker enrollment process along with the feedback code
         corresponding to the last enrollment attempt:
-            - `NO_ERROR`: No error occurred.
+            - `AUDIO_OK`: The audio is good for enrollment.
             - `AUDIO_TOO_SHORT`: Audio length is insufficient for enrollment,
             i.e. it is shorter than`.min_enroll_audio_len_samples()`.
             - `UNKNOWN_SPEAKER`: There is another speaker in the audio that is different from the speaker
@@ -293,7 +293,7 @@ class EagleProfiler(object):
             len(c_pcm),
             byref(feedback_code),
             byref(percentage))
-        feedback = EagleProfilerEnrollmentFeedbacks(feedback_code.value)
+        feedback = EagleProfilerEnrollmentFeedback(feedback_code.value)
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
 
@@ -517,7 +517,7 @@ __all__ = [
     'Eagle',
     'EagleProfile',
     'EagleProfiler',
-    'EagleProfilerEnrollmentFeedbacks',
+    'EagleProfilerEnrollmentFeedback',
     'EagleActivationError',
     'EagleActivationLimitError',
     'EagleActivationRefusedError',

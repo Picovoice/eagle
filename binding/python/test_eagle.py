@@ -21,7 +21,7 @@ from _eagle import (
     Eagle,
     EagleProfiler,
     EagleProfile,
-    EagleProfilerEnrollmentFeedbacks
+    EagleProfilerEnrollmentFeedback
 )
 from _util import default_library_path, default_model_path
 
@@ -69,7 +69,7 @@ class EagleTestCase(unittest.TestCase):
         for path in self.ENROLL_PATHS:
             pcm = self.load_wav_resource(path)
             percentage, error = self.eagle_profiler.enroll(pcm)
-            self.assertEqual(error, EagleProfilerEnrollmentFeedbacks.NO_ERROR)
+            self.assertEqual(error, EagleProfilerEnrollmentFeedback.AUDIO_OK)
 
         self.assertGreater(percentage, 0)
         profile = self.eagle_profiler.export()
@@ -79,11 +79,11 @@ class EagleTestCase(unittest.TestCase):
         for path in self.ENROLL_PATHS:
             pcm = self.load_wav_resource(path)
             percentage, error = self.eagle_profiler.enroll(pcm)
-            self.assertEqual(error, EagleProfilerEnrollmentFeedbacks.NO_ERROR)
+            self.assertEqual(error, EagleProfilerEnrollmentFeedback.AUDIO_OK)
 
         pcm = self.load_wav_resource(self.IMPOSTER_PATH)
         percentage, error = self.eagle_profiler.enroll(pcm)
-        self.assertEqual(error, EagleProfilerEnrollmentFeedbacks.UNKNOWN_SPEAKER)
+        self.assertEqual(error, EagleProfilerEnrollmentFeedback.UNKNOWN_SPEAKER)
 
     def test_eagle_process(self) -> None:
         pcm = self.load_wav_resource(self.TEST_PATH)

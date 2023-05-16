@@ -21,6 +21,14 @@ from pvrecorder import PvRecorder
 
 PV_RECORDER_FRAME_LENGTH = 512
 
+FEEDBACK_TO_DESCRIPTIVE_MSG = {
+    pveagle.EagleProfilerEnrollmentFeedback.AUDIO_OK: 'Good audio',
+    pveagle.EagleProfilerEnrollmentFeedback.AUDIO_TOO_SHORT: 'Insufficient audio length',
+    pveagle.EagleProfilerEnrollmentFeedback.UNKNOWN_SPEAKER: 'Different speaker in audio',
+    pveagle.EagleProfilerEnrollmentFeedback.NO_VOICE_FOUND: 'No voice found in audio',
+    pveagle.EagleProfilerEnrollmentFeedback.QUALITY_ISSUE: 'Low audio quality due to bad microphone or environment'
+}
+
 
 class EnrollmentAnimation(threading.Thread):
     def __init__(self, sleep_time_sec=0.1):
@@ -84,7 +92,7 @@ def main():
         help='Absolute path to dynamic library. Default: using the library provided by `pveagle`')
     parser.add_argument(
         '--model_path',
-        help='Absolute path to Koala model. Default: using the model provided by `pveagle`')
+        help='Absolute path to Eagle model. Default: using the model provided by `pveagle`')
     parser.add_argument('--audio_device_index', type=int, default=-1, help='Index of input audio device')
     parser.add_argument(
         '--output_audio_path',
@@ -159,12 +167,9 @@ def main():
                         enroll_pcm.extend(input_frame)
                     recorder.stop()
 
-                    enroll_percentage, error = eagle_profiler.enroll(enroll_pcm)
+                    enroll_percentage, feedback = eagle_profiler.enroll(enroll_pcm)
                     enrollment_animation.percentage = enroll_percentage
-                    if error is pveagle.EagleProfilerEnrollmentFeedbacks.NO_ERROR:
-                        enrollment_animation.feedback = ''
-                    else:
-                        enrollment_animation.feedback = ' - %s' % error.name
+                    enrollment_animation.feedback = ' - %s' % FEEDBACK_TO_DESCRIPTIVE_MSG[feedback]
 
             speaker_profile = eagle_profiler.export()
             with open(args.output_profile_path, 'wb') as f:
