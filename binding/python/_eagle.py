@@ -337,7 +337,7 @@ class EagleProfiler(object):
     @property
     def min_enroll_audio_len_samples(self) -> int:
         """
-        the minimum number of samples in an audio data required for enrollment.
+        The minimum number of samples of audio data required for enrollment.
         """
 
         return self._min_enroll_audio_len_samples
