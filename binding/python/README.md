@@ -51,7 +51,7 @@ eagle_profiler = pveagle.create_profiler(access_key)
 by `eagle_profiler.sample_rate`. The audio data must be 16-bit linearly-encoded and single-channel.
 
 When passing samples to `eagle_profiler.enroll`, the number of samples must be at
-least `eagle_profiler.min_enroll_audio_len_samples` to ensure sufficient data for enrollment. The percentage value
+least `eagle_profiler.min_enroll_samples` to ensure sufficient data for enrollment. The percentage value
 obtained from this process indicates the progress of enrollment, while the feedback value can be utilized to determine
 the status of the enrollment process.
 

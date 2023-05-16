@@ -147,10 +147,10 @@ void speaker_enrollment(
         exit(EXIT_FAILURE);
     }
 
-    pv_status_t (*pv_eagle_profiler_enrollment_min_audio_length_samples_func)(const pv_eagle_profiler_t *, int32_t *)
-    = load_symbol(eagle_library, "pv_eagle_profiler_enrollment_min_audio_length_samples");
-    if (!pv_eagle_profiler_enrollment_min_audio_length_samples_func) {
-        print_dl_error("failed to load 'pv_eagle_profiler_enrollment_min_audio_length_samples'");
+    pv_status_t (*pv_eagle_profiler_enroll_min_audio_length_samples_func)(const pv_eagle_profiler_t *, int32_t *)
+    = load_symbol(eagle_library, "pv_eagle_profiler_enroll_min_audio_length_samples");
+    if (!pv_eagle_profiler_enroll_min_audio_length_samples_func) {
+        print_dl_error("failed to load 'pv_eagle_profiler_enroll_min_audio_length_samples'");
         exit(EXIT_FAILURE);
     }
 

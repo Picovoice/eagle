@@ -137,7 +137,7 @@ class EagleProfile(object):
         return bytes(cast(ptr, POINTER(c_byte * size)).contents)
 
 
-class EagleProfilerEnrollmentFeedback(Enum):
+class EagleProfilerEnrollFeedback(Enum):
     """
     Enumeration of possible enrollment feedback codes.
     """
@@ -210,19 +210,19 @@ class EagleProfiler(object):
         self._profile_size = profile_size.value
 
         pv_eagle_profiler_enrollment_min_audio_length_sample_func = \
-            library.pv_eagle_profiler_enrollment_min_audio_length_samples
+            library.pv_eagle_profiler_enroll_min_audio_length_samples
         pv_eagle_profiler_enrollment_min_audio_length_sample_func.argtypes = [
             POINTER(self.CEagleProfiler),
             POINTER(c_int32)]
         pv_eagle_profiler_enrollment_min_audio_length_sample_func.restype = PicovoiceStatuses
 
-        min_enroll_audio_len_samples = c_int32()
+        min_enroll_samples = c_int32()
         status = pv_eagle_profiler_enrollment_min_audio_length_sample_func(
             self._eagle_profiler,
-            byref(min_enroll_audio_len_samples))
+            byref(min_enroll_samples))
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
-        self._min_enroll_audio_len_samples = min_enroll_audio_len_samples.value
+        self._min_enroll_samples = min_enroll_samples.value
 
         self._eagle_profiler_delete_func = library.pv_eagle_profiler_delete
         self._eagle_profiler_delete_func.argtypes = [POINTER(self.CEagleProfiler)]
@@ -256,11 +256,11 @@ class EagleProfiler(object):
         version_func.restype = c_char_p
         self._version = version_func().decode('utf-8')
 
-    def enroll(self, pcm: Sequence[int]) -> Tuple[float, EagleProfilerEnrollmentFeedback]:
+    def enroll(self, pcm: Sequence[int]) -> Tuple[float, EagleProfilerEnrollFeedback]:
         """
         Enrolls a speaker. This function should be called multiple times with different utterances of the same speaker
         until `percentage` reaches `100.0`. Any further enrollment can be used to improve the speaker voice profile.
-        The minimum number of required samples can be obtained by calling `.min_enroll_audio_len_samples()`.
+        The minimum number of required samples can be obtained by calling `.min_enroll_samples()`.
         The audio data used for enrollment should satisfy the following requirements:
             - only one speaker should be present in the audio
             - the speaker should be speaking in a normal voice
@@ -273,7 +273,7 @@ class EagleProfiler(object):
         corresponding to the last enrollment attempt:
             - `AUDIO_OK`: The audio is good for enrollment.
             - `AUDIO_TOO_SHORT`: Audio length is insufficient for enrollment,
-            i.e. it is shorter than`.min_enroll_audio_len_samples()`.
+            i.e. it is shorter than`.min_enroll_samples()`.
             - `UNKNOWN_SPEAKER`: There is another speaker in the audio that is different from the speaker
             being enrolled. Too much background noise may cause this error as well.
             - `NO_VOICE_FOUND`: The audio does not contain any voice, i.e. it is silent or
@@ -293,7 +293,7 @@ class EagleProfiler(object):
             len(c_pcm),
             byref(feedback_code),
             byref(percentage))
-        feedback = EagleProfilerEnrollmentFeedback(feedback_code.value)
+        feedback = EagleProfilerEnrollFeedback(feedback_code.value)
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
 
@@ -335,12 +335,12 @@ class EagleProfiler(object):
         self._eagle_profiler_delete_func(self._eagle_profiler)
 
     @property
-    def min_enroll_audio_len_samples(self) -> int:
+    def min_enroll_samples(self) -> int:
         """
-        The minimum number of samples of audio data required for enrollment.
+        The minimum length of the input pcm required by `enroll()`.
         """
 
-        return self._min_enroll_audio_len_samples
+        return self._min_enroll_samples
 
     @property
     def sample_rate(self) -> int:
@@ -517,7 +517,7 @@ __all__ = [
     'Eagle',
     'EagleProfile',
     'EagleProfiler',
-    'EagleProfilerEnrollmentFeedback',
+    'EagleProfilerEnrollFeedback',
     'EagleActivationError',
     'EagleActivationLimitError',
     'EagleActivationRefusedError',

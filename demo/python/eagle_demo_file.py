@@ -18,11 +18,11 @@ import wave
 import pveagle
 
 FEEDBACK_TO_DESCRIPTIVE_MSG = {
-    pveagle.EagleProfilerEnrollmentFeedback.AUDIO_OK: 'Good audio',
-    pveagle.EagleProfilerEnrollmentFeedback.AUDIO_TOO_SHORT: 'Insufficient audio length',
-    pveagle.EagleProfilerEnrollmentFeedback.UNKNOWN_SPEAKER: 'Different speaker in audio',
-    pveagle.EagleProfilerEnrollmentFeedback.NO_VOICE_FOUND: 'No voice found in audio',
-    pveagle.EagleProfilerEnrollmentFeedback.QUALITY_ISSUE: 'Low audio quality due to bad microphone or environment'
+    pveagle.EagleProfilerEnrollFeedback.AUDIO_OK: 'Good audio',
+    pveagle.EagleProfilerEnrollFeedback.AUDIO_TOO_SHORT: 'Insufficient audio length',
+    pveagle.EagleProfilerEnrollFeedback.UNKNOWN_SPEAKER: 'Different speaker in audio',
+    pveagle.EagleProfilerEnrollFeedback.NO_VOICE_FOUND: 'No voice found in audio',
+    pveagle.EagleProfilerEnrollFeedback.QUALITY_ISSUE: 'Low audio quality due to bad microphone or environment'
 }
 
 

@@ -82,7 +82,7 @@ PV_API const char *pv_eagle_profiler_enrollment_feedback_to_string(pv_eagle_prof
  * @param object EagleProfiler object.
  * @param pcm Audio data. The required sample rate can be attained by calling `pv_sample_rate()`. The required audio
  * format is 16-bit linearly-encoded single-channel PCM. The minimum audio length required for enrollment can be attained
- * by calling `pv_eagle_profiler_enrollment_min_audio_length_samples()`.
+ * by calling `pv_eagle_profiler_enroll_min_audio_length_samples()`.
  * @param num_samples Number of audio samples in `pcm`.
  * @param[out] feedback Feedback code. If enrollment process fails because of a bad input audio, this will be set to
  * a proper feedback code indicating the cause of failure:
@@ -107,13 +107,13 @@ PV_API pv_status_t pv_eagle_profiler_enroll(
         float *percentage);
 
 /**
- * Getter for the minimum number of samples in an audio data required for enrollment.
+ * Getter for the minimum length of the input pcm required by `pv_eagle_profiler_enroll()`.
  *
  * @param object EagleProfiler object.
  * @param[out] num_samples Number of samples.
  * @return Status code. Returns `PV_STATUS_INVALID_ARGUMENT` on failure.
  */
-PV_API pv_status_t pv_eagle_profiler_enrollment_min_audio_length_samples(
+PV_API pv_status_t pv_eagle_profiler_enroll_min_audio_length_samples(
         const pv_eagle_profiler_t *object,
         int32_t *num_samples);
 

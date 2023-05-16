@@ -179,11 +179,11 @@ void speaker_enrollment(
         exit(EXIT_FAILURE);
     }
 
-    pv_status_t (*pv_eagle_profiler_enrollment_min_audio_length_samples_func)(
+    pv_status_t (*pv_eagle_profiler_enroll_min_audio_length_samples_func)(
             const pv_eagle_profiler_t *,
-            int32_t *) = load_symbol(eagle_library, "pv_eagle_profiler_enrollment_min_audio_length_samples");
-    if (!pv_eagle_profiler_enrollment_min_audio_length_samples_func) {
-        print_dl_error("failed to load 'pv_eagle_profiler_enrollment_min_audio_length_samples'");
+            int32_t *) = load_symbol(eagle_library, "pv_eagle_profiler_enroll_min_audio_length_samples");
+    if (!pv_eagle_profiler_enroll_min_audio_length_samples_func) {
+        print_dl_error("failed to load 'pv_eagle_profiler_enroll_min_audio_length_samples'");
         exit(EXIT_FAILURE);
     }
 
@@ -227,7 +227,7 @@ void speaker_enrollment(
     }
 
     int32_t num_enroll_samples = 0;
-    eagle_profiler_status = pv_eagle_profiler_enrollment_min_audio_length_samples_func(
+    eagle_profiler_status = pv_eagle_profiler_enroll_min_audio_length_samples_func(
             eagle_profiler, &num_enroll_samples);
     if (eagle_profiler_status != PV_STATUS_SUCCESS) {
         fprintf(stderr, "failed to get minimum number of enrollment samples\n");

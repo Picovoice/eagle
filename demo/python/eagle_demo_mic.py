@@ -22,11 +22,11 @@ from pvrecorder import PvRecorder
 PV_RECORDER_FRAME_LENGTH = 512
 
 FEEDBACK_TO_DESCRIPTIVE_MSG = {
-    pveagle.EagleProfilerEnrollmentFeedback.AUDIO_OK: 'Good audio',
-    pveagle.EagleProfilerEnrollmentFeedback.AUDIO_TOO_SHORT: 'Insufficient audio length',
-    pveagle.EagleProfilerEnrollmentFeedback.UNKNOWN_SPEAKER: 'Different speaker in audio',
-    pveagle.EagleProfilerEnrollmentFeedback.NO_VOICE_FOUND: 'No voice found in audio',
-    pveagle.EagleProfilerEnrollmentFeedback.QUALITY_ISSUE: 'Low audio quality due to bad microphone or environment'
+    pveagle.EagleProfilerEnrollFeedback.AUDIO_OK: 'Good audio',
+    pveagle.EagleProfilerEnrollFeedback.AUDIO_TOO_SHORT: 'Insufficient audio length',
+    pveagle.EagleProfilerEnrollFeedback.UNKNOWN_SPEAKER: 'Different speaker in audio',
+    pveagle.EagleProfilerEnrollFeedback.NO_VOICE_FOUND: 'No voice found in audio',
+    pveagle.EagleProfilerEnrollFeedback.QUALITY_ISSUE: 'Low audio quality due to bad microphone or environment'
 }
 
 
@@ -145,7 +145,7 @@ def main():
         print('Eagle version: %s' % eagle_profiler.version)
         recorder = PvRecorder(device_index=args.audio_device_index, frame_length=PV_RECORDER_FRAME_LENGTH)
         print("Recording audio from '%s'" % recorder.selected_device)
-        num_enroll_frames = eagle_profiler.min_enroll_audio_len_samples // PV_RECORDER_FRAME_LENGTH
+        num_enroll_frames = eagle_profiler.min_enroll_samples // PV_RECORDER_FRAME_LENGTH
         sample_rate = eagle_profiler.sample_rate
         enrollment_animation = EnrollmentAnimation()
         print('Please keep speaking until the enrollment percentage reaches 100%')
