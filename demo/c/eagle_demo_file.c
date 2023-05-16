@@ -89,14 +89,13 @@ static struct option long_options[] = {
         {"access_key",          required_argument, NULL, 'a'},
         {"library_path",        required_argument, NULL, 'l'},
         {"model_path",          required_argument, NULL, 'm'},
-        {"wav_audio_path",      required_argument, NULL, 'w'},
         {"enroll",              required_argument, NULL, 'e'},
         {"test",                required_argument, NULL, 't'},
 };
 
 void print_usage(const char *program_name) {
     fprintf(stdout,
-            "Usage: %s [-e OUTPUT_PROFILE_PATH | -t INPUT_PROFILE_PATH] [-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY -w WAV_AUDIO_PATH]\n",
+            "Usage: %s [-e OUTPUT_PROFILE_PATH | -t INPUT_PROFILE_PATH] [-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY WAV_AUDIO_PATH_1 WAV_AUDIO_PATH_2 ...]\n",
             program_name);
 }
 
@@ -105,14 +104,14 @@ void speaker_enrollment(
         const char *model_path,
         void *eagle_library,
         const char *output_profile_path,
-        drwav *wav_audio_file) {
+        int32_t num_audio_paths,
+        const char *audio_paths[]) {
 
     const char *(*pv_status_to_string_func)(pv_status_t) = load_symbol(eagle_library, "pv_status_to_string");
     if (!pv_status_to_string_func) {
         print_dl_error("failed to load 'pv_status_to_string'");
         exit(EXIT_FAILURE);
     }
-
 
     pv_status_t (*pv_eagle_profiler_init_func)(
             const char *,
@@ -123,16 +122,15 @@ void speaker_enrollment(
         exit(EXIT_FAILURE);
     }
 
-    void
-    (*pv_eagle_profiler_delete_func)(pv_eagle_profiler_t *) = load_symbol(eagle_library, "pv_eagle_profiler_delete");
+    void (*pv_eagle_profiler_delete_func)(pv_eagle_profiler_t *)
+    = load_symbol(eagle_library, "pv_eagle_profiler_delete");
     if (!pv_eagle_profiler_delete_func) {
         print_dl_error("failed to load 'pv_eagle_profiler_delete'");
         exit(EXIT_FAILURE);
     }
 
-    const char *(*pv_eagle_profiler_enrollment_feedback_to_string_func)(
-            pv_eagle_profiler_enrollment_feedback_t) = load_symbol(eagle_library,
-                                                                   "pv_eagle_profiler_enrollment_feedback_to_string");
+    const char *(*pv_eagle_profiler_enrollment_feedback_to_string_func)(pv_eagle_profiler_enrollment_feedback_t)
+    = load_symbol(eagle_library, "pv_eagle_profiler_enrollment_feedback_to_string");
     if (!pv_eagle_profiler_enrollment_feedback_to_string_func) {
         print_dl_error("failed to load 'pv_eagle_profiler_enrollment_feedback_to_string'");
         exit(EXIT_FAILURE);
@@ -149,9 +147,8 @@ void speaker_enrollment(
         exit(EXIT_FAILURE);
     }
 
-    pv_status_t (*pv_eagle_profiler_enrollment_min_audio_length_samples_func)(
-            const pv_eagle_profiler_t *,
-            int32_t *) = load_symbol(eagle_library, "pv_eagle_profiler_enrollment_min_audio_length_samples");
+    pv_status_t (*pv_eagle_profiler_enrollment_min_audio_length_samples_func)(const pv_eagle_profiler_t *, int32_t *)
+    = load_symbol(eagle_library, "pv_eagle_profiler_enrollment_min_audio_length_samples");
     if (!pv_eagle_profiler_enrollment_min_audio_length_samples_func) {
         print_dl_error("failed to load 'pv_eagle_profiler_enrollment_min_audio_length_samples'");
         exit(EXIT_FAILURE);
@@ -186,17 +183,6 @@ void speaker_enrollment(
         exit(EXIT_FAILURE);
     }
 
-    size_t num_enroll_samples = (*wav_audio_file).totalPCMFrameCount;
-    int16_t *enroll_pcm = calloc(num_enroll_samples, sizeof(int16_t));
-    if (!enroll_pcm) {
-        fprintf(stderr, "failed to allocate memory for enrollment audio.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    drwav_read_pcm_frames_s16(wav_audio_file, num_enroll_samples, enroll_pcm);
-    drwav_uninit(wav_audio_file);
-
-
     pv_eagle_profiler_t *eagle_profiler = NULL;
     pv_status_t eagle_profiler_status = pv_eagle_profiler_init_func(
             access_key,
@@ -209,22 +195,85 @@ void speaker_enrollment(
 
     double total_cpu_time_usec = 0;
     double total_processed_time_usec = 0;
-
-    struct timeval before;
-    gettimeofday(&before, NULL);
-
     float enroll_percentage = 0.0f;
-    pv_eagle_profiler_enrollment_feedback_t feedback = PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_NONE;
-    eagle_profiler_status = pv_eagle_profiler_enroll_func(
-            eagle_profiler,
-            enroll_pcm,
-            (int32_t) num_enroll_samples,
-            &feedback,
-            &enroll_percentage);
-    if (eagle_profiler_status != PV_STATUS_SUCCESS) {
-        fprintf(stderr, "failed to enroll audio with feedback: %s\n",
+
+    for (int32_t i = 0; i < num_audio_paths; i++) {
+
+        const char *wav_audio_path = audio_paths[i];
+
+        drwav wav_audio_file;
+
+#if defined(_WIN32) || defined(_WIN64)
+
+        int wav_audio_path_wchars_num = MultiByteToWideChar(CP_UTF8, UTF8_COMPOSITION_FLAG, wav_audio_path, NULL_TERMINATED, NULL, 0);
+            wchar_t wav_audio_path_wchars[wav_audio_path_wchars_num];
+            MultiByteToWideChar(CP_UTF8, UTF8_COMPOSITION_FLAG, input_path, NULL_TERMINATED, wav_audio_path_wchars, wav_audio_path_wchars_num);
+            int drwav_init_file_status = drwav_init_file_w(&wav_audio_file, wav_audio_path_wchars, NULL);
+
+#else
+
+        int drwav_init_file_status = drwav_init_file(&wav_audio_file, wav_audio_path, NULL);
+
+#endif
+
+        if (!drwav_init_file_status) {
+            fprintf(stderr, "failed to open wav file at '%s'.", wav_audio_path);
+            exit(EXIT_FAILURE);
+        }
+
+        if (wav_audio_file.sampleRate != (uint32_t) pv_sample_rate_func()) {
+            fprintf(stderr, "audio sample rate should be %d\n.", pv_sample_rate_func());
+            exit(EXIT_FAILURE);
+        }
+
+        if (wav_audio_file.bitsPerSample != 16) {
+            fprintf(stderr, "audio format should be 16-bit\n.");
+            exit(EXIT_FAILURE);
+        }
+
+        if (wav_audio_file.channels != 1) {
+            fprintf(stderr, "audio should be single-channel.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        size_t num_enroll_samples = wav_audio_file.totalPCMFrameCount;
+        int16_t *enroll_pcm = calloc(num_enroll_samples, sizeof(int16_t));
+        if (!enroll_pcm) {
+            fprintf(stderr, "failed to allocate memory for enrollment audio.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        drwav_read_pcm_frames_s16(&wav_audio_file, num_enroll_samples, enroll_pcm);
+        drwav_uninit(&wav_audio_file);
+
+        struct timeval before;
+        gettimeofday(&before, NULL);
+
+        pv_eagle_profiler_enrollment_feedback_t feedback = PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_NONE;
+        eagle_profiler_status = pv_eagle_profiler_enroll_func(
+                eagle_profiler,
+                enroll_pcm,
+                (int32_t) num_enroll_samples,
+                &feedback,
+                &enroll_percentage);
+        if (eagle_profiler_status != PV_STATUS_SUCCESS) {
+            fprintf(stderr, "failed to enroll audio: %s\n", pv_status_to_string_func(eagle_profiler_status));
+            exit(EXIT_FAILURE);
+        }
+        struct timeval after;
+        gettimeofday(&after, NULL);
+
+        total_cpu_time_usec += (double) (after.tv_sec - before.tv_sec) * 1e6 +
+                               (double) (after.tv_usec - before.tv_usec);
+        total_processed_time_usec +=
+                ((double) num_enroll_samples * 1e6) / pv_sample_rate_func();
+
+        fprintf(stdout, "Enrolled audio file %s [Enrollment percentage: %.2f%% - Enrollment feedback: %s]\n",
+                wav_audio_path,
+                enroll_percentage,
                 pv_eagle_profiler_enrollment_feedback_to_string_func(feedback));
-        exit(EXIT_FAILURE);
+
+        free(enroll_pcm);
     }
 
     if (enroll_percentage < 100.0f) {
@@ -232,21 +281,9 @@ void speaker_enrollment(
         exit(EXIT_FAILURE);
     }
 
-    fprintf(stdout, "Enrollment is complete. Enrollment percentage: %.2f\n", enroll_percentage);
-
-    struct timeval after;
-    gettimeofday(&after, NULL);
-
-    total_cpu_time_usec += (double) (after.tv_sec - before.tv_sec) * 1e6 +
-                           (double) (after.tv_usec - before.tv_usec);
-    total_processed_time_usec +=
-            (num_enroll_samples * 1e6) / pv_sample_rate_func();
-
     const double real_time_factor =
             total_cpu_time_usec / total_processed_time_usec;
-    fprintf(stdout, "real time factor : %.3f\n", real_time_factor);
-
-    fprintf(stdout, "\n");
+    fprintf(stdout, "real time factor : %.3f\n\n", real_time_factor);
 
     int32_t profile_size_bytes = 0;
     eagle_profiler_status = pv_eagle_profiler_export_size_func(eagle_profiler, &profile_size_bytes);
@@ -269,8 +306,6 @@ void speaker_enrollment(
                        pv_status_to_string_func(eagle_profiler_status));
         exit(EXIT_FAILURE);
     }
-
-    free(enroll_pcm);
     pv_eagle_profiler_delete_func(eagle_profiler);
 
     FILE *output_profile_file = NULL;
@@ -295,6 +330,9 @@ void speaker_enrollment(
 
     fwrite(speaker_profile, profile_size_bytes, sizeof(uint8_t), output_profile_file);
 
+    fprintf(stdout, "Speaker profile is written to '%s'\n", output_profile_path);
+
+    free(speaker_profile);
     fclose(output_profile_file);
 }
 
@@ -303,7 +341,8 @@ void speaker_recognition(
         const char *model_path,
         void *eagle_library,
         const char *input_profile_path,
-        drwav *wav_audio_file) {
+        int32_t num_audio_paths,
+        const char *audio_paths[]) {
 
     const char *(*pv_status_to_string_func)(pv_status_t) = load_symbol(eagle_library, "pv_status_to_string");
     if (!pv_status_to_string_func) {
@@ -337,8 +376,8 @@ void speaker_recognition(
         exit(EXIT_FAILURE);
     }
 
-    int32_t (*pv_eagle_reset_func)(
-            pv_eagle_t *) = load_symbol(eagle_library, "pv_eagle_reset");
+    int32_t (*pv_eagle_reset_func)(pv_eagle_t *)
+    = load_symbol(eagle_library, "pv_eagle_reset");
     if (!pv_eagle_reset_func) {
         print_dl_error("failed to load 'pv_eagle_reset'");
         exit(EXIT_FAILURE);
@@ -408,27 +447,69 @@ void speaker_recognition(
     double total_cpu_time_usec = 0;
     double total_processed_time_usec = 0;
 
-    while ((int32_t) drwav_read_pcm_frames_s16(wav_audio_file, pv_eagle_frame_length_func(), pcm) ==
-           pv_eagle_frame_length_func()) {
-        struct timeval before;
-        gettimeofday(&before, NULL);
+    for (int32_t i = 0; i < num_audio_paths; i++) {
+        const char *wav_audio_path = audio_paths[i];
 
-        float score = 0.f;
-        eagle_status = pv_eagle_process_func(eagle, pcm, &score);
-        if (eagle_status != PV_STATUS_SUCCESS) {
-            fprintf(stderr, "failed to process audio with '%s'\n", pv_status_to_string_func(eagle_status));
+        drwav wav_audio_file;
+
+#if defined(_WIN32) || defined(_WIN64)
+
+        int wav_audio_path_wchars_num = MultiByteToWideChar(CP_UTF8, UTF8_COMPOSITION_FLAG, wav_audio_path, NULL_TERMINATED, NULL, 0);
+            wchar_t wav_audio_path_wchars[wav_audio_path_wchars_num];
+            MultiByteToWideChar(CP_UTF8, UTF8_COMPOSITION_FLAG, input_path, NULL_TERMINATED, wav_audio_path_wchars, wav_audio_path_wchars_num);
+            int drwav_init_file_status = drwav_init_file_w(&wav_audio_file, wav_audio_path_wchars, NULL);
+
+#else
+
+        int drwav_init_file_status = drwav_init_file(&wav_audio_file, wav_audio_path, NULL);
+
+#endif
+
+        if (!drwav_init_file_status) {
+            fprintf(stderr, "failed to open wav file at '%s'.", wav_audio_path);
             exit(EXIT_FAILURE);
         }
 
-        fprintf(stdout, "score: %.2f\n", score);
+        if (wav_audio_file.sampleRate != (uint32_t) pv_sample_rate_func()) {
+            fprintf(stderr, "audio sample rate should be %d\n.", pv_sample_rate_func());
+            exit(EXIT_FAILURE);
+        }
 
-        struct timeval after;
-        gettimeofday(&after, NULL);
+        if (wav_audio_file.bitsPerSample != 16) {
+            fprintf(stderr, "audio format should be 16-bit\n.");
+            exit(EXIT_FAILURE);
+        }
 
-        total_cpu_time_usec += (double) (after.tv_sec - before.tv_sec) * 1e6 +
-                               (double) (after.tv_usec - before.tv_usec);
-        total_processed_time_usec +=
-                (pv_eagle_frame_length_func() * 1e6) / pv_sample_rate_func();
+        if (wav_audio_file.channels != 1) {
+            fprintf(stderr, "audio should be single-channel.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        fprintf(stdout, "audio file: %s\n", wav_audio_path);
+        while ((int32_t) drwav_read_pcm_frames_s16(&wav_audio_file, pv_eagle_frame_length_func(), pcm) ==
+               pv_eagle_frame_length_func()) {
+            struct timeval before;
+            gettimeofday(&before, NULL);
+
+            float score = 0.f;
+            eagle_status = pv_eagle_process_func(eagle, pcm, &score);
+            if (eagle_status != PV_STATUS_SUCCESS) {
+                fprintf(stderr, "failed to process audio with '%s'\n", pv_status_to_string_func(eagle_status));
+                exit(EXIT_FAILURE);
+            }
+
+            fprintf(stdout, "score: %.2f\n", score);
+
+            struct timeval after;
+            gettimeofday(&after, NULL);
+
+            total_cpu_time_usec += (double) (after.tv_sec - before.tv_sec) * 1e6 +
+                                   (double) (after.tv_usec - before.tv_usec);
+            total_processed_time_usec +=
+                    (pv_eagle_frame_length_func() * 1e6) / pv_sample_rate_func();
+        }
+
+        drwav_uninit(&wav_audio_file);
     }
 
     const double real_time_factor =
@@ -445,12 +526,11 @@ int picovoice_main(int argc, char *argv[]) {
     const char *access_key = NULL;
     const char *library_path = NULL;
     const char *model_path = NULL;
-    const char *wav_audio_path = NULL;
     const char *input_profile_path = NULL;
     const char *output_profile_path = NULL;
 
     int c;
-    while ((c = getopt_long(argc, argv, "a:l:m:w:e:t:", long_options, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "a:l:m:e:t:", long_options, NULL)) != -1) {
         switch (c) {
             case 'l':
                 library_path = optarg;
@@ -460,9 +540,6 @@ int picovoice_main(int argc, char *argv[]) {
                 break;
             case 'a':
                 access_key = optarg;
-                break;
-            case 'w':
-                wav_audio_path = optarg;
                 break;
             case 'e':
                 output_profile_path = optarg;
@@ -475,7 +552,7 @@ int picovoice_main(int argc, char *argv[]) {
         }
     }
 
-    if (!library_path || !access_key || !wav_audio_path || !model_path) {
+    if (!library_path || !access_key || !model_path) {
         print_usage(argv[0]);
         exit(EXIT_FAILURE);
     }
@@ -488,6 +565,13 @@ int picovoice_main(int argc, char *argv[]) {
 
     if (!input_profile_path && !output_profile_path) {
         fprintf(stderr, "Please specify either enrollment or test mode\n");
+        print_usage(argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    int32_t num_audio_paths = argc - optind;
+    if (num_audio_paths < 1) {
+        fprintf(stderr, "Please provide at least one audio file.\n");
         print_usage(argv[0]);
         exit(EXIT_FAILURE);
     }
@@ -518,60 +602,24 @@ int picovoice_main(int argc, char *argv[]) {
 
     fprintf(stdout, "v%s\n\n", pv_eagle_version_func());
 
-    drwav wav_audio_file;
-
-#if defined(_WIN32) || defined(_WIN64)
-
-    int wav_audio_path_wchars_num = MultiByteToWideChar(CP_UTF8, UTF8_COMPOSITION_FLAG, wav_audio_path, NULL_TERMINATED, NULL, 0);
-        wchar_t wav_audio_path_wchars[wav_audio_path_wchars_num];
-        MultiByteToWideChar(CP_UTF8, UTF8_COMPOSITION_FLAG, input_path, NULL_TERMINATED, wav_audio_path_wchars, wav_audio_path_wchars_num);
-        int drwav_init_file_status = drwav_init_file_w(&wav_audio_file, wav_audio_path_wchars, NULL);
-
-#else
-
-    int drwav_init_file_status = drwav_init_file(&wav_audio_file, wav_audio_path, NULL);
-
-#endif
-
-    if (!drwav_init_file_status) {
-        fprintf(stderr, "failed to open wav file at '%s'.", wav_audio_path);
-        exit(EXIT_FAILURE);
-    }
-
-    if (wav_audio_file.sampleRate != (uint32_t) pv_sample_rate_func()) {
-        fprintf(stderr, "audio sample rate should be %d\n.", pv_sample_rate_func());
-        exit(EXIT_FAILURE);
-    }
-
-    if (wav_audio_file.bitsPerSample != 16) {
-        fprintf(stderr, "audio format should be 16-bit\n.");
-        exit(EXIT_FAILURE);
-    }
-
-    if (wav_audio_file.channels != 1) {
-        fprintf(stderr, "audio should be single-channel.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    void *speaker_profile = NULL;
-
     if (output_profile_path) {
         speaker_enrollment(
                 access_key,
                 model_path,
                 eagle_library,
                 output_profile_path,
-                &wav_audio_file);
+                num_audio_paths,
+                (const char **) &argv[optind]);
     } else {
         speaker_recognition(
                 access_key,
                 model_path,
                 eagle_library,
                 input_profile_path,
-                &wav_audio_file);
+                num_audio_paths,
+                (const char **) &argv[optind]);
     }
 
-    free(speaker_profile);
     close_dl(eagle_library);
 
     return EXIT_SUCCESS;

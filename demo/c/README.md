@@ -102,7 +102,7 @@ cmake -S demo/c/ -B demo/c/build && cmake --build demo/c/build --target eagle_de
 Running the executable without any command-line arguments prints the usage info to the console:
 
 ```console
-Usage: ./demo/c/build/eagle_demo_file [-e OUTPUT_PROFILE_PATH | -t INPUT_PROFILE_PATH] [-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY -w WAV_AUDIO_PATH]
+Usage: ./demo/c/build/eagle_demo_file [-e OUTPUT_PROFILE_PATH | -t INPUT_PROFILE_PATH] [-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY WAV_AUDIO_PATH_1 WAV_AUDIO_PATH_2 ...]
 ```
 
 ### Speaker Enrollment
@@ -111,14 +111,14 @@ To run the Eagle file demo in the enrollment mode, pass the `-e` argument with t
 where the speaker profile will be stored:
 
 ```console
-./demo/c/build/eagle_demo_file -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -w ${WAV_AUDIO_PATH} -e ${OUTPUT_PROFILE_PATH}
+./demo/c/build/eagle_demo_file -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -e ${OUTPUT_PROFILE_PATH} ${WAV_AUDIO_PATH_1} ${WAV_AUDIO_PATH_2} ...
 ```
 
 Replace `${LIBRARY_PATH}` with the path to the appropriate Eagle library available under [lib](../../lib), 
 `${MODEL_PATH}` with the path to the model file available under [lib/common](../../lib/common), `${ACCESS_KEY}` with a
-Picovoice AccessKey obtained from the [Picovoice Console](https://console.picovoice.ai/), `${WAV_AUDIO_PATH}` with a
-path to a single-channel WAV file that will be used to create a speaker profile, and `${OUTPUT_PROFILE_PATH}` with the
-path to the output file where the speaker profile will be stored.
+Picovoice AccessKey obtained from the [Picovoice Console](https://console.picovoice.ai/), `${OUTPUT_PROFILE_PATH}` with the
+path to the output file where the speaker profile will be stored, and `${WAV_AUDIO_PATH_1} ${WAV_AUDIO_PATH_2} ...` with
+the paths to the WAV files that will be used to enroll the speaker.
 
 ### Speaker Recognition
 
@@ -126,9 +126,9 @@ To run the Eagle file demo in the test mode, pass the `-t` argument with the pat
 where the speaker profile is stored:
 
 ```console
-./demo/c/build/eagle_demo_file -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -w ${WAV_AUDIO_PATH} -t ${INPUT_PROFILE_PATH}
+./demo/c/build/eagle_demo_file -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -t ${INPUT_PROFILE_PATH} ${WAV_AUDIO_PATH_1} ${WAV_AUDIO_PATH_2} ...
 ```
 
 All arguments are the same as the enrollment mode, except `${INPUT_PROFILE_PATH}` should be the path to the speaker
-profile file. `${WAV_AUDIO_PATH}` should be a path to a single-channel WAV file that will be used to test the speaker
-profile.
+profile file. `${WAV_AUDIO_PATH_1} ${WAV_AUDIO_PATH_2} ...` should be the paths to the WAV files that will be used to
+test the speaker.
