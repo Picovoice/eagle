@@ -118,7 +118,8 @@ def main():
             for audio_path in args.enroll_audio_paths:
                 audio = read_file(audio_path, eagle_profiler.sample_rate)
                 enroll_percentage, feedback = eagle_profiler.enroll(audio)
-                print('Enrolled audio file %s [Enrollment percentage: %.2f%% - Enrollment feedback: %s]' % (audio_path, enroll_percentage, FEEDBACK_TO_DESCRIPTIVE_MSG[feedback]))
+                print('Enrolled audio file %s [Enrollment percentage: %.2f%% - Enrollment feedback: %s]'
+                      % (audio_path, enroll_percentage, FEEDBACK_TO_DESCRIPTIVE_MSG[feedback]))
 
             speaker_profile = eagle_profiler.export()
             if args.output_profile_path is not None:
