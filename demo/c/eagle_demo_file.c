@@ -277,7 +277,7 @@ void speaker_enrollment(
     }
 
     if (enroll_percentage < 100.0f) {
-        fprintf(stderr, "Enrollment is not complete. Enrollment percentage: %.2f\n", enroll_percentage);
+        fprintf(stderr, "Failed to create speaker profile. Insufficient enrollment percentage: %.2f%%. Please add more audio files for enrollment.\n", enroll_percentage);
         exit(EXIT_FAILURE);
     }
 

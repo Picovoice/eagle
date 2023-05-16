@@ -116,17 +116,22 @@ def main():
         print('Eagle version: %s' % eagle_profiler.version)
 
         try:
+            enroll_percentage = 0.0
             for audio_path in args.enroll_audio_paths:
                 audio = read_file(audio_path, eagle_profiler.sample_rate)
                 enroll_percentage, feedback = eagle_profiler.enroll(audio)
                 print('Enrolled audio file %s [Enrollment percentage: %.2f%% - Enrollment feedback: %s]'
                       % (audio_path, enroll_percentage, FEEDBACK_TO_DESCRIPTIVE_MSG[feedback]))
 
-            speaker_profile = eagle_profiler.export()
-            if args.output_profile_path is not None:
-                with open(args.output_profile_path, 'wb') as f:
-                    f.write(speaker_profile.to_bytes())
-                print('Speaker profile is saved to %s' % args.output_profile_path)
+            if enroll_percentage < 100.0:
+                print('Failed to create speaker profile. Insufficient enrollment percentage: %.2f%%. '
+                      'Please add more audio files for enrollment.' % enroll_percentage)
+            else:
+                speaker_profile = eagle_profiler.export()
+                if args.output_profile_path is not None:
+                    with open(args.output_profile_path, 'wb') as f:
+                        f.write(speaker_profile.to_bytes())
+                    print('Speaker profile is saved to %s' % args.output_profile_path)
         except pveagle.EagleActivationLimitError:
             print('AccessKey has reached its processing limit')
         except pveagle.EagleError as e:
