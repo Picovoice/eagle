@@ -90,7 +90,7 @@ def main():
         help='Absolute path to test audio file')
     test.add_argument(
         '--csv_output_path',
-        help='Optional if provided the test result will be saved to the given path in CSV format instead of printing '
+        help='Optional. If provided, the test result will be saved to the given path in CSV format instead of printing '
              'to the terminal')
 
     args = parser.parse_args()
@@ -170,10 +170,14 @@ def main():
                 for i in range(num_frames):
                     frame = audio[i * eagle.frame_length:(i + 1) * eagle.frame_length]
                     scores = eagle.process(frame)
+                    time = i * frame_to_second
                     if csv_file is not None:
-                        result_writer.writerow([i, *scores])
+                        result_writer.writerow([time, *scores])
                     else:
-                        print_result(i * frame_to_second, scores)
+                        print_result(time, scores)
+
+                if csv_file is not None:
+                    print('Test result is saved to %s' % args.csv_output_path)
 
             except pveagle.EagleActivationLimitError:
                 print('AccessKey has reached its processing limit.')

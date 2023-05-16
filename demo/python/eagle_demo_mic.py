@@ -50,12 +50,13 @@ class EnrollmentAnimation(threading.Thread):
         self._done = False
         while not self._done:
             for frame in self._frames:
-                print('\033[2K\033[1G\r[%3d%%]' % self._percentage + self._feedback + frame, end='', flush=True)
                 if self._done:
                     break
+                print('\033[2K\033[1G\r[%3d%%]' % self._percentage + self._feedback + frame, end='', flush=True)
                 time.sleep(self._sleep_time_sec)
 
     def stop(self):
+        print('\033[2K\033[1G\r[%3d%%]' % self._percentage + self._feedback, end='', flush=True)
         self._done = True
 
     @property
@@ -96,13 +97,13 @@ def main():
     parser.add_argument('--audio_device_index', type=int, default=-1, help='Index of input audio device')
     parser.add_argument(
         '--output_audio_path',
-        help='If provided, all enrollment audio data will be saved to the given .wav file')
+        help='If provided, all recorded audio data will be saved to the given .wav file')
     parser.add_argument(
         '--show_audio_devices',
         action='store_true',
         help='List available audio input devices and exit')
 
-    subparsers = parser.add_subparsers(dest='command', required=True)
+    subparsers = parser.add_subparsers(dest='command')
 
     enroll = subparsers.add_parser('enroll', help='Enroll a new speaker profile')
     enroll.add_argument(
@@ -141,6 +142,7 @@ def main():
             print("Failed to initialize Eagle: %s" % e)
             raise
 
+        print('Eagle version: %s' % eagle_profiler.version)
         recorder = PvRecorder(device_index=args.audio_device_index, frame_length=PV_RECORDER_FRAME_LENGTH)
         print("Recording audio from '%s'" % recorder.selected_device)
         num_enroll_frames = eagle_profiler.min_enroll_audio_len_samples // PV_RECORDER_FRAME_LENGTH
@@ -172,6 +174,7 @@ def main():
                     enrollment_animation.feedback = ' - %s' % FEEDBACK_TO_DESCRIPTIVE_MSG[feedback]
 
             speaker_profile = eagle_profiler.export()
+            enrollment_animation.stop()
             with open(args.output_profile_path, 'wb') as f:
                 f.write(speaker_profile.to_bytes())
             print('\nSpeaker profile is saved to %s' % args.output_profile_path)
@@ -181,13 +184,11 @@ def main():
         except pveagle.EagleError as e:
             print('Failed to enroll speaker: %s' % e)
         finally:
-            enrollment_animation.stop()
             recorder.stop()
             recorder.delete()
             eagle_profiler.delete()
 
     elif args.command == 'test':
-
         if args.access_key is None:
             raise ValueError('Missing required argument --access_key')
 
@@ -225,15 +226,19 @@ def main():
                     print_result(scores)
 
         except KeyboardInterrupt:
-            print('Stopping...')
+            print('\nStopping...')
         except pveagle.EagleActivationLimitError:
-            print('AccessKey has reached its processing limit')
+            print('\nAccessKey has reached its processing limit')
         finally:
             if eagle is not None:
                 eagle.delete()
             if recorder is not None:
                 recorder.stop()
                 recorder.delete()
+
+    else:
+        print('Please specify a mode: enroll or test')
+        return
 
 
 if __name__ == '__main__':

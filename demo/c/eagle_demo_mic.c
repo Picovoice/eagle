@@ -278,7 +278,7 @@ void speaker_enrollment(
             exit(EXIT_FAILURE);
         }
         if (feedback != PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_NONE) {
-            fprintf(stdout, "Enrollment audio feedback: %s\n",
+            fprintf(stdout, "\nEnrollment audio feedback: %s\n",
                     pv_eagle_profiler_enrollment_feedback_to_string_func(feedback));
         }
         fprintf(stdout, "\rEnrollment progress: %.2f%%", enroll_percentage);
