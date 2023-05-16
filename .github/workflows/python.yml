@@ -56,4 +56,4 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Test
-      run: python test_eagle.py --access-key "/HZMi794/9p1aXKc3AsxHQIEQoV/Mf3/L4tHhHMXRtE7OJY64iJXxA=="
+      run: python test_eagle.py --access-key ${{secrets.PV_VALID_ACCESS_KEY}}

@@ -62,6 +62,6 @@ jobs:
     - name: Test
       run: >
         python3 test_eagle_perf.py 
-        --access-key "/HZMi794/9p1aXKc3AsxHQIEQoV/Mf3/L4tHhHMXRtE7OJY64iJXxA==" 
+        --access-key ${{secrets.PV_VALID_ACCESS_KEY}} 
         --num-test-iterations 20
         --proc-performance-threshold-sec 0.6

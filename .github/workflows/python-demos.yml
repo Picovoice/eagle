@@ -50,7 +50,7 @@ jobs:
     - name: Test enroll
       run: >
         python eagle_demo_file.py
-        --access_key "/HZMi794/9p1aXKc3AsxHQIEQoV/Mf3/L4tHhHMXRtE7OJY64iJXxA=="
+        --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
         enroll
         --enroll_audio_paths ../../resources/audio_samples/enroll_1.wav ../../resources/audio_samples/enroll_2.wav
         --output_profile_path test.egl
@@ -58,7 +58,7 @@ jobs:
     - name: Test inference
       run: >
         python eagle_demo_file.py
-        --access_key "/HZMi794/9p1aXKc3AsxHQIEQoV/Mf3/L4tHhHMXRtE7OJY64iJXxA=="
+        --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
         test
         --input_profile_paths test.egl
         --test_audio_path ../../resources/audio_samples/test.wav

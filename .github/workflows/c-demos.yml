@@ -68,4 +68,4 @@ jobs:
       run: cmake --build ./build --target eagle_demo_file
 
     - name: Test
-      run: python test/test_eagle_c.py "/HZMi794/9p1aXKc3AsxHQIEQoV/Mf3/L4tHhHMXRtE7OJY64iJXxA==" linux x86_64
+      run: python test/test_eagle_c.py ${{secrets.PV_VALID_ACCESS_KEY}} linux x86_64
