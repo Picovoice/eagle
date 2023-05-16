@@ -45,8 +45,9 @@ class EagleCTestCase(unittest.TestCase):
             "libpv_eagle." + self._get_lib_ext(self._platform)
         )
 
-    def _get_audio_file(self, audio_file_name):
-        return os.path.join(self._root_dir, 'resources/audio_samples', audio_file_name)
+    def _get_audio_file(self, audio_file_names):
+        return [os.path.join(self._root_dir, 'resources/audio_samples', audio_file_name)
+                for audio_file_name in audio_file_names]
 
     def run_eagle(self, audio_file_name, is_enroll=False):
         args = [
@@ -54,8 +55,8 @@ class EagleCTestCase(unittest.TestCase):
             "-a", self._access_key,
             "-l", self._get_library_file(),
             "-m", self._get_model_path(),
-            "-w", self._get_audio_file(audio_file_name),
             "-e" if is_enroll else "-t", "tmp_profile.egl",
+            *self._get_audio_file(audio_file_name),
         ]
         process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf-8')
         stdout, stderr = process.communicate()
@@ -64,10 +65,10 @@ class EagleCTestCase(unittest.TestCase):
         self.assertTrue("real time factor" in stdout)
 
     def test_eagle_enroll(self):
-        self.run_eagle("enroll_3.wav", is_enroll=True)
+        self.run_eagle(["enroll_1.wav", "enroll_2.wav"], is_enroll=True)
 
     def test_eagle_test(self):
-        self.run_eagle("test.wav", is_enroll=False)
+        self.run_eagle(["test.wav"], is_enroll=False)
 
 
 if __name__ == '__main__':

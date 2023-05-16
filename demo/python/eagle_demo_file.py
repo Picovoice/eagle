@@ -10,6 +10,7 @@
 #
 
 import argparse
+import contextlib
 import csv
 import struct
 import wave
@@ -154,33 +155,33 @@ def main():
 
         print('Eagle version: %s' % eagle.version)
 
-        output_result = None
+        csv_file = None
         result_writer = None
-        if args.csv_output_path is not None:
-            output_result = open(args.csv_output_path, mode='w')
-            result_writer = csv.writer(output_result, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            result_writer.writerow(['time', *['Speaker_%d' % i for i in range(len(speaker_profiles))]])
-        try:
-            audio = read_file(args.test_audio_path, eagle.sample_rate)
-            num_frames = len(audio) // eagle.frame_length
-            frame_to_second = eagle.frame_length / eagle.sample_rate
-            for i in range(num_frames):
-                frame = audio[i * eagle.frame_length:(i + 1) * eagle.frame_length]
-                scores = eagle.process(frame)
-                if output_result is not None:
-                    result_writer.writerow([i, *scores])
-                else:
-                    print_result(i * frame_to_second, scores)
+        with contextlib.ExitStack() as file_stack:
+            if args.csv_output_path is not None:
+                csv_file = file_stack.enter_context(open(args.csv_output_path, mode='w'))
+                result_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                result_writer.writerow(['time', *['Speaker_%d' % i for i in range(len(speaker_profiles))]])
 
-        except pveagle.EagleActivationLimitError:
-            print('AccessKey has reached its processing limit.')
-        except pveagle.EagleError as e:
-            print("Failed to process audio: ", e)
-            raise
-        finally:
-            eagle.delete()
-            if output_result is not None:
-                output_result.close()
+            try:
+                audio = read_file(args.test_audio_path, eagle.sample_rate)
+                num_frames = len(audio) // eagle.frame_length
+                frame_to_second = eagle.frame_length / eagle.sample_rate
+                for i in range(num_frames):
+                    frame = audio[i * eagle.frame_length:(i + 1) * eagle.frame_length]
+                    scores = eagle.process(frame)
+                    if csv_file is not None:
+                        result_writer.writerow([i, *scores])
+                    else:
+                        print_result(i * frame_to_second, scores)
+
+            except pveagle.EagleActivationLimitError:
+                print('AccessKey has reached its processing limit.')
+            except pveagle.EagleError as e:
+                print("Failed to process audio: ", e)
+                raise
+            finally:
+                eagle.delete()
 
 
 if __name__ == '__main__':
