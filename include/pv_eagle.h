@@ -54,12 +54,12 @@ PV_API void pv_eagle_profiler_delete(pv_eagle_profiler_t *object);
  * Enrollment feedback codes.
  */
 typedef enum {
-    PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_NONE = 0,
-    PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_AUDIO_TOO_SHORT,
-    PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_UNKNOWN_SPEAKER,
-    PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_NO_VOICE_FOUND,
-    PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_QUALITY_ISSUE,
-} pv_eagle_profiler_enrollment_feedback_t;
+    PV_EAGLE_PROFILER_ENROLL_FEEDBACK_AUDIO_OK = 0,
+    PV_EAGLE_PROFILER_ENROLL_FEEDBACK_AUDIO_TOO_SHORT,
+    PV_EAGLE_PROFILER_ENROLL_FEEDBACK_UNKNOWN_SPEAKER,
+    PV_EAGLE_PROFILER_ENROLL_FEEDBACK_NO_VOICE_FOUND,
+    PV_EAGLE_PROFILER_ENROLL_FEEDBACK_QUALITY_ISSUE,
+} pv_eagle_profiler_enroll_feedback_t;
 
 /**
  * Provides string representations of EagleProfiler enrollment feedback codes.
@@ -67,12 +67,12 @@ typedef enum {
  * @param feedback Feedback code.
  * @return String representation.
  */
-PV_API const char *pv_eagle_profiler_enrollment_feedback_to_string(pv_eagle_profiler_enrollment_feedback_t feedback);
+PV_API const char *pv_eagle_profiler_enroll_feedback_to_string(pv_eagle_profiler_enroll_feedback_t feedback);
 
 /**
  * Enrolls a speaker. This function should be called multiple times with different utterances of the same speaker
  * until `percentage` reaches `100.0`. Any further enrollment can be used to improve the speaker voice profile.
- * The minimum number of required samples can be obtained by calling `pv_eagle_profile_min_enrollment_audio_length()`.
+ * The minimum number of required samples can be obtained by calling `pv_eagle_profile_min_enroll_audio_length()`.
  * The audio data used for enrollment should satisfy the following requirements:
  * - only one speaker should be present in the audio
  * - the speaker should be speaking in a normal voice
@@ -86,14 +86,14 @@ PV_API const char *pv_eagle_profiler_enrollment_feedback_to_string(pv_eagle_prof
  * @param num_samples Number of audio samples in `pcm`.
  * @param[out] feedback Feedback code. If enrollment process fails because of a bad input audio, this will be set to
  * a proper feedback code indicating the cause of failure:
- * - `PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_AUDIO_TOO_SHORT`: The audio is too short,
+ * - `PV_EAGLE_PROFILER_ENROLL_FEEDBACK_AUDIO_TOO_SHORT`: The audio is too short,
  * i.e. it contains less than the minimum number of required samples.
- * - `PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_UNKNOWN_SPEAKER`: The speaker is unknown,
+ * - `PV_EAGLE_PROFILER_ENROLL_FEEDBACK_UNKNOWN_SPEAKER`: The speaker is unknown,
  * i.e. the speaker is not the same as the one enrolled in the previous enrollment.
- * - `PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_NO_VOICE_FOUND`: The audio does not contain any speech.
- * - `PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_QUALITY_ISSUE`:
+ * - `PV_EAGLE_PROFILER_ENROLL_FEEDBACK_NO_VOICE_FOUND`: The audio does not contain any speech.
+ * - `PV_EAGLE_PROFILER_ENROLL_FEEDBACK_QUALITY_ISSUE`:
  * The audio is too noisy or the speaker is speaking in a low voice.
-* Otherwise, it will be set to `PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_NONE`
+* Otherwise, it will be set to `PV_EAGLE_PROFILER_ENROLL_FEEDBACK_AUDIO_OK`
  * @param[out] percentage Percentage of enrollment completed.
  * @return Status code. Returns `PV_STATUS_OUT_OF_MEMORY`, `PV_STATUS_INVALID_ARGUMENT`,
  * `PV_STATUS_RUNTIME_ERROR`, `PV_STATUS_ACTIVATION_ERROR`, `PV_STATUS_ACTIVATION_LIMIT_REACHED`,
@@ -103,7 +103,7 @@ PV_API pv_status_t pv_eagle_profiler_enroll(
         pv_eagle_profiler_t *object,
         const int16_t *pcm,
         int32_t num_samples,
-        pv_eagle_profiler_enrollment_feedback_t *feedback,
+        pv_eagle_profiler_enroll_feedback_t *feedback,
         float *percentage);
 
 /**

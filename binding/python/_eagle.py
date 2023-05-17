@@ -209,15 +209,15 @@ class EagleProfiler(object):
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
         self._profile_size = profile_size.value
 
-        pv_eagle_profiler_enrollment_min_audio_length_sample_func = \
+        pv_eagle_profiler_enroll_min_audio_length_sample_func = \
             library.pv_eagle_profiler_enroll_min_audio_length_samples
-        pv_eagle_profiler_enrollment_min_audio_length_sample_func.argtypes = [
+        pv_eagle_profiler_enroll_min_audio_length_sample_func.argtypes = [
             POINTER(self.CEagleProfiler),
             POINTER(c_int32)]
-        pv_eagle_profiler_enrollment_min_audio_length_sample_func.restype = PicovoiceStatuses
+        pv_eagle_profiler_enroll_min_audio_length_sample_func.restype = PicovoiceStatuses
 
         min_enroll_samples = c_int32()
-        status = pv_eagle_profiler_enrollment_min_audio_length_sample_func(
+        status = pv_eagle_profiler_enroll_min_audio_length_sample_func(
             self._eagle_profiler,
             byref(min_enroll_samples))
         if status is not PicovoiceStatuses.SUCCESS:

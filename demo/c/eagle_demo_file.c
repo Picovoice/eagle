@@ -129,10 +129,10 @@ void speaker_enrollment(
         exit(EXIT_FAILURE);
     }
 
-    const char *(*pv_eagle_profiler_enrollment_feedback_to_string_func)(pv_eagle_profiler_enrollment_feedback_t)
-    = load_symbol(eagle_library, "pv_eagle_profiler_enrollment_feedback_to_string");
-    if (!pv_eagle_profiler_enrollment_feedback_to_string_func) {
-        print_dl_error("failed to load 'pv_eagle_profiler_enrollment_feedback_to_string'");
+    const char *(*pv_eagle_profiler_enroll_feedback_to_string_func)(pv_eagle_profiler_enroll_feedback_t)
+    = load_symbol(eagle_library, "pv_eagle_profiler_enroll_feedback_to_string");
+    if (!pv_eagle_profiler_enroll_feedback_to_string_func) {
+        print_dl_error("failed to load 'pv_eagle_profiler_enroll_feedback_to_string'");
         exit(EXIT_FAILURE);
     }
 
@@ -140,7 +140,7 @@ void speaker_enrollment(
             pv_eagle_profiler_t *,
             const int16_t *,
             int32_t,
-            pv_eagle_profiler_enrollment_feedback_t *,
+            pv_eagle_profiler_enroll_feedback_t *,
             float *) = load_symbol(eagle_library, "pv_eagle_profiler_enroll");
     if (!pv_eagle_profiler_enroll_func) {
         print_dl_error("failed to load 'pv_eagle_profiler_enroll'");
@@ -249,7 +249,7 @@ void speaker_enrollment(
         struct timeval before;
         gettimeofday(&before, NULL);
 
-        pv_eagle_profiler_enrollment_feedback_t feedback = PV_EAGLE_PROFILER_ENROLLMENT_FEEDBACK_NONE;
+        pv_eagle_profiler_enroll_feedback_t feedback = PV_EAGLE_PROFILER_ENROLL_FEEDBACK_AUDIO_OK;
         eagle_profiler_status = pv_eagle_profiler_enroll_func(
                 eagle_profiler,
                 enroll_pcm,
@@ -271,7 +271,7 @@ void speaker_enrollment(
         fprintf(stdout, "Enrolled audio file %s [Enrollment percentage: %.2f%% - Enrollment feedback: %s]\n",
                 wav_audio_path,
                 enroll_percentage,
-                pv_eagle_profiler_enrollment_feedback_to_string_func(feedback));
+                pv_eagle_profiler_enroll_feedback_to_string_func(feedback));
 
         free(enroll_pcm);
     }
