@@ -13,25 +13,26 @@ Eagle is an on-device speaker recognition engine. Eagle is:
 
 ## Compatibility
 
-- Python 3.5 or higher
-- Runs on Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64), Raspberry Pi (4, 3), and NVIDIA Jetson Nano.
+- iOS 11.0+
 
 ## Installation
 
-```console
-pip3 install pveagle
+The Eagle iOS binding is available via [Cocoapods](https://cocoapods.org/pods/Eagle-iOS). To import it into your iOS project, add the following line to your Podfile:
+
+```ruby
+pod 'Eagle-iOS'
 ```
 
 ## AccessKey
 
-Eagle requires a valid Picovoice `AccessKey` at initialization. `AccessKey` acts as your credentials when using Eagle
-SDKs. You can get your `AccessKey` for free. Make sure to keep your `AccessKey` secret.
+Eagle requires a valid Picovoice `AccessKey` at initialization. `AccessKey` acts as your credentials when using Eagle SDKs.
+You can get your `AccessKey` for free. Make sure to keep your `AccessKey` secret.
 Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get your `AccessKey`.
 
 ## Usage
 
-Eagle has two distinct steps: Enrollment and Recognition. In the enrollment step, Eagle analyzes a series of
-utterances from a particular speaker to learn their unique voiceprint. This step produces an `EagleProfile` object,
+Eagle consists of two distinct steps: Enrollment and Recognition. In the enrollment step, Eagle analyzes a series of
+utterances from a particular speaker to learn their unique voiceprint. This step results in an `EagleProfile` object,
 which can be stored and utilized during inference. During the Recognition step, Eagle compares the incoming frames of
 audio to the voiceprints of all enrolled speakers in real-time to determine the similarity between them.
 
@@ -39,26 +40,32 @@ audio to the voiceprints of all enrolled speakers in real-time to determine the 
 
 Create an instance of the profiler:
 
-```python
-import pveagle
+```swift
+import Eagle
 
-# AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)
-access_key = "${ACCESS_KEY}"
-eagle_profiler = pveagle.create_profiler(access_key)
+let accessKey : String = // .. AccessKey provided by Picovoice Console (https://console.picovoice.ai/)
+do {
+    let eagleProfiler = try EagleProfiler(accessKey: accessKey)
+} catch { }
 ```
 
-`EagleProfiler` is responsible for processing and enrolling PCM audio data, with the valid audio sample rate determined
-by `eagle_profiler.sample_rate`. The audio data must be 16-bit linearly-encoded and single-channel.
+`EagleProfiler` is responsible for processing and enrolling PCM audio data, with the valid audio sample rate determined by `eagleProfiler.sampleRate`. The audio data must be 16-bit linearly-encoded and single-channel.
 
-When passing samples to `eagle_profiler.enroll`, the number of samples must be at
-least `eagle_profiler.min_enroll_samples` to ensure sufficient data for enrollment. The percentage value
-obtained from this process indicates the progress of enrollment, while the feedback value can be utilized to determine
-the status of the enrollment process.
+When passing samples to `eagleProfiler.enroll`, the number of samples must be at
+least `eagleProfiler.minEnrollSamples` to ensure sufficient data for enrollment. The percentage value obtained from this process indicates the progress of enrollment, while the feedback value can be utilized to determine the status of the enrollment process.
 
-```python
-def get_next_enroll_audio_data():
-    pass
+```swift
+func get_next_enroll_audio_data() -> [Int16] {
+    // ...
+}
 
+do {
+    var percentage = 0.0
+    var feedback = nil
+    while (percentage < 100.0) {
+
+    }
+} catch { }
 
 percentage = 0.0
 while percentage < 100.0:
@@ -74,10 +81,6 @@ enrollment progress will remain unchanged.
 ```python
 speaker_profile = eagle_profiler.export()
 ```
-
-The `eagle_profiler.export()` function produces an `EagleProfile` object, which can be converted into a binary form
-using the `EagleProfile.to_bytes()` method. This binary representation can be saved and subsequently retrieved using
-the `EagleProfile.from_bytes()` method.
 
 To reset the profiler and enroll a new speaker, the `eagle_profiler.reset()` method can be used. This method clears all
 previously stored data, making it possible to start a new enrollment session with a different speaker.
@@ -119,7 +122,6 @@ Finally, when done be sure to explicitly release the resources:
 eagle.delete()
 ```
 
-## Demos
+## Running Unit Tests
 
-[pveagledemo](https://pypi.org/project/pveagledemo/) provides command-line utilities for processing real-time
-audio (i.e. microphone) and files using Eagle.
+Copy your `AccessKey` into the `accessKey` variable in [`OctopusAppTestUITests.swift`](OctopusAppTest/OctopusAppTestUITests/OctopusAppTestUITests.swift). Open `OctopusAppTest.xcworkspace` with XCode and run the tests with `Product > Test`.
