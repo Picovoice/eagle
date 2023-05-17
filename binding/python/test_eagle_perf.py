@@ -20,8 +20,7 @@ from typing import Sequence
 
 from _eagle import (
     Eagle,
-    EagleProfiler,
-    EagleProfile)
+    EagleProfiler)
 from _util import default_library_path, default_model_path
 
 
