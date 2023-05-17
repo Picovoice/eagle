@@ -26,8 +26,10 @@ from _util import default_library_path, default_model_path
 
 
 class EaglePerformanceTestCase(unittest.TestCase):
+    ENROLL_PATHS = [
+        os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/enroll_1.wav'),
+        os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/enroll_2.wav')]
     TEST_PATH = os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/test.wav')
-    PROFILE_PATH = os.path.join(os.path.dirname(__file__), '../../resources/profile_samples/test_profile.egl')
     access_key: str
 
     num_test_iterations: int
@@ -61,14 +63,23 @@ class EaglePerformanceTestCase(unittest.TestCase):
         self.assertLess(avg_perf, self.proc_performance_threshold_sec)
 
     def test_performance_proc(self) -> None:
-        with open(self.PROFILE_PATH, 'rb') as f:
-            profile = f.read()
+        # create profile
+        eagle_profiler = EagleProfiler(
+            access_key=self.access_key,
+            model_path=default_model_path('../..'),
+            library_path=default_library_path('../..'))
+
+        for path in self.ENROLL_PATHS:
+            pcm = self.load_wav_resource(path)
+            _ = eagle_profiler.enroll(pcm)
+
+        profile = eagle_profiler.export()
 
         eagle = Eagle(
             access_key=self.access_key,
             model_path=default_model_path('../..'),
             library_path=default_library_path('../..'),
-            speaker_profiles=[EagleProfile.from_bytes(profile)])
+            speaker_profiles=[profile])
 
         pcm = self.load_wav_resource(self.TEST_PATH)
 

@@ -54,7 +54,7 @@ jobs:
 
     - name: Build dependencies
       run: |
-        pip install wheel && python setup.py sdist bdist_wheel && pip install dist/pveagle-1.0.0-py3-none-any.whl
+        pip install wheel && python setup.py sdist bdist_wheel && pip install pip install dist/*.whl
 
     - name: Install dependencies
       run: pip install -r requirements.txt

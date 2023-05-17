@@ -32,7 +32,6 @@ class EagleTestCase(unittest.TestCase):
         os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/enroll_2.wav')]
     TEST_PATH = os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/test.wav')
     IMPOSTER_PATH = os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/imposter.wav')
-    PROFILE_PATH = os.path.join(os.path.dirname(__file__), '../../resources/profile_samples/test_profile.egl')
     access_key: str
     eagle: Eagle
     eagle_profiler: EagleProfiler
@@ -50,14 +49,17 @@ class EagleTestCase(unittest.TestCase):
             model_path=default_model_path('../..'),
             library_path=default_library_path('../..'))
 
-        with open(cls.PROFILE_PATH, 'rb') as f:
-            profile = f.read()
+        for path in cls.ENROLL_PATHS:
+            pcm = cls.load_wav_resource(path)
+            _ = cls.eagle_profiler.enroll(pcm)
+
+        profile = cls.eagle_profiler.export()
 
         cls.eagle = Eagle(
             access_key=cls.access_key,
             model_path=default_model_path('../..'),
             library_path=default_library_path('../..'),
-            speaker_profiles=[EagleProfile.from_bytes(profile)])
+            speaker_profiles=[profile])
 
     @classmethod
     def tearDownClass(cls) -> None:

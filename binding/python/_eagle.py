@@ -116,9 +116,9 @@ class EagleProfile(object):
 
     def to_bytes(self) -> bytes:
         """
-        Converts the profile to a byte array.
+        Converts the profile to a bytes object.
 
-        :return: the profile as a byte array.
+        :return: the profile as a bytes object.
         """
 
         return self._to_bytes(self.handle, self.size)
