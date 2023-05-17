@@ -126,9 +126,9 @@ class EagleProfile(object):
     @classmethod
     def from_bytes(cls, profile: bytes) -> 'EagleProfile':
         """
-        Creates an instance of EagleProfile from a byte array.
+        Creates an instance of EagleProfile from a bytes object.
 
-        :param profile: Byte array representation of a profile.
+        :param profile: The profile as a bytes object.
         :return: An instance of EagleProfile.
         """
 
