@@ -24,7 +24,7 @@ with open(os.path.join(os.path.dirname(__file__), 'README.md'), 'r') as f:
 
 setuptools.setup(
     name="pveagledemo",
-    version="1.0.0",
+    version="0.1.0",
     author="Picovoice",
     author_email="hello@picovoice.ai",
     description="Eagle Speaker Recognition Engine demos",
@@ -32,10 +32,10 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/Picovoice/eagle",
     packages=["pveagledemo"],
-    install_requires=["pveagle==1.0.0", "pvrecorder==1.1.1"],
+    install_requires=["pveagle==0.1.0", "pvrecorder==1.1.1"],
     include_package_data=True,
     classifiers=[
-        "Development Status :: 5 - Production/Stable",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",

@@ -116,7 +116,9 @@ class EagleProfile(object):
 
     def to_bytes(self) -> bytes:
         """
-        Returns the profile as a byte array.
+        Converts the profile to a byte array.
+
+        :return: the profile as a byte array.
         """
 
         return self._to_bytes(self.handle, self.size)
@@ -125,6 +127,9 @@ class EagleProfile(object):
     def from_bytes(cls, profile: bytes) -> 'EagleProfile':
         """
         Creates an instance of EagleProfile from a byte array.
+
+        :param profile: Byte array representation of a profile.
+        :return: An instance of EagleProfile.
         """
 
         byte_ptr = (c_byte * len(profile)).from_buffer_copy(profile)
@@ -151,21 +156,18 @@ class EagleProfilerEnrollFeedback(Enum):
 
 class EagleProfiler(object):
     """
-    Python binding for the profiler of Eagle Speaker Recognition engine.
+    Python binding for the profiler of the Eagle speaker recognition engine.
+    It enrolls a speaker given a set of utterances and then constructs a profile for the enrolled speaker.
     """
 
     class CEagleProfiler(Structure):
         pass
 
-    def __init__(
-            self,
-            access_key: str,
-            model_path: str,
-            library_path: str) -> None:
+    def __init__(self, access_key: str, model_path: str, library_path: str) -> None:
         """
         Constructor.
 
-        :param access_key: AccessKey obtained from Picovoice Console (https://picovoice.ai/console/)
+        :param access_key: AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)
         :param model_path: Absolute path to file containing model parameters (.pv file).
         :param library_path: Absolute path to Eagle's dynamic library.
         """
@@ -181,71 +183,72 @@ class EagleProfiler(object):
 
         library = cdll.LoadLibrary(library_path)
 
+        # noinspection PyArgumentList
         self._eagle_profiler = POINTER(self.CEagleProfiler)()
 
-        eagle_profiler_init_func = library.pv_eagle_profiler_init
-        eagle_profiler_init_func.argtypes = [
+        init_func = library.pv_eagle_profiler_init
+        init_func.argtypes = [
             c_char_p,
             c_char_p,
             POINTER(POINTER(self.CEagleProfiler))]
-        eagle_profiler_init_func.restype = PicovoiceStatuses
+        init_func.restype = PicovoiceStatuses
 
-        status = eagle_profiler_init_func(
+        status = init_func(
             access_key.encode('utf-8'),
             model_path.encode('utf-8'),
             byref(self._eagle_profiler))
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
 
-        eagle_profiler_speaker_profile_size_func = library.pv_eagle_profiler_export_size
-        eagle_profiler_speaker_profile_size_func.argtypes = [
+        speaker_profile_size_func = library.pv_eagle_profiler_export_size
+        speaker_profile_size_func.argtypes = [
             POINTER(self.CEagleProfiler),
             POINTER(c_int32)]
-        eagle_profiler_speaker_profile_size_func.restype = PicovoiceStatuses
+        speaker_profile_size_func.restype = PicovoiceStatuses
 
         profile_size = c_int32()
-        status = eagle_profiler_speaker_profile_size_func(self._eagle_profiler, byref(profile_size))
+        status = speaker_profile_size_func(self._eagle_profiler, byref(profile_size))
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
         self._profile_size = profile_size.value
 
-        pv_eagle_profiler_enroll_min_audio_length_sample_func = \
+        enroll_min_audio_length_sample_func = \
             library.pv_eagle_profiler_enroll_min_audio_length_samples
-        pv_eagle_profiler_enroll_min_audio_length_sample_func.argtypes = [
+        enroll_min_audio_length_sample_func.argtypes = [
             POINTER(self.CEagleProfiler),
             POINTER(c_int32)]
-        pv_eagle_profiler_enroll_min_audio_length_sample_func.restype = PicovoiceStatuses
+        enroll_min_audio_length_sample_func.restype = PicovoiceStatuses
 
         min_enroll_samples = c_int32()
-        status = pv_eagle_profiler_enroll_min_audio_length_sample_func(
+        status = enroll_min_audio_length_sample_func(
             self._eagle_profiler,
             byref(min_enroll_samples))
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
         self._min_enroll_samples = min_enroll_samples.value
 
-        self._eagle_profiler_delete_func = library.pv_eagle_profiler_delete
-        self._eagle_profiler_delete_func.argtypes = [POINTER(self.CEagleProfiler)]
-        self._eagle_profiler_delete_func.restype = None
+        self._delete_func = library.pv_eagle_profiler_delete
+        self._delete_func.argtypes = [POINTER(self.CEagleProfiler)]
+        self._delete_func.restype = None
 
-        self._eagle_profiler_enroll_func = library.pv_eagle_profiler_enroll
-        self._eagle_profiler_enroll_func.argtypes = [
+        self._enroll_func = library.pv_eagle_profiler_enroll
+        self._enroll_func.argtypes = [
             POINTER(self.CEagleProfiler),
             POINTER(c_int16),
             c_int32,
             POINTER(c_int),
             POINTER(c_float)]
-        self._eagle_profiler_enroll_func.restype = PicovoiceStatuses
+        self._enroll_func.restype = PicovoiceStatuses
 
-        self._eagle_profiler_reset_func = library.pv_eagle_profiler_reset
-        self._eagle_profiler_reset_func.argtypes = [POINTER(self.CEagleProfiler)]
-        self._eagle_profiler_reset_func.restype = PicovoiceStatuses
+        self._reset_func = library.pv_eagle_profiler_reset
+        self._reset_func.argtypes = [POINTER(self.CEagleProfiler)]
+        self._reset_func.restype = PicovoiceStatuses
 
-        self._eagle_profiler_export_func = library.pv_eagle_profiler_export
-        self._eagle_profiler_export_func.argtypes = [
+        self._export_func = library.pv_eagle_profiler_export
+        self._export_func.argtypes = [
             POINTER(self.CEagleProfiler),
             c_void_p]
-        self._eagle_profiler_export_func.restype = PicovoiceStatuses
+        self._export_func.restype = PicovoiceStatuses
 
         self._sample_rate = library.pv_sample_rate()
 
@@ -260,7 +263,7 @@ class EagleProfiler(object):
         """
         Enrolls a speaker. This function should be called multiple times with different utterances of the same speaker
         until `percentage` reaches `100.0`. Any further enrollment can be used to improve the speaker voice profile.
-        The minimum number of required samples can be obtained by calling `.min_enroll_samples()`.
+        The minimum number of required samples can be obtained by calling `.min_enroll_samples`.
         The audio data used for enrollment should satisfy the following requirements:
             - only one speaker should be present in the audio
             - the speaker should be speaking in a normal voice
@@ -273,7 +276,7 @@ class EagleProfiler(object):
         corresponding to the last enrollment attempt:
             - `AUDIO_OK`: The audio is good for enrollment.
             - `AUDIO_TOO_SHORT`: Audio length is insufficient for enrollment,
-            i.e. it is shorter than`.min_enroll_samples()`.
+            i.e. it is shorter than`.min_enroll_samples`.
             - `UNKNOWN_SPEAKER`: There is another speaker in the audio that is different from the speaker
             being enrolled. Too much background noise may cause this error as well.
             - `NO_VOICE_FOUND`: The audio does not contain any voice, i.e. it is silent or
@@ -287,7 +290,7 @@ class EagleProfiler(object):
 
         feedback_code = c_int()
         percentage = c_float()
-        status = self._eagle_profiler_enroll_func(
+        status = self._enroll_func(
             self._eagle_profiler,
             c_pcm,
             len(c_pcm),
@@ -308,7 +311,7 @@ class EagleProfiler(object):
         """
 
         profile = (c_byte * self._profile_size)()
-        status = self._eagle_profiler_export_func(
+        status = self._export_func(
             self._eagle_profiler,
             byref(profile)
         )
@@ -323,7 +326,7 @@ class EagleProfiler(object):
         It should be called before starting a new enrollment session.
         """
 
-        status = self._eagle_profiler_reset_func(self._eagle_profiler)
+        status = self._reset_func(self._eagle_profiler)
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
 
@@ -332,12 +335,12 @@ class EagleProfiler(object):
         Releases resources acquired by Eagle Profiler.
         """
 
-        self._eagle_profiler_delete_func(self._eagle_profiler)
+        self._delete_func(self._eagle_profiler)
 
     @property
     def min_enroll_samples(self) -> int:
         """
-        The minimum length of the input pcm required by `enroll()`.
+        The minimum length of the input pcm required by `.enroll()`.
         """
 
         return self._min_enroll_samples
@@ -345,7 +348,7 @@ class EagleProfiler(object):
     @property
     def sample_rate(self) -> int:
         """
-        Audio sample rate accepted by `.enroll`.
+        Audio sample rate accepted by `.enroll()`.
         """
 
         return self._sample_rate
@@ -361,7 +364,8 @@ class EagleProfiler(object):
 
 class Eagle(object):
     """
-    Python binding for Eagle Speaker Recognition engine.
+    Python binding for Eagle speaker recognition engine.
+    It processes incoming audio in consecutive frames and emits a similarity score for each enrolled speaker.
     """
 
     class CEagle(Structure):
@@ -376,42 +380,43 @@ class Eagle(object):
         """
         Constructor.
 
-        :param access_key: AccessKey obtained from Picovoice Console (https://picovoice.ai/console/)
+        :param access_key: AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)
         :param model_path: Absolute path to file containing model parameters (.pv file).
         :param library_path: Absolute path to Eagle's dynamic library.
         :param speaker_profiles: A list of EagleProfile objects. This can be constructed using `EagleProfiler`.
         """
 
-        if not isinstance(access_key, str) or len(access_key) == 0:
+        if len(access_key) == 0:
             raise EagleInvalidArgumentError("`access_key` should be a non-empty string.")
 
         if not os.path.exists(model_path):
             raise EagleIOError("Could not find model file at `%s`." % model_path)
 
-        if speaker_profiles is None or len(speaker_profiles) == 0:
-            raise EagleInvalidArgumentError("Eagle requires at least one speaker profile.")
-
         if not os.path.exists(library_path):
             raise EagleIOError("Could not find Eagle's dynamic library at `%s`." % library_path)
 
+        if len(speaker_profiles) == 0:
+            raise EagleInvalidArgumentError("Eagle requires at least one speaker profile.")
+
         library = cdll.LoadLibrary(library_path)
 
+        # noinspection PyArgumentList
         self._eagle = POINTER(self.CEagle)()
 
-        eagle_init_func = library.pv_eagle_init
-        eagle_init_func.argtypes = [
+        init_func = library.pv_eagle_init
+        init_func.argtypes = [
             c_char_p,
             c_char_p,
             c_int32,
             POINTER(c_void_p),
             POINTER(POINTER(self.CEagle))]
-        eagle_init_func.restype = PicovoiceStatuses
+        init_func.restype = PicovoiceStatuses
 
         profile_bytes = (c_void_p * len(speaker_profiles))()
         for i, profile in enumerate(speaker_profiles):
             profile_bytes[i] = profile.handle
 
-        status = eagle_init_func(
+        status = init_func(
             access_key.encode('utf-8'),
             model_path.encode('utf-8'),
             len(speaker_profiles),
@@ -420,22 +425,22 @@ class Eagle(object):
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
 
-        self._eagle_delete_func = library.pv_eagle_delete
-        self._eagle_delete_func.argtypes = [POINTER(self.CEagle)]
-        self._eagle_delete_func.restype = None
+        self._delete_func = library.pv_eagle_delete
+        self._delete_func.argtypes = [POINTER(self.CEagle)]
+        self._delete_func.restype = None
 
-        self._eagle_process_func = library.pv_eagle_process
-        self._eagle_process_func.argtypes = [
+        self._process_func = library.pv_eagle_process
+        self._process_func.argtypes = [
             POINTER(self.CEagle),
             POINTER(c_int16),
             POINTER(c_float)]
-        self._eagle_process_func.restype = PicovoiceStatuses
+        self._process_func.restype = PicovoiceStatuses
 
         self._scores = (c_float * len(speaker_profiles))()
 
-        self._eagle_reset_func = library.pv_eagle_reset
-        self._eagle_reset_func.argtypes = [POINTER(self.CEagle)]
-        self._eagle_reset_func.restype = PicovoiceStatuses
+        self._reset_func = library.pv_eagle_reset
+        self._reset_func.argtypes = [POINTER(self.CEagle)]
+        self._reset_func.restype = PicovoiceStatuses
 
         self._sample_rate = library.pv_sample_rate()
 
@@ -464,7 +469,7 @@ class Eagle(object):
         frame_type = c_int16 * self.frame_length
         pcm = frame_type(*pcm)
 
-        status = self._eagle_process_func(self._eagle, pcm, self._scores)
+        status = self._process_func(self._eagle, pcm, self._scores)
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
 
@@ -477,7 +482,7 @@ class Eagle(object):
         It must be called before processing a new sequence of audio frames.
         """
 
-        status = self._eagle_reset_func(self._eagle)
+        status = self._reset_func(self._eagle)
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
 
@@ -486,7 +491,7 @@ class Eagle(object):
         Releases resources acquired by Eagle.
         """
 
-        self._eagle_delete_func(self._eagle)
+        self._delete_func(self._eagle)
 
     @property
     def sample_rate(self) -> int:

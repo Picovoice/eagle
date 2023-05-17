@@ -9,6 +9,6 @@
 # specific language governing permissions and limitations under the License.
 #
 
-from ._factory import *
 from ._eagle import *
+from ._factory import *
 from ._util import *

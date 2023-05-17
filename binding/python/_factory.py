@@ -24,6 +24,19 @@ def create_recognizer(
         speaker_profiles: Union[Sequence[EagleProfile], EagleProfile],
         model_path: Optional[str] = None,
         library_path: Optional[str] = None) -> Eagle:
+    """
+    Factory method for the recognizer component of the Eagle speaker recognition engine.
+
+    :param access_key: AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)
+    :param speaker_profiles: An instance of EagleProfile or a list of EagleProfile instances. Each profile corresponds
+    to a speaker enrolled in the voice recognition system.
+    :param library_path: Absolute path to Eagle's dynamic library. If not set it will be set to the default
+    location.
+    :param model_path: Absolute path to the file containing model parameters (.pv file).
+    If not set it will be set to the default location.
+    :return: An instance of Eagle speaker recognition object.
+    """
+
     if model_path is None:
         model_path = default_model_path()
 
@@ -44,6 +57,17 @@ def create_profiler(
         access_key: str,
         model_path: Optional[str] = None,
         library_path: Optional[str] = None) -> EagleProfiler:
+    """
+    Factory method for the profiler component of the Eagle speaker recognition engine.
+
+    :param access_key: AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)
+    :param library_path: Absolute path to Eagle's dynamic library. If not set it will be set to the default
+    location.
+    :param model_path: Absolute path to the file containing model parameters (.pv file).
+    If not set it will be set to the default location.
+    :return: An instance of EagleProfiler object.
+    """
+
     if model_path is None:
         model_path = default_model_path()
 
