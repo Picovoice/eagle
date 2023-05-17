@@ -86,32 +86,38 @@ def print_result(scores):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--access_key',
-        help='AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)')
-    parser.add_argument(
-        '--library_path',
-        help='Absolute path to dynamic library. Default: using the library provided by `pveagle`')
-    parser.add_argument(
-        '--model_path',
-        help='Absolute path to Eagle model. Default: using the model provided by `pveagle`')
-    parser.add_argument('--audio_device_index', type=int, default=-1, help='Index of input audio device')
-    parser.add_argument(
-        '--output_audio_path',
-        help='If provided, all recorded audio data will be saved to the given .wav file')
-    parser.add_argument(
         '--show_audio_devices',
         action='store_true',
         help='List available audio input devices and exit')
 
+    common_parser = argparse.ArgumentParser(add_help=False)
+    common_parser.add_argument(
+        '--access_key',
+        required=True,
+        help='AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)')
+    common_parser.add_argument(
+        '--library_path',
+        help='Absolute path to dynamic library. Default: using the library provided by `pveagle`')
+    common_parser.add_argument(
+        '--model_path',
+        help='Absolute path to Eagle model. Default: using the model provided by `pveagle`')
+    common_parser.add_argument('--audio_device_index', type=int, default=-1, help='Index of input audio device')
+    common_parser.add_argument(
+        '--output_audio_path',
+        help='If provided, all recorded audio data will be saved to the given .wav file')
+
     subparsers = parser.add_subparsers(dest='command')
 
-    enroll = subparsers.add_parser('enroll', help='Enroll a new speaker profile')
+    enroll = subparsers.add_parser('enroll', help='Enroll a new speaker profile', parents=[common_parser])
     enroll.add_argument(
         '--output_profile_path',
         required=True,
         help='Absolute path to output file for the created profile')
 
-    test = subparsers.add_parser('test', help='Evaluate Eagle''s performance using the provided speaker profiles.')
+    test = subparsers.add_parser(
+        'test',
+        help='Evaluate Eagle''s performance using the provided speaker profiles.',
+        parents=[common_parser])
     test.add_argument(
         '--input_profile_paths',
         required=True,
@@ -126,9 +132,6 @@ def main():
         return
 
     if args.command == 'enroll':
-        if args.access_key is None:
-            raise ValueError('Missing required argument --access_key')
-
         try:
             eagle_profiler = pveagle.create_profiler(
                 access_key=args.access_key,
@@ -179,6 +182,9 @@ def main():
                 f.write(speaker_profile.to_bytes())
             print('\nSpeaker profile is saved to %s' % args.output_profile_path)
 
+        except KeyboardInterrupt:
+            print('\nStopping enrollment. No speaker profile is saved.')
+            enrollment_animation.stop()
         except pveagle.EagleActivationLimitError:
             print('AccessKey has reached its processing limit')
         except pveagle.EagleError as e:
@@ -189,9 +195,6 @@ def main():
             eagle_profiler.delete()
 
     elif args.command == 'test':
-        if args.access_key is None:
-            raise ValueError('Missing required argument --access_key')
-
         profiles = list()
         for profile_path in args.input_profile_paths:
             with open(profile_path, 'rb') as f:

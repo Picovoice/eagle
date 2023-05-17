@@ -55,19 +55,22 @@ def print_result(time, scores):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
+
+    common_parser = argparse.ArgumentParser(add_help=False)
+    common_parser.add_argument(
         '--access_key',
         required=True,
         help='AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)')
-    parser.add_argument(
+    common_parser.add_argument(
         '--library_path',
         help='Absolute path to dynamic library. Default: using the library provided by `pveagle`')
-    parser.add_argument(
+    common_parser.add_argument(
         '--model_path',
         help='Absolute path to Eagle model. Default: using the model provided by `pveagle`')
+
     subparsers = parser.add_subparsers(dest='command', required=True)
 
-    enroll = subparsers.add_parser('enroll')
+    enroll = subparsers.add_parser('enroll', parents=[common_parser])
     enroll.add_argument(
         '--enroll_audio_paths',
         required=True,
@@ -78,7 +81,7 @@ def main():
         required=True,
         help='Absolute path to save the speaker profile')
 
-    test = subparsers.add_parser('test')
+    test = subparsers.add_parser('test', parents=[common_parser])
     test.add_argument(
         '--input_profile_paths',
         required=True,

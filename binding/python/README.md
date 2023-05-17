@@ -30,8 +30,8 @@ Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get you
 
 ## Usage
 
-Eagle consists of two distinct steps: Enrollment and Recognition. In the enrollment step, Eagle analyzes a series of
-utterances from a particular speaker to learn their unique voiceprint. This step results in an `EagleProfile` object,
+Eagle has two distinct steps: Enrollment and Recognition. In the enrollment step, Eagle analyzes a series of
+utterances from a particular speaker to learn their unique voiceprint. This step produces an `EagleProfile` object,
 which can be stored and utilized during inference. During the Recognition step, Eagle compares the incoming frames of
 audio to the voiceprints of all enrolled speakers in real-time to determine the similarity between them.
 
@@ -74,6 +74,10 @@ enrollment progress will remain unchanged.
 ```python
 speaker_profile = eagle_profiler.export()
 ```
+
+The `eagle_profiler.export()` function produces an `EagleProfile` object, which can be converted into a binary form
+using the `EagleProfile.to_bytes()` method. This binary representation can be saved and subsequently retrieved using
+the `EagleProfile.from_bytes()` method.
 
 To reset the profiler and enroll a new speaker, the `eagle_profiler.reset()` method can be used. This method clears all
 previously stored data, making it possible to start a new enrollment session with a different speaker.
