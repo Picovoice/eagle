@@ -64,7 +64,7 @@ class EagleTestCase(unittest.TestCase):
         cls.eagle.delete()
         cls.eagle_profiler.delete()
 
-    def test_eagle_profiling(self) -> None:
+    def test_eagle_enrollment(self) -> None:
         percentage = 0.0
         for path in self.ENROLL_PATHS:
             pcm = self.load_wav_resource(path)
@@ -75,7 +75,7 @@ class EagleTestCase(unittest.TestCase):
         profile = self.eagle_profiler.export()
         self.assertGreater(profile.size, 0)
 
-    def test_eagle_profiling_unknown_speaker(self) -> None:
+    def test_eagle_enrollment_unknown_speaker(self) -> None:
         for path in self.ENROLL_PATHS:
             pcm = self.load_wav_resource(path)
             percentage, error = self.eagle_profiler.enroll(pcm)

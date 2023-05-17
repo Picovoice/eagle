@@ -18,7 +18,7 @@ Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get you
 
 ## Overview
 
-Eagle consists of two distinct steps: Profiling and Recognition. In the Profiling step, Eagle analyzes a series of
+Eagle consists of two distinct steps: Enrollment and Recognition. In the enrollment step, Eagle analyzes a series of
 utterances from a particular speaker to learn their unique voiceprint. This step results in a `Profile` object,
 which can be stored and utilized during inference. During the Recognition step, Eagle compares the incoming frames of
 audio to the voiceprints of all enrolled speakers in real-time to determine the similarity between them.

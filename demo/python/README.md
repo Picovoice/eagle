@@ -32,7 +32,7 @@ Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get you
 
 ## Overview
 
-Eagle consists of two distinct steps: Profiling and Recognition. In the Profiling step, Eagle analyzes a series of
+Eagle consists of two distinct steps: Enrollment and Recognition. In the enrollment step, Eagle analyzes a series of
 utterances from a particular speaker to learn their unique voiceprint. This step results in an `EagleProfile` object,
 which can be stored and utilized during inference. During the Recognition step, Eagle compares the incoming frames of
 audio to the voiceprints of all enrolled speakers in real-time to determine the similarity between them.
@@ -48,7 +48,7 @@ eagle_demo_mic.py --access_key ${ACCESS_KEY} \\
 
 Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console.
 
-The commands `enroll` and `test` are utilized for the purpose of enrolling and testing a speaker profile, respectively.
+The commands `enroll` and `test` are used to create a speaker profile and perform speaker recognition, respectively.
 Detailed explanations of these commands will be provided in their respective sections.
 
 Furthermore, the demo offers optional arguments, which can be accessed by utilizing the --help argument. By doing so,
@@ -95,8 +95,8 @@ eagle_demo_file.py --access_key ${ACCESS_KEY} \\
 
 Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console.
 
-The `enroll` and `test` commands are used to enroll and test speaker profiles, respectively, and will be discussed in
-detail in their respective sections.
+The commands `enroll` and `test` are used to create a speaker profile and perform speaker recognition, respectively, and
+will be discussed in detail in their respective sections.
 
 To view the optional arguments for the demo, use the `--help` argument. This will display a list of available arguments
 and their descriptions.
