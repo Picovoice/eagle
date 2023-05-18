@@ -78,29 +78,28 @@ describe('Eagle Binding', function () {
   //   }
   // });
 
-  it('should be able to process pure speech', () => {
+  it('should be able to enroll a speaker', () => {
     cy.getFramesFromFile('audio_samples/enroll_1.wav').then(async inputPcm1 => {
       cy.getFramesFromFile('audio_samples/enroll_2.wav').then(
         async inputPcm2 => {
-          const profiler = await EagleProfiler.create(ACCESS_KEY, {
-            publicPath: '/test/eagle_params.pv',
-            forceWrite: true,
-          });
-
           try {
+            const profiler = await EagleProfilerWorker.create(ACCESS_KEY, {
+              publicPath: '/test/eagle_params.pv',
+              forceWrite: true,
+            });
+
             const res1 = await profiler.enroll(inputPcm1);
             expect(res1.feedback).to.eq(EagleProfilerEnrollFeedback.AUDIO_OK);
             expect(res1.percentage).to.be.gt(0);
+
             const res2 = await profiler.enroll(inputPcm2);
             expect(res2.feedback).to.eq(EagleProfilerEnrollFeedback.AUDIO_OK);
             expect(res2.percentage).to.eq(100);
-          } catch (e) {
-            expect(e).to.be.undefined;
-          }
 
-          try {
             const result = await profiler.export();
             expect(result.profile.length).to.be.gt(0);
+
+            await profiler.reset();
           } catch (e) {
             expect(e).to.be.undefined;
           }

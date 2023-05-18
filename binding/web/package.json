@@ -33,7 +33,7 @@
     "format": "prettier --write \"**/*.{js,ts,json}\"",
     "copywasm": "node scripts/copy_wasm.js",
     "setup-test": "node scripts/setup_test.js && npx pvbase64 -i ./test/eagle_params.pv -o ./test/eagle_params.js",
-    "test": "cypress open",
+    "test": "cypress run --spec test/eagle.test.ts",
     "test-perf": "cypress run --spec test/eagle_perf.test.ts"
   },
   "dependencies": {

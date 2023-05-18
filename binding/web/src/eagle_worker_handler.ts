@@ -11,7 +11,11 @@
 /// <reference lib="webworker" />
 
 import { EagleProfiler } from './eagle';
-import { EagleProfilerWorkerRequest } from './types';
+import {
+  EagleProfilerWorkerEnrollRequest,
+  EagleProfilerWorkerInitRequest,
+  EagleProfilerWorkerRequest,
+} from './types';
 
 let eagleProfiler: EagleProfiler | null = null;
 
@@ -29,6 +33,112 @@ let eagleProfiler: EagleProfiler | null = null;
 //   });
 // };
 
+const initRequest = async (
+  request: EagleProfilerWorkerInitRequest
+): Promise<any> => {
+  if (eagleProfiler !== null) {
+    return {
+      command: 'error',
+      message: 'Eagle profiler already initialized',
+    };
+  }
+  try {
+    EagleProfiler.setWasm(request.wasm);
+    EagleProfiler.setWasmSimd(request.wasmSimd);
+    eagleProfiler = await EagleProfiler._init(
+      request.accessKey,
+      request.modelPath,
+      request.options
+    );
+    return {
+      command: 'ok',
+      minEnrollSamples: eagleProfiler.minEnrollSamples,
+      sampleRate: eagleProfiler.sampleRate,
+      version: eagleProfiler.version,
+    };
+  } catch (e: any) {
+    return {
+      command: 'error',
+      message: e.message,
+    };
+  }
+};
+
+const enrollRequest = async (
+  request: EagleProfilerWorkerEnrollRequest
+): Promise<any> => {
+  if (eagleProfiler === null) {
+    return {
+      command: 'error',
+      message: 'Eagle profiler not initialized',
+    };
+  }
+  try {
+    const result = await eagleProfiler.enroll(request.inputFrame);
+    return {
+      command: 'ok',
+      result,
+    };
+  } catch (e: any) {
+    return {
+      command: 'error',
+      message: e.message,
+    };
+  }
+};
+
+const exportRequest = async (): Promise<any> => {
+  if (eagleProfiler === null) {
+    return {
+      command: 'error',
+      message: 'Eagle profiler not initialized',
+    };
+  }
+  try {
+    const profile = await eagleProfiler.export();
+    return {
+      command: 'ok',
+      profile,
+    };
+  } catch (e: any) {
+    return {
+      command: 'error',
+      message: e.message,
+    };
+  }
+};
+
+const resetRequest = async (): Promise<any> => {
+  if (eagleProfiler === null) {
+    return {
+      command: 'error',
+      message: 'Eagle not initialized',
+    };
+  }
+  try {
+    await eagleProfiler.reset();
+    return {
+      command: 'ok',
+    };
+  } catch (e: any) {
+    return {
+      command: 'error',
+      message: e.message,
+    };
+  }
+};
+
+const releaseRequest = async (): Promise<any> => {
+  if (eagleProfiler !== null) {
+    await eagleProfiler.release();
+    eagleProfiler = null;
+    close();
+  }
+  return {
+    command: 'ok',
+  };
+};
+
 /**
  * Eagle worker handler.
  */
@@ -37,73 +147,19 @@ self.onmessage = async function (
 ): Promise<void> {
   switch (event.data.command) {
     case 'init':
-      if (eagleProfiler !== null) {
-        self.postMessage({
-          command: 'error',
-          message: 'Eagle profiler already initialized',
-        });
-        return;
-      }
-      try {
-        EagleProfiler.setWasm(event.data.wasm);
-        EagleProfiler.setWasmSimd(event.data.wasmSimd);
-        eagleProfiler = await EagleProfiler._init(
-          event.data.accessKey,
-          event.data.modelPath,
-          event.data.options
-        );
-        self.postMessage({
-          command: 'ok',
-          minEnrollSamples: eagleProfiler.minEnrollSamples,
-          sampleRate: eagleProfiler.sampleRate,
-          version: eagleProfiler.version,
-        });
-      } catch (e: any) {
-        self.postMessage({
-          command: 'error',
-          message: e.message,
-        });
-      }
+      self.postMessage(await initRequest(event.data));
       break;
     case 'enroll':
-      if (eagleProfiler === null) {
-        self.postMessage({
-          command: 'error',
-          message: 'Eagle profiler not initialized',
-        });
-        return;
-      }
-      await eagleProfiler.enroll(event.data.inputFrame);
+      self.postMessage(await enrollRequest(event.data));
       break;
     case 'export':
-      if (eagleProfiler === null) {
-        self.postMessage({
-          command: 'error',
-          message: 'Eagle profiler not initialized',
-        });
-        return;
-      }
-      await eagleProfiler.export();
+      self.postMessage(await exportRequest());
       break;
     case 'reset':
-      if (eagleProfiler === null) {
-        self.postMessage({
-          command: 'error',
-          message: 'Eagle not initialized',
-        });
-        return;
-      }
-      await eagleProfiler.reset();
+      self.postMessage(await resetRequest());
       break;
     case 'release':
-      if (eagleProfiler !== null) {
-        await eagleProfiler.release();
-        eagleProfiler = null;
-        close();
-      }
-      self.postMessage({
-        command: 'ok',
-      });
+      self.postMessage(await releaseRequest());
       break;
     default:
       self.postMessage({
