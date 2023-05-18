@@ -51,7 +51,7 @@ jobs:
       run: >
         python eagle_demo_file.py enroll
         --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
-        --enroll_audio_paths ../../resources/audio_samples/enroll_1.wav ../../resources/audio_samples/enroll_2.wav
+        --enroll_audio_paths ../../resources/audio_samples/speaker_1_utt_1.wav ../../resources/audio_samples/speaker_1_utt_2.wav
         --output_profile_path test.egl
 
     - name: Test inference

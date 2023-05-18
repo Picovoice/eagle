@@ -65,7 +65,7 @@ class EagleCTestCase(unittest.TestCase):
         self.assertTrue("real time factor" in stdout)
 
     def test_eagle_enroll(self):
-        self.run_eagle(["enroll_1.wav", "enroll_2.wav"], is_enroll=True)
+        self.run_eagle(["speaker_1_utt_1.wav", "speaker_1_utt_2.wav"], is_enroll=True)
 
     def test_eagle_test(self):
         self.run_eagle(["test.wav"], is_enroll=False)

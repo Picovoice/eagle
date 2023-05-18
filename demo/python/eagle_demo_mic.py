@@ -11,6 +11,7 @@
 
 import argparse
 import contextlib
+import os
 import struct
 import threading
 import time
@@ -76,10 +77,9 @@ class EnrollmentAnimation(threading.Thread):
         self._feedback = value
 
 
-def print_result(scores):
+def print_result(scores, labels):
     result = '\rscores -> '
-    for i, score in enumerate(scores):
-        result += 'speaker[%d]: %.2f, ' % (i, score)
+    result += ', '.join('`%s`: %.2f' % (label, score) for label, score in zip(labels, scores))
     print(result, end='', flush=True)
 
 
@@ -196,7 +196,9 @@ def main():
 
     elif args.command == 'test':
         profiles = list()
+        speaker_labels = list()
         for profile_path in args.input_profile_paths:
+            speaker_labels.append(os.path.splitext(os.path.basename(profile_path))[0])
             with open(profile_path, 'rb') as f:
                 profile = pveagle.EagleProfile.from_bytes(f.read())
             profiles.append(profile)
@@ -226,7 +228,7 @@ def main():
                     if args.output_audio_path is not None:
                         test_audio_file.writeframes(struct.pack('%dh' % len(pcm), *pcm))
                     scores = eagle.process(pcm)
-                    print_result(scores)
+                    print_result(scores, speaker_labels)
 
         except KeyboardInterrupt:
             print('\nStopping...')

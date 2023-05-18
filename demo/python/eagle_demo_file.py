@@ -12,6 +12,7 @@
 import argparse
 import contextlib
 import csv
+import os
 import struct
 import wave
 
@@ -47,9 +48,9 @@ def read_file(file_name, sample_rate):
     return frames[::channels]
 
 
-def print_result(time, scores):
+def print_result(time, scores, labels):
     result = 'time: %4.2f sec | scores -> ' % time
-    result += ', '.join('speaker[%d]: %.3f, ' % (i, score) for i, score in enumerate(scores))
+    result += ', '.join('`%s`: %.2f' % (label, score) for label, score in zip(labels, scores))
     print(result)
 
 
@@ -144,7 +145,9 @@ def main():
 
     elif args.command == 'test':
         speaker_profiles = []
+        speaker_labels = []
         for input_profile_path in args.input_profile_paths:
+            speaker_labels.append(os.path.splitext(os.path.basename(input_profile_path), )[0])
             with open(input_profile_path, 'rb') as f:
                 speaker_profiles.append(pveagle.EagleProfile.from_bytes(f.read()))
 
@@ -182,7 +185,7 @@ def main():
                     if csv_file is not None:
                         result_writer.writerow([time, *scores])
                     else:
-                        print_result(time, scores)
+                        print_result(time, scores, speaker_labels)
 
                 if csv_file is not None:
                     print('Test result is saved to %s' % args.csv_output_path)
