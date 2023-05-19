@@ -238,7 +238,7 @@ const char *access_key = "${ACCESS_KEY}";
 const char *model_path = "${MODEL_PATH}";
 
 pv_eagle_profiler_t *eagle_profiler = NULL;
-pv_status_t status = pv_eagle_profiler_init_func(
+pv_status_t status = pv_eagle_profiler_init(
             access_key,
             model_path,
             &eagle_profiler);
