@@ -1,11 +1,9 @@
-import { EagleProfiler } from './eagle';
+import { Eagle, EagleProfiler } from './eagle';
 import { EagleProfilerWorker } from './eagle_worker';
 
 import {
   EagleModel,
-  EagleProfile,
   EagleProfilerEnrollFeedback,
-  EagleProfilerOptions,
   EagleProfilerWorkerInitRequest,
   EagleProfilerWorkerEnrollRequest,
   EagleProfilerWorkerExportRequest,
@@ -23,17 +21,18 @@ import {
 import eagleWasm from '../lib/pv_eagle.wasm';
 import eagleWasmSimd from '../lib/pv_eagle_simd.wasm';
 
+Eagle.setWasm(eagleWasm);
+Eagle.setWasmSimd(eagleWasmSimd);
 EagleProfiler.setWasm(eagleWasm);
 EagleProfiler.setWasmSimd(eagleWasmSimd);
 EagleProfilerWorker.setWasm(eagleWasm);
 EagleProfilerWorker.setWasmSimd(eagleWasmSimd);
 
 export {
+  Eagle,
   EagleModel,
-  EagleProfile,
   EagleProfiler,
   EagleProfilerEnrollFeedback,
-  EagleProfilerOptions,
   EagleProfilerWorker,
   EagleProfilerWorkerInitRequest,
   EagleProfilerWorkerEnrollRequest,

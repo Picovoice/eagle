@@ -17,26 +17,12 @@ import {
   EagleProfilerWorkerRequest,
 } from './types';
 
-let eagleProfiler: EagleProfiler | null = null;
-
-// const processCallback = (enhancedPcm: Int16Array): void => {
-//   self.postMessage({
-//     command: 'ok',
-//     enhancedPcm: enhancedPcm,
-//   });
-// };
-
-// const processErrorCallback = (error: string): void => {
-//   self.postMessage({
-//     command: 'error',
-//     message: error,
-//   });
-// };
+let profiler: EagleProfiler | null = null;
 
 const initRequest = async (
   request: EagleProfilerWorkerInitRequest
 ): Promise<any> => {
-  if (eagleProfiler !== null) {
+  if (profiler !== null) {
     return {
       command: 'error',
       message: 'Eagle profiler already initialized',
@@ -45,16 +31,12 @@ const initRequest = async (
   try {
     EagleProfiler.setWasm(request.wasm);
     EagleProfiler.setWasmSimd(request.wasmSimd);
-    eagleProfiler = await EagleProfiler._init(
-      request.accessKey,
-      request.modelPath,
-      request.options
-    );
+    profiler = await EagleProfiler._init(request.accessKey, request.modelPath);
     return {
       command: 'ok',
-      minEnrollSamples: eagleProfiler.minEnrollSamples,
-      sampleRate: eagleProfiler.sampleRate,
-      version: eagleProfiler.version,
+      minEnrollSamples: profiler.minEnrollSamples,
+      sampleRate: profiler.sampleRate,
+      version: profiler.version,
     };
   } catch (e: any) {
     return {
@@ -67,14 +49,14 @@ const initRequest = async (
 const enrollRequest = async (
   request: EagleProfilerWorkerEnrollRequest
 ): Promise<any> => {
-  if (eagleProfiler === null) {
+  if (profiler === null) {
     return {
       command: 'error',
       message: 'Eagle profiler not initialized',
     };
   }
   try {
-    const result = await eagleProfiler.enroll(request.inputFrame);
+    const result = await profiler.enroll(request.inputFrame);
     return {
       command: 'ok',
       result,
@@ -88,14 +70,14 @@ const enrollRequest = async (
 };
 
 const exportRequest = async (): Promise<any> => {
-  if (eagleProfiler === null) {
+  if (profiler === null) {
     return {
       command: 'error',
       message: 'Eagle profiler not initialized',
     };
   }
   try {
-    const profile = await eagleProfiler.export();
+    const profile = await profiler.export();
     return {
       command: 'ok',
       profile,
@@ -109,14 +91,14 @@ const exportRequest = async (): Promise<any> => {
 };
 
 const resetRequest = async (): Promise<any> => {
-  if (eagleProfiler === null) {
+  if (profiler === null) {
     return {
       command: 'error',
       message: 'Eagle not initialized',
     };
   }
   try {
-    await eagleProfiler.reset();
+    await profiler.reset();
     return {
       command: 'ok',
     };
@@ -129,9 +111,9 @@ const resetRequest = async (): Promise<any> => {
 };
 
 const releaseRequest = async (): Promise<any> => {
-  if (eagleProfiler !== null) {
-    await eagleProfiler.release();
-    eagleProfiler = null;
+  if (profiler !== null) {
+    await profiler.release();
+    profiler = null;
     close();
   }
   return {

@@ -13,9 +13,7 @@ import PvWorker from 'web-worker:./eagle_worker_handler.ts';
 
 import {
   EagleModel,
-  EagleProfile,
   EagleProfilerEnrollResult,
-  EagleProfilerOptions,
   EagleProfilerWorkerEnrollResponse,
   EagleProfilerWorkerExportResponse,
   EagleProfilerWorkerInitResponse,
@@ -99,16 +97,12 @@ export class EagleProfilerWorker {
    * Set to a different name to use multiple models across `eagle` instances.
    * @param model.forceWrite Flag to overwrite the model in storage even if it exists.
    * @param model.version Version of the model file. Increment to update the model file in storage.
-   * @param options Optional configuration arguments.
-   * @param options.enrollErrorCallback User-defined callback invoked if any error happens
-   * while enrolling a speaker.
    *
    * @returns An instance of the Eagle Profiler.
    */
   public static async create(
     accessKey: string,
-    model: EagleModel,
-    options: EagleProfilerOptions = {}
+    model: EagleModel
   ): Promise<EagleProfilerWorker> {
     // const { processErrorCallback, ...rest } = options;
 
@@ -152,7 +146,6 @@ export class EagleProfilerWorker {
       command: 'init',
       accessKey: accessKey,
       modelPath: modelPath,
-      options: options,
       wasm: this._wasm,
       wasmSimd: this._wasmSimd,
     });
@@ -224,8 +217,8 @@ export class EagleProfilerWorker {
    * Exports the speaker profile of the current session.
    * Will raise an exception if the profile is not ready.
    */
-  public async export(): Promise<EagleProfile> {
-    const returnPromise: Promise<EagleProfile> = new Promise(
+  public async export(): Promise<Uint8Array> {
+    const returnPromise: Promise<Uint8Array> = new Promise(
       (resolve, reject) => {
         this._worker.onmessage = (
           event: MessageEvent<EagleProfilerWorkerExportResponse>

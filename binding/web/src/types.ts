@@ -16,16 +16,6 @@ import { PvModel } from '@picovoice/web-utils';
  */
 export type EagleModel = PvModel;
 
-export type EagleProfile = {
-  /** Buffer containing an Eagle speaker profile */
-  profile: Uint8Array;
-};
-
-export type EagleProfilerOptions = {
-  /** @defaultValue undefined */
-  enrollErrorCallback?: (error: Error) => void;
-};
-
 export enum EagleProfilerEnrollFeedback {
   AUDIO_OK = 0,
   AUDIO_TOO_SHORT,
@@ -39,16 +29,10 @@ export type EagleProfilerEnrollResult = {
   percentage: number;
 };
 
-// export type EagleOptions = {
-//   /** @defaultValue undefined */
-//   processErrorCallback?: (error: string) => void;
-// };
-
 export type EagleProfilerWorkerInitRequest = {
   command: 'init';
   accessKey: string;
   modelPath: string;
-  options: EagleProfilerOptions;
   wasm: string;
   wasmSimd: string;
 };
@@ -102,7 +86,7 @@ export type EagleProfilerWorkerExportResponse =
   | EagleProfilerWorkerFailureResponse
   | {
       command: 'ok';
-      profile: EagleProfile;
+      profile: Uint8Array;
     };
 
 export type EagleProfilerWorkerResetResponse =
