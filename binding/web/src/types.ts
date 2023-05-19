@@ -107,3 +107,70 @@ export type EagleProfilerWorkerResponse =
   | EagleProfilerWorkerExportResponse
   | EagleProfilerWorkerResetResponse
   | EagleProfilerWorkerReleaseResponse;
+
+export type EagleWorkerInitRequest = {
+  command: 'init';
+  accessKey: string;
+  modelPath: string;
+  speakerProfiles: Uint8Array[];
+  wasm: string;
+  wasmSimd: string;
+};
+
+export type EagleWorkerProcessRequest = {
+  command: 'process';
+  inputFrame: Int16Array;
+};
+
+export type EagleWorkerResetRequest = {
+  command: 'reset';
+};
+
+export type EagleWorkerReleaseRequest = {
+  command: 'release';
+};
+
+export type EagleWorkerRequest =
+  | EagleWorkerInitRequest
+  | EagleWorkerProcessRequest
+  | EagleWorkerResetRequest
+  | EagleWorkerReleaseRequest;
+
+export type EagleWorkerFailureResponse = {
+  command: 'failed' | 'error';
+  message: string;
+};
+
+export type EagleWorkerInitResponse =
+  | EagleWorkerFailureResponse
+  | {
+      command: 'ok';
+      frameLength: number;
+      sampleRate: number;
+      version: string;
+    };
+
+export type EagleWorkerProcessResponse =
+  | EagleWorkerFailureResponse
+  | {
+      command: 'ok';
+      scores: number[];
+    };
+
+export type EagleWorkerResetResponse =
+  | EagleWorkerFailureResponse
+  | {
+      command: 'ok';
+    };
+
+export type EagleWorkerReleaseResponse =
+  | EagleWorkerFailureResponse
+  | {
+      command: 'ok';
+    };
+
+export type EagleWorkerResponse =
+  | EagleWorkerInitResponse
+  | EagleWorkerProcessResponse
+  | EagleWorkerResetResponse
+  | EagleWorkerReleaseResponse;

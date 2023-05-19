@@ -10,35 +10,33 @@
 /// <reference no-default-lib="false"/>
 /// <reference lib="webworker" />
 
-import { Eagle } from './eagle';
+import { EagleProfiler } from './eagle';
 import {
-  EagleWorkerProcessRequest,
-  EagleWorkerInitRequest,
-  EagleWorkerRequest,
+  EagleProfilerWorkerEnrollRequest,
+  EagleProfilerWorkerInitRequest,
+  EagleProfilerWorkerRequest,
 } from './types';
 
-let eagle: Eagle | null = null;
+let profiler: EagleProfiler | null = null;
 
-const initRequest = async (request: EagleWorkerInitRequest): Promise<any> => {
-  if (eagle !== null) {
+const initRequest = async (
+  request: EagleProfilerWorkerInitRequest
+): Promise<any> => {
+  if (profiler !== null) {
     return {
       command: 'error',
-      message: 'Eagle has already been initialized',
+      message: 'Eagle profiler already initialized',
     };
   }
   try {
-    Eagle.setWasm(request.wasm);
-    Eagle.setWasmSimd(request.wasmSimd);
-    eagle = await Eagle._init(
-      request.accessKey,
-      request.modelPath,
-      request.speakerProfiles
-    );
+    EagleProfiler.setWasm(request.wasm);
+    EagleProfiler.setWasmSimd(request.wasmSimd);
+    profiler = await EagleProfiler._init(request.accessKey, request.modelPath);
     return {
       command: 'ok',
-      frameLength: eagle.frameLength,
-      sampleRate: eagle.sampleRate,
-      version: eagle.version,
+      minEnrollSamples: profiler.minEnrollSamples,
+      sampleRate: profiler.sampleRate,
+      version: profiler.version,
     };
   } catch (e: any) {
     return {
@@ -48,20 +46,41 @@ const initRequest = async (request: EagleWorkerInitRequest): Promise<any> => {
   }
 };
 
-const processRequest = async (
-  request: EagleWorkerProcessRequest
+const enrollRequest = async (
+  request: EagleProfilerWorkerEnrollRequest
 ): Promise<any> => {
-  if (eagle === null) {
+  if (profiler === null) {
     return {
       command: 'error',
-      message: 'Eagle has not been initialized',
+      message: 'Eagle profiler not initialized',
     };
   }
   try {
-    const scores = await eagle.process(request.inputFrame);
+    const result = await profiler.enroll(request.inputFrame);
     return {
       command: 'ok',
-      scores,
+      result,
+    };
+  } catch (e: any) {
+    return {
+      command: 'error',
+      message: e.message,
+    };
+  }
+};
+
+const exportRequest = async (): Promise<any> => {
+  if (profiler === null) {
+    return {
+      command: 'error',
+      message: 'Eagle profiler not initialized',
+    };
+  }
+  try {
+    const profile = await profiler.export();
+    return {
+      command: 'ok',
+      profile,
     };
   } catch (e: any) {
     return {
@@ -72,14 +91,14 @@ const processRequest = async (
 };
 
 const resetRequest = async (): Promise<any> => {
-  if (eagle === null) {
+  if (profiler === null) {
     return {
       command: 'error',
-      message: 'Eagle has not been initialized',
+      message: 'Eagle not initialized',
     };
   }
   try {
-    await eagle.reset();
+    await profiler.reset();
     return {
       command: 'ok',
     };
@@ -92,9 +111,9 @@ const resetRequest = async (): Promise<any> => {
 };
 
 const releaseRequest = async (): Promise<any> => {
-  if (eagle !== null) {
-    await eagle.release();
-    eagle = null;
+  if (profiler !== null) {
+    await profiler.release();
+    profiler = null;
     close();
   }
   return {
@@ -103,17 +122,20 @@ const releaseRequest = async (): Promise<any> => {
 };
 
 /**
- * Eagle worker handler.
+ * Eagle profiler worker handler.
  */
 self.onmessage = async function (
-  event: MessageEvent<EagleWorkerRequest>
+  event: MessageEvent<EagleProfilerWorkerRequest>
 ): Promise<void> {
   switch (event.data.command) {
     case 'init':
       self.postMessage(await initRequest(event.data));
       break;
-    case 'process':
-      self.postMessage(await processRequest(event.data));
+    case 'enroll':
+      self.postMessage(await enrollRequest(event.data));
+      break;
+    case 'export':
+      self.postMessage(await exportRequest());
       break;
     case 'reset':
       self.postMessage(await resetRequest());

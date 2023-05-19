@@ -3,175 +3,171 @@ import {
   EagleProfiler,
   EagleProfilerEnrollFeedback,
   EagleProfilerWorker,
+  EagleWorker,
 } from '../';
 
 // @ts-ignore
 import eagleParams from './eagle_params';
-import { EagleProfilerEnrollResult } from '../src/types';
 
 const ACCESS_KEY = Cypress.env('ACCESS_KEY');
+let testProfile: Uint8Array;
 
-const getProfile = async (audioChunks: Int16Array[]): Promise<Uint8Array> => {
-  const profiler = await EagleProfiler.create(ACCESS_KEY, {
-    publicPath: '/test/eagle_params.pv',
-    forceWrite: true,
-  });
-
+const getProfile = async (
+  profiler,
+  audioChunks,
+  expectedFeedback
+): Promise<Uint8Array> => {
   let percentage = 0;
-  for (const audio of audioChunks) {
-    const result = await profiler.enroll(audio);
-    expect(result.feedback).to.eq(EagleProfilerEnrollFeedback.AUDIO_OK);
+  for (let i = 0; i < audioChunks.length; i++) {
+    const result = await profiler.enroll(audioChunks[i]);
+    expect(result.feedback).to.eq(expectedFeedback[i]);
     expect(result.percentage).to.be.gt(0);
     percentage = result.percentage;
   }
-  expect(percentage).to.eq(100);
+  expect(percentage).to.be.eq(100);
 
-  const profile = await profiler.export();
-  expect(profile.length).to.be.gt(0);
-
-  await profiler.release();
-  return profile;
+  return await profiler.export();
 };
 
-// describe('Eagle Profiler', async function () {
-//   // it('should be able to init with public path', async () => {
-//   //   try {
-//   //     const profiler = await EagleProfiler.create(ACCESS_KEY, {
-//   //       publicPath: '/test/eagle_params.pv',
-//   //       forceWrite: true,
-//   //     });
-//   //
-//   //     expect(profiler.sampleRate).to.be.gt(0);
-//   //     expect(profiler.minEnrollSamples).to.be.gt(0);
-//   //     expect(typeof profiler.version).to.eq('string');
-//   //     expect(profiler.version).length.to.be.gt(0);
-//   //     await profiler.release();
-//   //   } catch (e) {
-//   //     expect(e).to.be.undefined;
-//   //   }
-//   // });
-//   //
-//   // it('should be able to init with public path (worker)', async () => {
-//   //   try {
-//   //     const profiler = await EagleProfilerWorker.create(ACCESS_KEY, {
-//   //       publicPath: '/test/eagle_params.pv',
-//   //       forceWrite: true,
-//   //     });
-//   //     expect(profiler.sampleRate).to.be.gt(0);
-//   //     expect(profiler.minEnrollSamples).to.be.gt(0);
-//   //     expect(typeof profiler.version).to.eq('string');
-//   //     expect(profiler.version).length.to.be.gt(0);
-//   //     await profiler.release();
-//   //     await profiler.terminate();
-//   //   } catch (e) {
-//   //     expect(e).to.be.undefined;
-//   //   }
-//   // });
-//   //
-//   // it('should be able to init with base64', async () => {
-//   //   try {
-//   //     const profiler = await EagleProfiler.create(ACCESS_KEY, {
-//   //       base64: eagleParams,
-//   //       forceWrite: true,
-//   //     });
-//   //
-//   //     expect(profiler.sampleRate).to.be.gt(0);
-//   //     expect(profiler.minEnrollSamples).to.be.gt(0);
-//   //     expect(typeof profiler.version).to.eq('string');
-//   //     expect(profiler.version).length.to.be.gt(0);
-//   //     await profiler.release();
-//   //   } catch (e) {
-//   //     expect(e).to.be.undefined;
-//   //   }
-//   // });
-//   //
-//   // it('should be able to init with base64 (worker)', async () => {
-//   //   try {
-//   //     const profiler = await EagleProfilerWorker.create(ACCESS_KEY, {
-//   //       base64: eagleParams,
-//   //       forceWrite: true,
-//   //     });
-//   //     expect(profiler.sampleRate).to.be.gt(0);
-//   //     expect(profiler.minEnrollSamples).to.be.gt(0);
-//   //     expect(typeof profiler.version).to.eq('string');
-//   //     expect(profiler.version).length.to.be.gt(0);
-//   //     await profiler.release();
-//   //     await profiler.terminate();
-//   //   } catch (e) {
-//   //     expect(e).to.be.undefined;
-//   //   }
-//   // });
-//   // it('should be able to enroll a speaker', () => {
-//   //   cy.getFramesFromFile('audio_samples/speaker_1_utt_1.wav').then(
-//   //     async inputPcm1 => {
-//   //       cy.getFramesFromFile('audio_samples/speaker_1_utt_2.wav').then(
-//   //         async inputPcm2 => {
-//   //           try {
-//   //             const profiler = await EagleProfilerWorker.create(ACCESS_KEY, {
-//   //               publicPath: '/test/eagle_params.pv',
-//   //               forceWrite: true,
-//   //             });
-//   //
-//   //             const res1 = await profiler.enroll(inputPcm1);
-//   //             expect(res1.feedback).to.eq(EagleProfilerEnrollFeedback.AUDIO_OK);
-//   //             expect(res1.percentage).to.be.gt(0);
-//   //
-//   //             const res2 = await profiler.enroll(inputPcm2);
-//   //             expect(res2.feedback).to.eq(EagleProfilerEnrollFeedback.AUDIO_OK);
-//   //             expect(res2.percentage).to.eq(100);
-//   //
-//   //             const profile = await profiler.export();
-//   //             expect(profile.length).to.be.gt(0);
-//   //
-//   //             await profiler.reset();
-//   //           } catch (e) {
-//   //             expect(e).to.be.undefined;
-//   //           }
-//   //         }
-//   //       );
-//   //     }
-//   //   );
-//   // });
-// });
+const getScores = async (eagle, pcm): Promise<number[]> => {
+  const allScores: number[] = [];
+  for (
+    let i = 0;
+    i < pcm.length - eagle.frameLength + 1;
+    i += eagle.frameLength
+  ) {
+    const scores = await eagle.process(pcm.slice(i, i + eagle.frameLength));
+    allScores.push(scores[0]);
+  }
 
-describe('Eagle', function () {
-  it('init eagle', () => {
+  return allScores;
+};
+
+before(() => {
+  cy.getFramesFromFile('audio_samples/speaker_1_utt_1.wav').then(
+    async inputPcm1 => {
+      cy.getFramesFromFile('audio_samples/speaker_1_utt_2.wav').then(
+        async inputPcm2 => {
+          const profiler = await EagleProfiler.create(ACCESS_KEY, {
+            publicPath: '/test/eagle_params.pv',
+            forceWrite: true,
+          });
+          testProfile = await getProfile(
+            profiler,
+            [inputPcm1, inputPcm2],
+            [
+              EagleProfilerEnrollFeedback.AUDIO_OK,
+              EagleProfilerEnrollFeedback.AUDIO_OK,
+            ]
+          );
+          profiler.release();
+        }
+      );
+    }
+  );
+});
+
+describe('Eagle Profiler', async function () {
+  it('should be able to init with public path', async () => {
+    try {
+      const profiler = await EagleProfiler.create(ACCESS_KEY, {
+        publicPath: '/test/eagle_params.pv',
+        forceWrite: true,
+      });
+
+      expect(profiler.sampleRate).to.be.gt(0);
+      expect(profiler.minEnrollSamples).to.be.gt(0);
+      expect(typeof profiler.version).to.eq('string');
+      expect(profiler.version).length.to.be.gt(0);
+      await profiler.release();
+    } catch (e) {
+      expect(e).to.be.undefined;
+    }
+  });
+
+  it('should be able to init with public path (worker)', async () => {
+    try {
+      const profiler = await EagleProfilerWorker.create(ACCESS_KEY, {
+        publicPath: '/test/eagle_params.pv',
+        forceWrite: true,
+      });
+      expect(profiler.sampleRate).to.be.gt(0);
+      expect(profiler.minEnrollSamples).to.be.gt(0);
+      expect(typeof profiler.version).to.eq('string');
+      expect(profiler.version).length.to.be.gt(0);
+      await profiler.release();
+      await profiler.terminate();
+    } catch (e) {
+      expect(e).to.be.undefined;
+    }
+  });
+
+  it('should be able to init with base64', async () => {
+    try {
+      const profiler = await EagleProfiler.create(ACCESS_KEY, {
+        base64: eagleParams,
+        forceWrite: true,
+      });
+
+      expect(profiler.sampleRate).to.be.gt(0);
+      expect(profiler.minEnrollSamples).to.be.gt(0);
+      expect(typeof profiler.version).to.eq('string');
+      expect(profiler.version).length.to.be.gt(0);
+      await profiler.release();
+    } catch (e) {
+      expect(e).to.be.undefined;
+    }
+  });
+
+  it('should be able to init with base64 (worker)', async () => {
+    try {
+      const profiler = await EagleProfilerWorker.create(ACCESS_KEY, {
+        base64: eagleParams,
+        forceWrite: true,
+      });
+      expect(profiler.sampleRate).to.be.gt(0);
+      expect(profiler.minEnrollSamples).to.be.gt(0);
+      expect(typeof profiler.version).to.eq('string');
+      expect(profiler.version).length.to.be.gt(0);
+      await profiler.release();
+      await profiler.terminate();
+    } catch (e) {
+      expect(e).to.be.undefined;
+    }
+  });
+
+  it('should be able to enroll speakers with reset', () => {
     cy.getFramesFromFile('audio_samples/speaker_1_utt_1.wav').then(
       async inputPcm1 => {
         cy.getFramesFromFile('audio_samples/speaker_1_utt_2.wav').then(
           async inputPcm2 => {
             try {
-              const profile = await getProfile([inputPcm1, inputPcm2]);
-              const eagle = await Eagle.create(
-                ACCESS_KEY,
-                {
-                  publicPath: '/test/eagle_params.pv',
-                  forceWrite: true,
-                },
-                [profile]
+              const profiler = await EagleProfiler.create(ACCESS_KEY, {
+                publicPath: '/test/eagle_params.pv',
+                forceWrite: true,
+              });
+
+              const profile = await getProfile(
+                profiler,
+                [inputPcm1, inputPcm2],
+                [
+                  EagleProfilerEnrollFeedback.AUDIO_OK,
+                  EagleProfilerEnrollFeedback.AUDIO_OK,
+                ]
               );
-              expect(eagle.sampleRate).to.be.gt(0);
-              expect(eagle.frameLength).to.be.gt(0);
-              expect(typeof eagle.version).to.eq('string');
-              expect(eagle.version).length.to.be.gt(0);
-              cy.getFramesFromFile('audio_samples/test.wav').then(
-                async testPcm => {
-                  const allScores: number[] = [];
-                  for (
-                    let i = 0;
-                    i < testPcm.length - eagle.frameLength + 1;
-                    i += eagle.frameLength
-                  ) {
-                    const scores = await eagle.process(
-                      testPcm.slice(i, i + eagle.frameLength)
-                    );
-                    allScores.push(scores[0]);
-                  }
-                  console.log(allScores);
-                  expect(Math.max(...allScores)).to.be.gt(0.5);
-                  await eagle.release();
-                }
+              expect(profile.length).to.be.gt(0);
+
+              await profiler.reset();
+              const profile2 = await getProfile(
+                profiler,
+                [inputPcm1, inputPcm2],
+                [
+                  EagleProfilerEnrollFeedback.AUDIO_OK,
+                  EagleProfilerEnrollFeedback.AUDIO_OK,
+                ]
               );
+              expect(profile2.length).to.be.eq(profile.length);
+              await profiler.release();
             } catch (e) {
               expect(e).to.be.undefined;
             }
@@ -179,5 +175,216 @@ describe('Eagle', function () {
         );
       }
     );
+  });
+  it('should be able to enroll speakers with reset (worker)', () => {
+    cy.getFramesFromFile('audio_samples/speaker_1_utt_1.wav').then(
+      async inputPcm1 => {
+        cy.getFramesFromFile('audio_samples/speaker_1_utt_2.wav').then(
+          async inputPcm2 => {
+            try {
+              const profiler = await EagleProfilerWorker.create(ACCESS_KEY, {
+                publicPath: '/test/eagle_params.pv',
+                forceWrite: true,
+              });
+
+              const profile = await getProfile(
+                profiler,
+                [inputPcm1, inputPcm2],
+                [
+                  EagleProfilerEnrollFeedback.AUDIO_OK,
+                  EagleProfilerEnrollFeedback.AUDIO_OK,
+                ]
+              );
+              expect(profile.length).to.be.gt(0);
+
+              await profiler.reset();
+              const profile2 = await getProfile(
+                profiler,
+                [inputPcm1, inputPcm2],
+                [
+                  EagleProfilerEnrollFeedback.AUDIO_OK,
+                  EagleProfilerEnrollFeedback.AUDIO_OK,
+                ]
+              );
+              expect(profile2.length).to.be.eq(profile.length);
+              await profiler.release();
+            } catch (e) {
+              expect(e).to.be.undefined;
+            }
+          }
+        );
+      }
+    );
+  });
+  it('should detect unknown speaker during enrollment (worker)', () => {
+    cy.getFramesFromFile('audio_samples/speaker_1_utt_1.wav').then(
+      async inputPcm1 => {
+        cy.getFramesFromFile('audio_samples/speaker_1_utt_2.wav').then(
+          async inputPcm2 => {
+            cy.getFramesFromFile('audio_samples/imposter.wav').then(
+              async imposterPcm => {
+                try {
+                  const profiler = await EagleProfiler.create(ACCESS_KEY, {
+                    publicPath: '/test/eagle_params.pv',
+                    forceWrite: true,
+                  });
+
+                  await getProfile(
+                    profiler,
+                    [inputPcm1, inputPcm2, imposterPcm],
+                    [
+                      EagleProfilerEnrollFeedback.AUDIO_OK,
+                      EagleProfilerEnrollFeedback.AUDIO_OK,
+                      EagleProfilerEnrollFeedback.UNKNOWN_SPEAKER,
+                    ]
+                  );
+                  await profiler.release();
+                } catch (e) {
+                  expect(e).to.be.undefined;
+                }
+              }
+            );
+          }
+        );
+      }
+    );
+  });
+});
+
+describe('Eagle', function () {
+  it('eagle init', async () => {
+    const eagle = await Eagle.create(
+      ACCESS_KEY,
+      {
+        publicPath: '/test/eagle_params.pv',
+        forceWrite: true,
+      },
+      [testProfile]
+    );
+    expect(eagle.sampleRate).to.be.gt(0);
+    expect(eagle.frameLength).to.be.gt(0);
+    expect(typeof eagle.version).to.eq('string');
+    expect(eagle.version).length.to.be.gt(0);
+    await eagle.release();
+  });
+  it('eagle init (worker)', async () => {
+    const eagle = await EagleWorker.create(
+      ACCESS_KEY,
+      {
+        publicPath: '/test/eagle_params.pv',
+        forceWrite: true,
+      },
+      [testProfile]
+    );
+    expect(eagle.sampleRate).to.be.gt(0);
+    expect(eagle.frameLength).to.be.gt(0);
+    expect(typeof eagle.version).to.eq('string');
+    expect(eagle.version).length.to.be.gt(0);
+    await eagle.release();
+    await eagle.terminate();
+  });
+  it('eagle init with base64', async () => {
+    const eagle = await Eagle.create(
+      ACCESS_KEY,
+      {
+        base64: eagleParams,
+        forceWrite: true,
+      },
+      [testProfile]
+    );
+    expect(eagle.sampleRate).to.be.gt(0);
+    expect(eagle.frameLength).to.be.gt(0);
+    expect(typeof eagle.version).to.eq('string');
+    expect(eagle.version).length.to.be.gt(0);
+    await eagle.release();
+  });
+  it('eagle init with base64 (worker)', async () => {
+    const eagle = await EagleWorker.create(
+      ACCESS_KEY,
+      {
+        base64: eagleParams,
+        forceWrite: true,
+      },
+      [testProfile]
+    );
+    expect(eagle.sampleRate).to.be.gt(0);
+    expect(eagle.frameLength).to.be.gt(0);
+    expect(typeof eagle.version).to.eq('string');
+    expect(eagle.version).length.to.be.gt(0);
+    await eagle.release();
+    await eagle.terminate();
+  });
+  it('eagle process with reset', () => {
+    cy.getFramesFromFile('audio_samples/test.wav').then(async testPcm => {
+      try {
+        const eagle = await Eagle.create(
+          ACCESS_KEY,
+          {
+            publicPath: '/test/eagle_params.pv',
+            forceWrite: true,
+          },
+          [testProfile]
+        );
+        const scores = await getScores(eagle, testPcm);
+
+        expect(Math.max(...scores)).to.be.gt(0.5);
+        await eagle.reset();
+
+        const scores2 = await getScores(eagle, testPcm);
+
+        expect(scores2).to.be.deep.eq(scores);
+        await eagle.release();
+      } catch (e) {
+        expect(e).to.be.undefined;
+      }
+    });
+  });
+
+  it('eagle process with reset (worker)', () => {
+    cy.getFramesFromFile('audio_samples/test.wav').then(async testPcm => {
+      try {
+        const eagle = await EagleWorker.create(
+          ACCESS_KEY,
+          {
+            publicPath: '/test/eagle_params.pv',
+            forceWrite: true,
+          },
+          [testProfile]
+        );
+        const scores = await getScores(eagle, testPcm);
+
+        expect(Math.max(...scores)).to.be.gt(0.5);
+        await eagle.reset();
+
+        const scores2 = await getScores(eagle, testPcm);
+
+        expect(scores2).to.be.deep.eq(scores);
+        await eagle.release();
+        await eagle.terminate();
+      } catch (e) {
+        expect(e).to.be.undefined;
+      }
+    });
+  });
+
+  it('eagle process imposter', () => {
+    cy.getFramesFromFile('audio_samples/imposter.wav').then(async testPcm => {
+      try {
+        const eagle = await Eagle.create(
+          ACCESS_KEY,
+          {
+            publicPath: '/test/eagle_params.pv',
+            forceWrite: true,
+          },
+          [testProfile]
+        );
+        const scores = await getScores(eagle, testPcm);
+
+        expect(Math.max(...scores)).to.be.lt(0.5);
+        await eagle.release();
+      } catch (e) {
+        expect(e).to.be.undefined;
+      }
+    });
   });
 });

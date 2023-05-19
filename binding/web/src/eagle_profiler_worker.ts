@@ -9,20 +9,22 @@
   specific language governing permissions and limitations under the License.
 */
 
-import PvWorker from 'web-worker:./eagle_worker_handler.ts';
+import PvWorker from 'web-worker:./eagle_profiler_worker_handler.ts';
 
 import {
   EagleModel,
-  EagleWorkerProcessResponse,
-  EagleWorkerInitResponse,
-  EagleWorkerReleaseResponse,
-  EagleWorkerResetResponse,
+  EagleProfilerEnrollResult,
+  EagleProfilerWorkerEnrollResponse,
+  EagleProfilerWorkerExportResponse,
+  EagleProfilerWorkerInitResponse,
+  EagleProfilerWorkerReleaseResponse,
+  EagleProfilerWorkerResetResponse,
 } from './types';
 import { loadModel } from '@picovoice/web-utils';
 
-export class EagleWorker {
+export class EagleProfilerWorker {
   private readonly _worker: Worker;
-  private readonly _frameLength: number;
+  private readonly _minEnrollSamples: number;
   private readonly _sampleRate: number;
   private readonly _version: string;
 
@@ -31,21 +33,21 @@ export class EagleWorker {
 
   private constructor(
     worker: Worker,
-    frameLength: number,
+    minEnrollSamples: number,
     sampleRate: number,
     version: string
   ) {
     this._worker = worker;
-    this._frameLength = frameLength;
+    this._minEnrollSamples = minEnrollSamples;
     this._sampleRate = sampleRate;
     this._version = version;
   }
 
   /**
-   * Number of audio samples per frame expected by Eagle (i.e. length of the array passed into `.process()`)
+   * The minimum length of the input pcm required by `.enroll()`.
    */
-  get frameLength(): number {
-    return this._frameLength;
+  get minEnrollSamples(): number {
+    return this._minEnrollSamples;
   }
 
   /**
@@ -83,9 +85,9 @@ export class EagleWorker {
   }
 
   /**
-   * Creates an instance of the Picovoice Eagle Speaker Recognition Engine.
+   * Creates an instance of profiler component of the Eagle Speaker Recognition Engine.
    *
-   * @param accessKey: AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)
+   * @param accessKey AccessKey obtained from Picovoice Console (https://console.picovoice.ai/).
    * @param model Eagle model options.
    * @param model.base64 The model in base64 string to initialize Eagle.
    * @param model.publicPath The model path relative to the public directory.
@@ -93,34 +95,34 @@ export class EagleWorker {
    * Set to a different name to use multiple models across `eagle` instances.
    * @param model.forceWrite Flag to overwrite the model in storage even if it exists.
    * @param model.version Version of the model file. Increment to update the model file in storage.
-   * @param speakerProfiles A list of Eagle profiles. These can be constructed using `EagleProfiler`.
    *
-   * @return An instance of the Eagle engine.
+   * @return An instance of the Eagle Profiler.
    */
   public static async create(
     accessKey: string,
-    model: EagleModel,
-    speakerProfiles: Uint8Array[]
-  ): Promise<EagleWorker> {
+    model: EagleModel
+  ): Promise<EagleProfilerWorker> {
+    // const { processErrorCallback, ...rest } = options;
+
     const customWritePath = model.customWritePath
       ? model.customWritePath
       : 'eagle_model';
     const modelPath = await loadModel({ ...model, customWritePath });
 
     const worker = new PvWorker();
-    const returnPromise: Promise<EagleWorker> = new Promise(
+    const returnPromise: Promise<EagleProfilerWorker> = new Promise(
       (resolve, reject) => {
         // @ts-ignore - block from GC
         this.worker = worker;
         worker.onmessage = (
-          event: MessageEvent<EagleWorkerInitResponse>
+          event: MessageEvent<EagleProfilerWorkerInitResponse>
         ): void => {
           switch (event.data.command) {
             case 'ok':
               resolve(
-                new EagleWorker(
+                new EagleProfilerWorker(
                   worker,
-                  event.data.frameLength,
+                  event.data.minEnrollSamples,
                   event.data.sampleRate,
                   event.data.version
                 )
@@ -142,7 +144,6 @@ export class EagleWorker {
       command: 'init',
       accessKey: accessKey,
       modelPath: modelPath,
-      speakerProfiles: speakerProfiles,
       wasm: this._wasm,
       wasmSimd: this._wasmSimd,
     });
@@ -151,51 +152,68 @@ export class EagleWorker {
   }
 
   /**
-   * Processes a frame of audio and returns a list of similarity scores for each speaker profile.
+   * Enrolls a speaker. This function should be called multiple times with different utterances of the same speaker
+   * until `percentage` reaches `100.0`, at which point a speaker voice profile can be exported using `.export()`.
+   * Any further enrollment can be used to improve the speaker profile. The minimum length of the input pcm to
+   * `.enroll()` can be obtained by calling `.minEnrollSamples`.
+   * The audio data used for enrollment should satisfy the following requirements:
+   *    - only one speaker should be present in the audio
+   *    - the speaker should be speaking in a normal voice
+   *    - the audio should contain no speech from other speakers and no other sounds (e.g. music)
+   *    - it should be captured in a quiet environment with no background noise
+   * @param pcm Audio data for enrollment. The audio needs to have a sample rate equal to `.sampleRate` and be
+   * 16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
    *
-   * @param pcm A frame of audio samples. The number of samples per frame can be attained by calling
-   * `.frameLength`. The incoming audio needs to have a sample rate equal to `.sampleRate` and be 16-bit
-   * linearly-encoded. Eagle operates on single-channel audio.
-   *
-   * @return A list of similarity scores for each speaker profile. A higher score indicates that the voice
-   * belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match.
+   * @return The percentage of completeness of the speaker enrollment process along with the feedback code
+   * corresponding to the last enrollment attempt:
+   *    - `AUDIO_OK`: The audio is good for enrollment.
+   *    - `AUDIO_TOO_SHORT`: Audio length is insufficient for enrollment,
+   *       i.e. it is shorter than`.min_enroll_samples`.
+   *    - `UNKNOWN_SPEAKER`: There is another speaker in the audio that is different from the speaker
+   *       being enrolled. Too much background noise may cause this error as well.
+   *    - `NO_VOICE_FOUND`: The audio does not contain any voice, i.e. it is silent or
+   *       has a low signal-to-noise ratio.
+   *    - `QUALITY_ISSUE`: The audio quality is too low for enrollment due to a bad microphone
+   *       or recording environment.
    */
-  public process(
+  public enroll(
     pcm: Int16Array
     // options: {
     //   transfer?: boolean;
     //   transferCallback?: (data: Int16Array) => void;
     // } = {}
-  ): Promise<number[]> {
+  ): Promise<EagleProfilerEnrollResult> {
     // const { transfer = false, transferCallback } = options;
 
-    const returnPromise: Promise<number[]> = new Promise((resolve, reject) => {
-      this._worker.onmessage = (
-        event: MessageEvent<EagleWorkerProcessResponse>
-      ): void => {
-        // if (transfer && transferCallback && event.data.inputFrame) {
-        //   transferCallback(new Int16Array(event.data.inputFrame.buffer));
-        // }
-        switch (event.data.command) {
-          case 'ok':
-            resolve(event.data.scores);
-            break;
-          case 'failed':
-          case 'error':
-            reject(event.data.message);
-            break;
-          default:
-            // @ts-ignore
-            reject(`Unrecognized command: ${event.data.command}`);
-        }
-      };
-    });
+    const returnPromise: Promise<EagleProfilerEnrollResult> = new Promise(
+      (resolve, reject) => {
+        this._worker.onmessage = (
+          event: MessageEvent<EagleProfilerWorkerEnrollResponse>
+        ): void => {
+          // if (transfer && transferCallback && event.data.inputFrame) {
+          //   transferCallback(new Int16Array(event.data.inputFrame.buffer));
+          // }
+          switch (event.data.command) {
+            case 'ok':
+              resolve(event.data.result);
+              break;
+            case 'failed':
+            case 'error':
+              reject(event.data.message);
+              break;
+            default:
+              // @ts-ignore
+              reject(`Unrecognized command: ${event.data.command}`);
+          }
+        };
+      }
+    );
 
     // const transferable = transfer ? [pcm.buffer] : [];
 
     this._worker.postMessage(
       {
-        command: 'process',
+        command: 'enroll',
         inputFrame: pcm,
         // transfer: transfer,
       }
@@ -206,13 +224,47 @@ export class EagleWorker {
   }
 
   /**
-   * Resets the internal state of the engine.
-   * It must be called before processing a new sequence of audio frames.
+   * Exports the speaker profile of the current session.
+   * Will throw error if the profile is not ready.
+   *
+   * @return A byte array containing the speaker profile.
+   */
+  public async export(): Promise<Uint8Array> {
+    const returnPromise: Promise<Uint8Array> = new Promise(
+      (resolve, reject) => {
+        this._worker.onmessage = (
+          event: MessageEvent<EagleProfilerWorkerExportResponse>
+        ): void => {
+          switch (event.data.command) {
+            case 'ok':
+              resolve(event.data.profile);
+              break;
+            case 'failed':
+            case 'error':
+              reject(event.data.message);
+              break;
+            default:
+              // @ts-ignore
+              reject(`Unrecognized command: ${event.data.command}`);
+          }
+        };
+      }
+    );
+    this._worker.postMessage({
+      command: 'export',
+    });
+
+    return returnPromise;
+  }
+
+  /**
+   * Resets the internal state of Eagle Profiler.
+   * It should be called before starting a new enrollment session.
    */
   public async reset(): Promise<void> {
     const returnPromise: Promise<void> = new Promise((resolve, reject) => {
       this._worker.onmessage = (
-        event: MessageEvent<EagleWorkerResetResponse>
+        event: MessageEvent<EagleProfilerWorkerResetResponse>
       ): void => {
         switch (event.data.command) {
           case 'ok':
@@ -236,12 +288,12 @@ export class EagleWorker {
   }
 
   /**
-   * Releases resources acquired by Eagle
+   * Releases resources acquired by Eagle Profiler
    */
   public release(): Promise<void> {
     const returnPromise: Promise<void> = new Promise((resolve, reject) => {
       this._worker.onmessage = (
-        event: MessageEvent<EagleWorkerReleaseResponse>
+        event: MessageEvent<EagleProfilerWorkerReleaseResponse>
       ): void => {
         switch (event.data.command) {
           case 'ok':
