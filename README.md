@@ -23,17 +23,17 @@ Eagle is an on-device speaker recognition engine. Eagle is:
     - [Overview](#overview)
     - [AccessKey](#accesskey)
     - [Demos](#demos)
-      - [Python](#python-demos)
-      - [Android](#android-demo)
-      - [iOS](#ios-demo)
-      - [C](#c-demos)
-      - [Web](#web-demo)
+        - [Python](#python)
+        - [Android](#android)
+        - [iOS](#ios)
+        - [C](#c)
+        - [Web](#web)
     - [SDKs](#sdks)
-      - [Python](#python)
-      - [Android](#android)
-      - [iOS](#ios)
-      - [C](#c)
-      - [Web](#web)
+        - [Python](#python)
+        - [Android](#android)
+        - [iOS](#ios)
+        - [C](#c)
+        - [Web](#web)
     - [Releases](#releases)
 
 ## Overview
@@ -41,15 +41,15 @@ Eagle is an on-device speaker recognition engine. Eagle is:
 Eagle consists of two distinct steps: Enrollment and Recognition. In the enrollment step, Eagle analyzes a series of
 utterances from a particular speaker to learn their unique voiceprint. This step results in a `Profile`,
 which can be stored and utilized in the next step. During the Recognition step, Eagle registers speakers using
-the `Profile`s generated in the enrollment phase. Then, Eagle compares the incoming frames of audio to the voiceprints of
-all enrolled speakers in real-time to determine the similarity between them.
+the `Profile`s generated in the enrollment phase. Then, Eagle compares the incoming frames of audio to the voiceprints
+of all enrolled speakers in real-time to determine the similarity between them.
 
 ## AccessKey
 
 AccessKey is your authentication and authorization token for deploying Picovoice SDKs, including Eagle. Anyone who is
 using Picovoice needs to have a valid AccessKey. You must keep your AccessKey secret. You would need internet
-connectivity to validate your AccessKey with Picovoice license servers even though the speaker recognition is running 100%
-offline.
+connectivity to validate your AccessKey with Picovoice license servers even though the speaker recognition is running
+100% offline.
 
 AccessKey also verifies that your usage is within the limits of your account. Everyone who signs up for
 [Picovoice Console](https://console.picovoice.ai/) receives the `Free Tier` usage rights described
@@ -65,15 +65,40 @@ Install the demo package:
 pip3 install pveagledemo
 ```
 
-```console
-eagle_demo_mic --access_key ${ACCESS_KEY}
-```
+#### Speaker Enrollment
+
+Create a new speaker profile:
 
 ```console
-eagle_demo_file \
+eagle_demo_mic enroll --access_key ${ACCESS_KEY} --output_profile_path ${OUTPUT_PROFILE_PATH}
+```
+
+or
+
+```console
+eagle_demo_file enroll \
     --access_key ${ACCESS_KEY} \
-    --test_audio_paths ${TEST_AUDIO_PATHS} \
     --enroll_audio_paths ${ENROLL_AUDIO_PATHS}
+    --output_profile_path ${OUTPUT_PROFILE_PATH}
+```
+
+#### Speaker Recognition
+
+Test the speaker recognition engine:
+
+```console
+eagle_demo_mic test \
+    --access_key ${ACCESS_KEY} \
+    --input_profile_paths ${INPUT_PROFILE_PATH}
+```
+
+or
+
+```console
+eagle_demo_file test \
+    --access_key ${ACCESS_KEY} \
+    --input_profile_paths ${INPUT_PROFILE_PATH}
+    --test_audio_paths ${TEST_AUDIO_PATHS}
 ```
 
 Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console.
@@ -98,17 +123,32 @@ To list the available audio input devices:
 ./demo/c/build/eagle_demo_mic -s
 ```
 
-To run the demo:
+#### Speaker Enrollment
+
+To enroll a new speaker:
 
 ```console
-./demo/c/build/eagle_demo_mic -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY}
+./demo/c/build/eagle_demo_mic -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -e ${OUTPUT_PROFILE_PATH}
+```
+
+#### Speaker Recognition
+
+To test the speaker recognition engine:
+
+```console
+./demo/c/build/eagle_demo_mic -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -i ${INPUT_PROFILE_PATH}
 ```
 
 Replace `${LIBRARY_PATH}` with path to appropriate library available under [lib](./lib), `${MODEL_PATH}` with path
 to the model file available under [lib/common](./lib/common), `${ACCESS_KEY}` with AccessKey
-obtained from [Picovoice Console](https://console.picovoice.ai/).
+obtained from [Picovoice Console](https://console.picovoice.ai/). `${OUTPUT_PROFILE_PATH}` in the enrollment step is the
+path to the generated speaker profile. `${INPUT_PROFILE_PATH}` in the recognition step is the path to the generated
+speaker
+profile to be tested.
 
 For more information about C demos go to [demo/c](./demo/c).
+
+### Web
 
 ## SDKs
 
@@ -202,9 +242,9 @@ pv_status_t status = pv_eagle_profiler_init_func(
             access_key,
             model_path,
             &eagle_profiler);
-    if (status != PV_STATUS_SUCCESS) {
-        // error handling logic
-    }
+if (status != PV_STATUS_SUCCESS) {
+    // error handling logic
+}
 ```
 
 Replace `${ACCESS_KEY}` with the AccessKey obtained from Picovoice Console, and `${MODEL_PATH}` with the path to the
@@ -217,14 +257,14 @@ extern const int16_t *get_next_enroll_audio_frame(void);
 extern const int32_t get_next_enroll_audio_num_samples(void);
 
 float enroll_percentage = 0.0f;
-pv_eagle_profiler_enrollment_error_t error = PV_EAGLE_PROFILER_ENROLLMENT_ERROR_NONE;
+pv_eagle_profiler_enroll_feedback_t feedback = PV_EAGLE_PROFILER_ENROLLMENT_ERROR_AUDIO_OK;
 
 while (enroll_percentage < 100.0f) {
   status = pv_eagle_profiler_enroll(
           eagle_profiler,
           get_next_enroll_audio_frame(),
           get_next_enroll_audio_num_samples(),
-          &error,
+          &feedback,
           &enroll_percentage);
   if (status != PV_STATUS_SUCCESS) {
       // error handling logic
@@ -232,7 +272,7 @@ while (enroll_percentage < 100.0f) {
 }
 
 int32_t profile_size_bytes = 0;
-status = pv_eagle_profiler_speaker_profile_size(eagle_profiler, &profile_size_bytes);
+status = pv_eagle_profiler_export_size(eagle_profiler, &profile_size_bytes);
 void *speaker_profile = malloc(profile_size_bytes);
 status = pv_eagle_profiler_export(
         eagle_profiler,

@@ -39,11 +39,11 @@ audio to the voiceprints of all enrolled speakers in real-time to determine the 
 
 ## Microphone Demo
 
-The microphone demo captures audio input from a microphone that is connected. To run the demo, use the following command in the terminal:
+The microphone demo captures audio input from a microphone that is connected. To run the demo, use the following command
+in the terminal:
 
 ```console
-eagle_demo_mic.py --access_key ${ACCESS_KEY} \\
-  {enroll,test} ...
+eagle_demo_mic {enroll, test} --access_key ${ACCESS_KEY} ...
 ```
 
 Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console.
@@ -51,11 +51,11 @@ Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console.
 The commands `enroll` and `test` are used to create a speaker profile and perform speaker recognition, respectively.
 Detailed explanations of these commands will be provided in their respective sections.
 
-Furthermore, the demo offers optional arguments, which can be accessed by utilizing the --help argument. By doing so,
+Furthermore, the demo offers optional arguments, which can be accessed by utilizing the `--help` argument. By doing so,
 you will receive a comprehensive listing of the available arguments along with their corresponding descriptions.
 
 ```console
-eagle_demo_mic.py --help
+eagle_demo_mic --help
 ```
 
 ### Speaker Enrollment
@@ -65,8 +65,7 @@ using the audio captured from the microphone. It will display the progress perce
 100%. Once completed, it will save the profile of the enrolled speaker to the disk.
 
 ```console
-eagle_demo_mic.py --access_key ${ACCESS_KEY} \\
-  enroll --output_profile_path ${OUTPUT_PROFILE_PATH}
+eagle_demo_mic enroll --access_key ${ACCESS_KEY} --output_profile_path ${OUTPUT_PROFILE_PATH}
 ``````
 
 Replace `${OUTPUT_PROFILE_PATH}` with the absolute path where the generated profile should be written.
@@ -77,20 +76,18 @@ Once the speaker profile for all speakers are created, the demo can be run in th
 command:
 
 ```console
-eagle_demo_mic.py --access_key ${ACCESS_KEY} \\
-  test --input_profile_paths ${INPUT_PROFILE_PATH_1 ...}
+eagle_demo_mic test --access_key ${ACCESS_KEY} --input_profile_paths ${INPUT_PROFILE_PATH_1 ...}
 ```
 
-In this mode, you can include multiple speaker profiles by specifying them with the `--input_profile_paths` option. Eagle
-will assess and provide a distinct score for each profile, which will be displayed in the terminal.
+In this mode, you can include multiple speaker profiles by specifying them with the `--input_profile_paths` option.
+Eagle will assess and provide a distinct score for each profile, which will be displayed in the terminal.
 
 ## File Demo
 
 Similar to the mic demo, the file demo can be run in two modes: `enroll` and `test`
 
 ```console
-eagle_demo_file.py --access_key ${ACCESS_KEY} \\
-  {enroll,test} ...
+eagle_demo_file {enroll,test} --access_key ${ACCESS_KEY} ...
 ```
 
 Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console.
@@ -102,7 +99,7 @@ To view the optional arguments for the demo, use the `--help` argument. This wil
 and their descriptions.
 
 ```console
-eagle_demo_file.py --help
+eagle_demo_file --help
 ```
 
 ### Speaker Enrollment
@@ -110,12 +107,12 @@ eagle_demo_file.py --help
 To run the demo in `enroll` mode, you need two additional input arguments along with the AccessKey.
 
 ```console
-eagle_demo_file.py --access_key ${ACCESS_KEY} \\
-  enroll --enroll_audio_paths ${ENROLL_AUDIO_PATH_1 ...} --output_profile_path ${OUTPUT_PROFILE_PATH}
+eagle_demo_file enroll --access_key ${ACCESS_KEY} \
+  --output_profile_path ${OUTPUT_PROFILE_PATH} --enroll_audio_paths ${ENROLL_AUDIO_PATH_1 ...} 
 ```
 
-In this command, `{ENROLL_AUDIO_PATH_1 ...}` represents the absolute paths to the enroll audio files. If multiple files are
-provided, Eagle will process all of them. Once the specified files are processed, the demo will generate a profile at
+In this command, `{ENROLL_AUDIO_PATH_1 ...}` represents the absolute paths to the enroll audio files. If multiple files
+are provided, Eagle will process all of them. Once the specified files are processed, the demo will generate a profile at
 `${OUTPUT_PROFILE_PATH}`.
 
 ### Speaker Recognition
@@ -125,8 +122,8 @@ The file demo requires a test audio and one or more speaker profiles that were c
 To run the demo, use the following command in the console:
 
 ```console
-eagle_demo_file.py --access_key ${ACCESS_KEY} \\
-  test --input_profile_paths INPUT_PROFILE_PATHS [INPUT_PROFILE_PATHS ...] --test_audio_path TEST_AUDIO_PATH
+eagle_demo_file test --access_key ${ACCESS_KEY} \
+  --input_profile_paths ${INPUT_PROFILE_PATH_1 ...} --test_audio_path ${TEST_AUDIO_PATH}
 ```
 
 The demo will display the result for each enrolled speaker in the terminal.
@@ -134,7 +131,7 @@ The demo will display the result for each enrolled speaker in the terminal.
 Optionally, you can also generate a `.csv` file for further analysis by including the `--csv_output_path` parameter:
 
 ```console
-eagle_demo_file.py --access_key ${ACCESS_KEY} \\
-  test --input_profile_paths INPUT_PROFILE_PATHS [INPUT_PROFILE_PATHS ...] --test_audio_path ${TEST_AUDIO_PATH} \\
+eagle_demo_file test --access_key ${ACCESS_KEY} \
+  --input_profile_paths ${INPUT_PROFILE_PATH_1 ...} --test_audio_path ${TEST_AUDIO_PATH} \
   --csv_output_path ${CSV_OUTPUT_PATH}
 ```
