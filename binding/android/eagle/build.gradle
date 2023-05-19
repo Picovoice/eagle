@@ -36,13 +36,13 @@ dependencies {
 }
 
 task copyLibs(type: Copy) {
-    from("${rootDir}/../../../lib/android")
+    from("${rootDir}/../../lib/android")
     into("${rootDir}/eagle/src/main/jniLibs")
 }
 
 task copyParams(type: Copy) {
-    from("${rootDir}/../../../lib/common")
-    include('eagle_param.pv')
+    from("${rootDir}/../../lib/common")
+    include('eagle_params.pv')
     into("${rootDir}/eagle/src/main/res/raw")
 }
 

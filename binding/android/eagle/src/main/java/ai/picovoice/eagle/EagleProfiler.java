@@ -23,9 +23,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * Android binding for Eagle speaker recognition engine.
+ * Android binding for the profiler of the Eagle speaker recognition engine.
+ * It enrolls a speaker given a set of utterances and then constructs a profile for the enrolled speaker.
  */
-public class Eagle {
+public class EagleProfiler {
 
     private static String defaultModelPath;
 
@@ -40,24 +41,10 @@ public class Eagle {
      *
      * @param accessKey AccessKey obtained from Picovoice Console
      * @param modelPath Absolute path to the file containing Eagle model parameters.
-     * @param speakerProfiles A list of EagleProfile objects. This can be constructed using `EagleProfiler`.
-     * @throws EagleException if there is an error while initializing Eagle.
+     * @throws EagleException if there is an error while initializing EagleProfiler.
      */
-    private Eagle(
-            String accessKey,
-            String modelPath,
-            EagleProfile[] speakerProfiles) throws EagleException {
-        long[] profileHandles = new long[speakerProfiles.length];
-
-        for (int i = 0; i < speakerProfiles.length; i++) {
-            profileHandles[i] = speakerProfiles[i].profileNative.handle;
-        }
-
-        handle = EagleNative.init(
-                accessKey,
-                modelPath,
-                speakerProfiles.length,
-                profileHandles);
+    private EagleProfiler(String accessKey, String modelPath) throws EagleException {
+        handle = EagleProfilerNative.init(accessKey, modelPath);
     }
 
     /**
@@ -65,48 +52,57 @@ public class Eagle {
      */
     public void delete() {
         if (handle != 0) {
-            EagleNative.delete(handle);
+            EagleProfilerNative.delete(handle);
             handle = 0;
         }
     }
 
     /**
-     * Processes a frame of audio and returns a list of similarity scores for each speaker profile.
+     * Enrolls a speaker. This function should be called multiple times with different utterances of the same speaker
+     * until `percentage` reaches `100.0`. Any further enrollment can be used to improve the speaker voice profile.
+     * The minimum number of required samples can be obtained by calling `.getMinEnrollSamples()`.
+     * The audio data used for enrollment should satisfy the following requirements:
+     *     - only one speaker should be present in the audio
+     *     - the speaker should be speaking in a normal voice
+     *     - the audio should contain no speech from other speakers and no other sounds (e.g. music)
+     *     - it should be captured in a quiet environment with no background noise
      *
-     * @param pcm A frame of audio samples. The number of samples per frame can be attained by calling
-     *            `.frame_length`. The incoming audio needs to have a sample rate equal to `.sample_rate` and be 16-bit
-     *            linearly-encoded. Eagle operates on single-channel audio.
-     * @return A list of similarity scores for each speaker profile. A higher score indicates that the voice
-     *         belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match.
-     * @throws EagleException if there is an error while processing audio frames.
+     * @param pcm The audio needs to have a sample rate equal to `.getSampleRate()` and be
+     *            16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
+     * @return The percentage of completeness of the speaker enrollment process along with the feedback code
+     * corresponding to the last enrollment attempt.
+     * @throws EagleException if there is an error while enrolling speaker.
      */
-    public float[] process(short[] pcm) throws EagleException {
+    public EagleProfilerEnrollFeedback enroll(short[] pcm) throws EagleException {
         if (handle == 0) {
-            throw new EagleInvalidStateException("Attempted to call eagle process after delete.");
+            throw new EagleInvalidStateException("Attempted to call eagle enroll after delete.");
         }
 
-        if (pcm.length != this.getFrameLength()) {
-            throw new EagleInvalidArgumentError(
-                    String.format("Length of input frame %d does not match required frame length %d",
-                            pcm.length,
-                            this.getSampleRate()));
-        }
-
-        return EagleNative.process(handle, pcm);
+         return EagleProfilerNative.enroll(handle, pcm, pcm.length);
     }
 
     /**
-     * Resets the internal state of the engine. It must be called before
-     * processing a new sequence of audio frames.
+     * Exports the speaker profile of the current session. Will raise an exception if the profile is not ready.
      *
-     * @throws EagleException if there is an error while resetting Eagle.
+     * @return An EagleProfile object.
+     */
+    public EagleProfile export() throws EagleException {
+        if (handle == 0) {
+            throw new EagleInvalidStateException("Attempted to call eagle profile export after delete.");
+        }
+
+        return new EagleProfile(EagleProfilerNative.export(handle));
+    }
+
+    /**
+     * Resets the internal state of Eagle Profiler. It should be called before starting a new enrollment session.
      */
     public void reset() throws EagleException {
         if (handle == 0) {
             throw new EagleInvalidStateException("Attempted to call eagle reset after delete.");
         }
 
-        EagleNative.reset(handle);
+        EagleProfilerNative.reset(handle);
     }
 
     /**
@@ -115,16 +111,7 @@ public class Eagle {
      * @return Version.
      */
     public String getVersion() {
-        return EagleNative.getVersion();
-    }
-
-    /**
-     * Getter for number of audio samples per frame.
-     *
-     * @return Number of audio samples per frame.
-     */
-    public int getFrameLength() {
-        return EagleNative.getFrameLength();
+        return EagleProfilerNative.getVersion();
     }
 
     /**
@@ -133,15 +120,22 @@ public class Eagle {
      * @return Audio sample rate accepted by Picovoice.
      */
     public int getSampleRate() {
-        return EagleNative.getSampleRate();
+        return EagleProfilerNative.getSampleRate();
+    }
+
+    /**
+     * Getter for minimum length of the input pcm required by `.enroll()`.
+     *
+     * @return minimum length of the input pcm.
+     */
+    public int getMinEnrollSamples() throws EagleException {
+        return EagleProfilerNative.minEnrollSamples(handle);
     }
 
     public static class Builder {
 
         private String accessKey = null;
         private String modelPath = null;
-
-        private EagleProfile[] speakerProfiles = null;
 
         public Builder setAccessKey(String accessKey) {
             this.accessKey = accessKey;
@@ -150,11 +144,6 @@ public class Eagle {
 
         public Builder setModelPath(String modelPath) {
             this.modelPath = modelPath;
-            return this;
-        }
-
-        public Builder setSpeakerProfiles(EagleProfile[] speakerProfiles) {
-            this.speakerProfiles = speakerProfiles;
             return this;
         }
 
@@ -185,13 +174,13 @@ public class Eagle {
         }
 
         /**
-         * Validates properties and creates an instance of the Eagle speaker recognition engine.
+         * Validates properties and creates an instance of the Eagle profiler.
          *
          * @param context Android app context (for extracting Eagle resources)
-         * @return An instance Eagle speaker recognition engine
-         * @throws EagleException if there is an error while initializing Eagle.
+         * @return An instance Eagle profiler
+         * @throws EagleException if there is an error while initializing Eagle profiler.
          */
-        public Eagle build(Context context) throws EagleException {
+        public EagleProfiler build(Context context) throws EagleException {
             if (accessKey == null || this.accessKey.equals("")) {
                 throw new EagleInvalidArgumentException("No AccessKey was provided to Eagle");
             }
@@ -215,11 +204,7 @@ public class Eagle {
                 }
             }
 
-            if (speakerProfiles == null || this.speakerProfiles.length == 0) {
-                throw new EagleInvalidArgumentException("No speaker profiles provided to Eagle");
-            }
-
-            return new Eagle(accessKey, modelPath, speakerProfiles);
+            return new EagleProfiler(accessKey, modelPath);
         }
     }
 

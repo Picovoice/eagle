@@ -14,7 +14,7 @@ package ai.picovoice.eagle;
  * Enumeration of possible enrollment feedback codes:
  * - `AUDIO_OK`: The audio is good for enrollment.
  * - `AUDIO_TOO_SHORT`: Audio length is insufficient for enrollment,
- *      i.e. it is shorter than`.min_enroll_samples`.
+ *      i.e. it is shorter than`EagleProfiler.getMinEnrollSamples()`.
  * - `UNKNOWN_SPEAKER`: There is another speaker in the audio that is different from the speaker
  *      being enrolled. Too much background noise may cause this error as well.
  * - `NO_VOICE_FOUND`: The audio does not contain any voice, i.e. it is silent or
