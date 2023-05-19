@@ -1,0 +1,2 @@
+-keep class ai.picovoice.eagle.*Exception { <init>(...); }
+-keep class ai.picovoice.eagle.Eagle
