@@ -16,7 +16,7 @@ on:
       - 'lib/mac/**'
       - 'lib/raspberry-pi/**'
       - 'lib/windows/**'
-      - 'resources/audio_samples/test.wav'
+      - 'resources/audio_samples/*.wav'
   pull_request:
     branches: [main, 'v[0-9]+.[0-9]+']
     paths:
@@ -31,7 +31,7 @@ on:
       - 'lib/mac/**'
       - 'lib/raspberry-pi/**'
       - 'lib/windows/**'
-      - 'resources/audio_samples/test.wav'
+      - 'resources/audio_samples/*.wav'
 
 defaults:
   run:

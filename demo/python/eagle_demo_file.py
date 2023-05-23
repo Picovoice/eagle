@@ -147,7 +147,7 @@ def main():
         speaker_profiles = []
         speaker_labels = []
         for input_profile_path in args.input_profile_paths:
-            speaker_labels.append(os.path.splitext(os.path.basename(input_profile_path), )[0])
+            speaker_labels.append(os.path.splitext(os.path.basename(input_profile_path))[0])
             with open(input_profile_path, 'rb') as f:
                 speaker_profiles.append(pveagle.EagleProfile.from_bytes(f.read()))
 

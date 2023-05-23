@@ -68,7 +68,7 @@ class EagleCTestCase(unittest.TestCase):
         self.run_eagle(["speaker_1_utt_1.wav", "speaker_1_utt_2.wav"], is_enroll=True)
 
     def test_eagle_test(self):
-        self.run_eagle(["test.wav"], is_enroll=False)
+        self.run_eagle(["speaker_1_test_utt.wav"], is_enroll=False)
 
 
 if __name__ == '__main__':

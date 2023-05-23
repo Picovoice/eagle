@@ -29,8 +29,8 @@ class EagleTestCase(unittest.TestCase):
     ENROLL_PATHS = [
         os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/speaker_1_utt_1.wav'),
         os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/speaker_1_utt_2.wav')]
-    TEST_PATH = os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/test.wav')
-    IMPOSTER_PATH = os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/imposter.wav')
+    TEST_PATH = os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/speaker_1_test_utt.wav')
+    IMPOSTER_PATH = os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/speaker_2_test_utt.wav')
     access_key: str
     eagle: Eagle
     eagle_profiler: EagleProfiler

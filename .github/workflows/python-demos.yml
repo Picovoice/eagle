@@ -59,4 +59,4 @@ jobs:
         python eagle_demo_file.py test
         --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
         --input_profile_paths test.egl
-        --test_audio_path ../../resources/audio_samples/test.wav
+        --test_audio_path ../../resources/audio_samples/speaker_1_test_utt.wav

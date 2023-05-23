@@ -28,7 +28,7 @@ class EaglePerformanceTestCase(unittest.TestCase):
     ENROLL_PATHS = [
         os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/speaker_1_utt_1.wav'),
         os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/speaker_1_utt_2.wav')]
-    TEST_PATH = os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/test.wav')
+    TEST_PATH = os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/speaker_1_test_utt.wav')
     access_key: str
 
     num_test_iterations: int
