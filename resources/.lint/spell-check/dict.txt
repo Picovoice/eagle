@@ -25,3 +25,4 @@ androidx
 appcompat
 appbar
 eagledemo
+gradlew
