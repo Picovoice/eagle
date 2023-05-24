@@ -70,7 +70,7 @@ public class EagleProfiler {
      * @param pcm The audio needs to have a sample rate equal to `.getSampleRate()` and be
      *            16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
      * @return The percentage of completeness of the speaker enrollment process along with the feedback code
-     * corresponding to the last enrollment attempt.
+     *         corresponding to the last enrollment attempt.
      * @throws EagleException if there is an error while enrolling speaker.
      */
     public EagleProfilerEnrollFeedback enroll(short[] pcm) throws EagleException {
@@ -78,7 +78,7 @@ public class EagleProfiler {
             throw new EagleInvalidStateException("Attempted to call eagle enroll after delete.");
         }
 
-         return EagleProfilerNative.enroll(handle, pcm, pcm.length);
+        return EagleProfilerNative.enroll(handle, pcm, pcm.length);
     }
 
     /**
@@ -132,6 +132,9 @@ public class EagleProfiler {
         return EagleProfilerNative.minEnrollSamples(handle);
     }
 
+    /**
+     * Builder for creating instance of EagleProfiler.
+     */
     public static class Builder {
 
         private String accessKey = null;
@@ -159,7 +162,11 @@ public class EagleProfiler {
             }
         }
 
-        private static String extractResource(Context context, InputStream srcFileStream, String dstFilename) throws IOException {
+        private static String extractResource(
+                Context context,
+                InputStream srcFileStream,
+                String dstFilename
+        ) throws IOException {
             InputStream is = new BufferedInputStream(srcFileStream, 256);
             OutputStream os = new BufferedOutputStream(context.openFileOutput(dstFilename, Context.MODE_PRIVATE), 256);
             int r;

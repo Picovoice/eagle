@@ -34,6 +34,7 @@ public class Eagle {
     }
 
     private long handle;
+    private int numSpeakers;
 
     /**
      * Constructor.
@@ -58,6 +59,8 @@ public class Eagle {
                 modelPath,
                 speakerProfiles.length,
                 profileHandles);
+
+        numSpeakers = speakerProfiles.length;
     }
 
     /**
@@ -74,8 +77,8 @@ public class Eagle {
      * Processes a frame of audio and returns a list of similarity scores for each speaker profile.
      *
      * @param pcm A frame of audio samples. The number of samples per frame can be attained by calling
-     *            `.getFrameLength()`. The incoming audio needs to have a sample rate equal to `.getSampleRate()` and be 16-bit
-     *            linearly-encoded. Eagle operates on single-channel audio.
+     *            `.getFrameLength()`. The incoming audio needs to have a sample rate equal
+*                 to `.getSampleRate()` and be 16-bit linearly-encoded. Eagle operates on single-channel audio.
      * @return A list of similarity scores for each speaker profile. A higher score indicates that the voice
      *         belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match.
      * @throws EagleException if there is an error while processing audio frames.
@@ -92,7 +95,7 @@ public class Eagle {
                             this.getSampleRate()));
         }
 
-        return EagleNative.process(handle, pcm);
+        return EagleNative.process(handle, pcm, numSpeakers);
     }
 
     /**
@@ -136,6 +139,9 @@ public class Eagle {
         return EagleNative.getSampleRate();
     }
 
+    /**
+     * Builder for creating instance of Eagle.
+     */
     public static class Builder {
 
         private String accessKey = null;
@@ -158,7 +164,7 @@ public class Eagle {
             return this;
         }
 
-        public Builder setSpeakerProfiler(EagleProfile speakerProfile) {
+        public Builder setSpeakerProfile(EagleProfile speakerProfile) {
             this.speakerProfiles = new EagleProfile[]{ speakerProfile };
             return this;
         }
@@ -175,7 +181,11 @@ public class Eagle {
             }
         }
 
-        private static String extractResource(Context context, InputStream srcFileStream, String dstFilename) throws IOException {
+        private static String extractResource(
+                Context context,
+                InputStream srcFileStream,
+                String dstFilename
+        ) throws IOException {
             InputStream is = new BufferedInputStream(srcFileStream, 256);
             OutputStream os = new BufferedOutputStream(context.openFileOutput(dstFilename, Context.MODE_PRIVATE), 256);
             int r;

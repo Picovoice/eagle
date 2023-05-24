@@ -1,0 +1,27 @@
+ext {
+    defaultTargetSdkVersion = 33
+}
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.2.2'
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        flatDir {
+            dirs 'file:///home/kwangsoo/work/github/eagle/binding/android/eagle/build/outputs/aar'
+        }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

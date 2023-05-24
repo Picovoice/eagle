@@ -16,8 +16,6 @@ import java.util.HashMap;
 
 class EagleNative {
 
-    private static final HashMap<Long, Integer> numSpeakerMap = new HashMap<>();
-
     static native int getFrameLength();
 
     static native int getSampleRate();
@@ -32,19 +30,8 @@ class EagleNative {
 
     static native void delete(long object);
 
-    static native float[] process(long object, short[] pcm) throws EagleException;
+    static native float[] process(long object, short[] pcm, int numSpeakers) throws EagleException;
 
     static native void reset(long object) throws EagleException;
 
-    private static void addNumSpeaker(long object, int numSpeakers) {
-        numSpeakerMap.put(object, numSpeakers);
-    }
-
-    private static int getNumSpeaker(long object) {
-        return numSpeakerMap.get(object);
-    }
-
-    private static void removeNumSpeaker(long object) {
-        numSpeakerMap.remove(object);
-    }
 }

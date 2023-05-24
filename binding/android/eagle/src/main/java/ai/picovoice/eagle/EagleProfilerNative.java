@@ -27,7 +27,7 @@ class EagleProfilerNative {
     static native EagleProfilerEnrollFeedback enroll(
             long handle,
             short[] pcm,
-            int num_samples) throws EagleException;
+            int numSamples) throws EagleException;
 
     static native EagleProfileNative export(long handle) throws EagleException;
 

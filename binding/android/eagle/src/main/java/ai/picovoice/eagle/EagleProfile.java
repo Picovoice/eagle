@@ -37,11 +37,11 @@ public class EagleProfile {
     }
 
     /**
-     * Gets the speaker profile in the form of a byte array
+     * Gets the speaker profile in the form of a byte array.
      *
      * @return the speaker profile in the form of a byte array.
      */
-    public byte[] getBytes(){
+    public byte[] getBytes() {
         return profileNative.getBytes();
     }
 
