@@ -64,7 +64,7 @@ jobs:
         --token ${{secrets.APPCENTERAPITOKEN}}
         --app "Picovoice/Eagle-Android"
         --devices "Picovoice/android-min-max"
-        --app-path eagle-demo-app/build/outputs/apk/en/debug/eagle-demo-app-en-debug.apk
+        --app-path eagle-demo-app/build/outputs/apk/debug/eagle-demo-app-debug.apk
         --test-series "eagle-android"
         --locale "en_US"
-        --build-dir eagle-demo-app/build/outputs/apk/androidTest/en/debug
+        --build-dir eagle-demo-app/build/outputs/apk/androidTest/debug
