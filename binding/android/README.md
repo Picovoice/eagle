@@ -58,7 +58,8 @@ final String accessKey = "${ACCESS_KEY}";
 
 try {
     EagleProfiler eagleProfiler = new EagleProfiler.Builder()
-            .setAccessKey(accessKey);
+            .setAccessKey(accessKey)
+            .build();
 } catch (EagleException e) { }
 ```
 
@@ -77,7 +78,7 @@ public short[] getNextEnrollAudioData() {
 
 EagleProfilerEnrollFeedback feedback = null;
 try {
-    while (feedback != null && feedback.getPercentage < 100.0) {
+    while (feedback != null && feedback.getPercentage() < 100.0) {
         feedback = eagleProfiler.enroll(getNextEnrollAudioData());
     }
 } catch (EagleException e) { }
@@ -119,7 +120,8 @@ final String accessKey = "${ACCESS_KEY}";
 try {
     Eagle eagle = new Eagle.Builder()
         .setAccessKey(accessKey)
-        .setSpeakerProfile(speakerProfile);
+        .setSpeakerProfile(speakerProfile)
+        .build();
 } catch (EagleException e) { }
 ```
 
@@ -133,12 +135,11 @@ public short[] getNextAudioFrame() {
     // get audio frame    
 }
 
-
 try {
     while (true) {
         float[] scores = eagle.process(getNextAudioFrame());
     }
-} catch (EagleExepction e) { }
+} catch (EagleException e) { }
 ```
 
 The return value `scores` represents the degree of similarity between the input audio frame and the enrolled speakers.

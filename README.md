@@ -110,6 +110,11 @@ For more information about Python demos go to [demo/python](./demo/python).
 
 ### Android
 
+Using Android Studio, open [demo/android/EagleDemo](./demo/android/EagleDemo) as an Android project and then run the application.
+
+Replace `"${YOUR_ACCESS_KEY_HERE}"` in the file [MainActivity.java](./demo/android/EagleDemo/eagle-demo-app/src/main/java/ai/picovoice/eagledemo/MainActivity.java) with your `AccessKey`.
+
+
 ### iOS
 
 ### C
@@ -225,6 +230,97 @@ eagle.delete()
 ```
 
 ### Android
+
+To include the package in your Android project, ensure you have included `mavenCentral()` in your top-level `build.gradle` file and then add the following to your app's `build.gradle`:
+
+```groovy
+dependencies {
+    implementation 'ai.picovoice:eagle-android:${LATEST_VERSION}'
+}
+```
+
+#### Speaker Enrollment
+
+Create an instance of the profiler:
+
+```java
+import ai.picovoice.eagle.*;
+
+final String accessKey = "${ACCESS_KEY}";
+
+try {
+    EagleProfiler eagleProfiler = new EagleProfiler.Builder()
+            .setAccessKey(accessKey)
+            .build();
+} catch (EagleException e) { }
+```
+
+Create a new speaker profile:
+
+```java
+public short[] getNextEnrollAudioData() {
+    // get audio data
+}
+
+EagleProfilerEnrollFeedback feedback = null;
+try {
+    while (feedback != null && feedback.getPercentage() < 100.0) {
+        feedback = eagleProfiler.enroll(getNextEnrollAudioData());
+    }
+} catch (EagleException e) { }
+```
+
+Export the speaker profile once enrollment is complete:
+
+```java
+try {
+    EagleProfile speakerProfile = eagleProfiler.export();
+} catch (EagleException e) { }
+```
+
+Release the resources acquired by the profiler:
+
+```java
+eagleProfiler.delete();
+```
+
+#### Speaker Recognition
+
+Create an instance of the engine using the speaker profile exported before:
+
+```java
+import ai.picovoice.eagle.*;
+
+final String accessKey = "${ACCESS_KEY}";
+
+try {
+    Eagle eagle = new Eagle.Builder()
+        .setAccessKey(accessKey)
+        .setSpeakerProfile(speakerProfile)
+        .build();
+} catch (EagleException e) { }
+```
+
+Process incoming audio frames:
+
+```java
+public short[] getNextAudioFrame() {
+    // get audio frame    
+}
+
+
+try {
+    while (true) {
+        float[] scores = eagle.process(getNextAudioFrame());
+    }
+} catch (EagleException e) { }
+```
+
+Finally, when done be sure to explicitly release the resources:
+
+```java
+eagle.delete()
+```
 
 ### iOS
 
