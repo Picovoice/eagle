@@ -1,10 +1,10 @@
-# koala-web-demo
+# eagle-web-demo
 
-This is a basic demo to show how to use Koala for web browsers, using the IIFE version of the library (i.e. an HTML script tag). It instantiates a Koala worker engine and uses it with the [@picovoice/web-voice-processor](https://www.npmjs.com/package/@picovoice/web-voice-processor) to access (and automatically downsample) microphone audio.
+This is a basic demo to show how to use Eagle for web browsers, using the IIFE version of the library (i.e. an HTML script tag). It instantiates an Eagle worker engine and uses it with the [@picovoice/web-voice-processor](https://www.npmjs.com/package/@picovoice/web-voice-processor) to access (and automatically downsample) microphone audio.
 
 ## AccessKey
 
-Koala requires a valid Picovoice `AccessKey` at initialization. `AccessKey` acts as your credentials when using Picovoice SDKs.
+Eagle requires a valid Picovoice `AccessKey` at initialization. `AccessKey` acts as your credentials when using Picovoice SDKs.
 You can get your `AccessKey` for free. Make sure to keep your `AccessKey` secret.
 Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get your `AccessKey`.
 
@@ -32,4 +32,5 @@ Available on:
 Hit CTRL-C to stop the server
 ```
 
-Wait until Koala and the WebVoiceProcessor have initialized. Record audio or upload an audio file to enhance audio.
+Enter your AccessKey and wait until Eagle and the WebVoiceProcessor have initialized. Record audio or upload an audio 
+file to enroll speakers. Test speaker recognition in real-time with a microphone.

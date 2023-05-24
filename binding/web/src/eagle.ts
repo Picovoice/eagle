@@ -736,6 +736,10 @@ export class Eagle extends EagleBase {
       throw new Error('Invalid AccessKey');
     }
 
+    if (!speakerProfiles || speakerProfiles.length === 0) {
+      throw new Error('No speaker profiles provided');
+    }
+
     return new Promise<Eagle>((resolve, reject) => {
       Eagle._eagleMutex
         .runExclusive(async () => {
