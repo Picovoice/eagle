@@ -93,7 +93,7 @@ export class EagleWorker {
    * Set to a different name to use multiple models across `eagle` instances.
    * @param model.forceWrite Flag to overwrite the model in storage even if it exists.
    * @param model.version Version of the model file. Increment to update the model file in storage.
-   * @param speakerProfiles A list of Eagle profiles. These can be constructed using `EagleProfiler`.
+   * @param speakerProfiles One or more Eagle speaker profiles. These can be constructed using `EagleProfiler`.
    *
    * @return An instance of the Eagle engine.
    */
@@ -191,7 +191,8 @@ export class EagleWorker {
 
   /**
    * Resets the internal state of the engine.
-   * It must be called before processing a new sequence of audio frames.
+   * It is best to call before processing a new sequence of audio (e.g. a new voice interaction).
+   * This ensures that the accuracy of the engine is not affected by a change in audio context.
    */
   public async reset(): Promise<void> {
     const returnPromise: Promise<void> = new Promise((resolve, reject) => {

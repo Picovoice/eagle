@@ -839,7 +839,8 @@ export class Eagle extends EagleBase {
 
   /**
    * Resets the internal state of the engine.
-   * It must be called before processing a new sequence of audio frames.
+   * It is best to call before processing a new sequence of audio (e.g. a new voice interaction).
+   * This ensures that the accuracy of the engine is not affected by a change in audio context.
    */
   public async reset(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
