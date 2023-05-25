@@ -56,13 +56,13 @@ obtained from this process indicates the progress of enrollment, while the feedb
 the status of the enrollment process.
 
 ```python
-def get_next_enroll_audio_data():
+def get_next_enroll_audio_data(num_samples):
     pass
 
 
 percentage = 0.0
 while percentage < 100.0:
-    percentage, feedback = eagle_profiler.enroll(get_next_enroll_audio_data())
+    percentage, feedback = eagle_profiler.enroll(get_next_enroll_audio_data(eagle_profiler.min_enroll_samples))
     print(feedback.name)
 ```
 
@@ -90,7 +90,7 @@ eagle_profiler.delete()
 
 ### Speaker Recognition
 
-Create an instance of the engine:
+Create an instance of the engine with one or more speaker profiles from the `EagleProfiler`:
 
 ```python
 eagle = pveagle.create_recognizer(access_key, speaker_profile)
@@ -107,11 +107,13 @@ def get_next_audio_frame():
 
 
 while True:
-    score = eagle.process(get_next_audio_frame())
+    scores = eagle.process(get_next_audio_frame())
 ```
 
-The return value `score` represents the degree of similarity between the input audio frame and the enrolled speakers.
-This value is a floating-point number ranging from 0 to 1, with higher values indicating a greater degree of similarity.
+The `scores` array contains floating-point numbers that indicate the similarity between the input audio frame and the
+enrolled speakers. Each value in the array corresponds to a specific enrolled speaker, maintaining the same order as the
+speaker profiles provided during initialization. The values in the array range from 0.0 to 1.0, where higher values
+indicate a stronger degree of similarity.
 
 Finally, when done be sure to explicitly release the resources:
 

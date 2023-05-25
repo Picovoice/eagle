@@ -478,8 +478,9 @@ class Eagle(object):
 
     def reset(self) -> None:
         """
-        Resets the internal state of the engine.
-        It must be called before processing a new sequence of audio frames.
+        Resets the internal state of the Eagle engine. It is best to call before processing a new sequence of audio
+        (e.g. a new voice interaction). This ensures that the accuracy of the engine is not affected by a change
+        in audio context.
         """
 
         status = self._reset_func(self._eagle)
