@@ -17,12 +17,13 @@ public class EagleBase {
     /// - Returns: The full path of the resource.
     internal func getResourcePath(_ filePath: String) throws -> String {
         if let resourcePath = Bundle(for: type(of: self)).resourceURL?.appendingPathComponent(filePath).path {
-            if (FileManager.default.fileExists(atPath: resourcePath)) {
+            if FileManager.default.fileExists(atPath: resourcePath) {
                 return resourcePath
             }
         }
 
-        throw EagleIOError("Could not find file at path '\(filePath)'. If this is a packaged asset, ensure you have added it to your xcode project.")
+        throw EagleIOError("Could not find file at path '\(filePath)'.
+                            If this is a packaged asset, ensure you have added it to your xcode project.")
     }
 
     /// Given a C pv_status_t enum, return the appropriate EagleError
@@ -66,7 +67,8 @@ public class EagleBase {
     /// - Parameters:
     ///   - status: C enum value.
     /// - Returns: The equivalent Swift enum value.
-    internal func pvProfilerEnrollmentErrorToEnrollFeedback(_ status: pv_eagle_profiler_enroll_feedback_t) -> EagleProfilerEnrollFeedback {
+    internal func pvProfilerEnrollmentErrorToEnrollFeedback(
+            _ status: pv_eagle_profiler_enroll_feedback_t) -> EagleProfilerEnrollFeedback {
         switch status {
         case PV_EAGLE_PROFILER_ENROLL_FEEDBACK_AUDIO_OK:
             return EagleProfilerEnrollFeedback.AUDIO_OK

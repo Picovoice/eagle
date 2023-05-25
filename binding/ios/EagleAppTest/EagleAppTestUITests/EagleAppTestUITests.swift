@@ -39,9 +39,9 @@ class EagleAppTestUITests: BaseTest {
 
     func testIndexAndSearchData() throws {
         let bundle = Bundle(for: type(of: self))
-        let fileURL:URL = bundle.url(forResource: "multiple_keywords", withExtension: "wav")!
+        let fileURL: URL = bundle.url(forResource: "multiple_keywords", withExtension: "wav")!
         let audioData = try Data(contentsOf: fileURL)
-        var pcm = Array<Int16>(repeating: 0, count: (audioData.count - 44) / 2)
+        var pcm = [Int16](repeating: 0, count: (audioData.count - 44) / 2)
         _ = pcm.withUnsafeMutableBytes {
             audioData.copyBytes(to: $0, from: 44..<audioData.count)
         }
@@ -66,7 +66,7 @@ class EagleAppTestUITests: BaseTest {
         let audioFilePath = bundle.path(forResource: "multiple_keywords", ofType: "wav")!
 
         let eagle = try Eagle(accessKey: accessKey)
-        var metadata:EagleMetadata? = try eagle.indexAudioFile(path: audioFilePath)
+        var metadata: EagleMetadata? = try eagle.indexAudioFile(path: audioFilePath)
 
         let metadataBytes = try metadata!.getBytes()
         XCTAssert(metadataBytes.count == 227360)
@@ -98,7 +98,7 @@ class EagleAppTestUITests: BaseTest {
         let invalidPhrase: Set<String> = [""]
         var invalidArg = false
         do {
-            let _ = try eagle.search(metadata: metadata, phrases: invalidPhrase)
+            _ = try eagle.search(metadata: metadata, phrases: invalidPhrase)
         } catch is EagleInvalidArgumentError {
             invalidArg = true
         }
@@ -119,7 +119,7 @@ class EagleAppTestUITests: BaseTest {
         let invalidPhrase: Set<String> = ["    "]
         var invalidArg = false
         do {
-            let _ = try eagle.search(metadata: metadata, phrases: invalidPhrase)
+            _ = try eagle.search(metadata: metadata, phrases: invalidPhrase)
         } catch is EagleInvalidArgumentError {
             invalidArg = true
         }
@@ -140,7 +140,7 @@ class EagleAppTestUITests: BaseTest {
         let invalidPhrase: Set<String> = ["12"]
         var invalidArg = false
         do {
-            let _ = try eagle.search(metadata: metadata, phrases: invalidPhrase)
+            _ = try eagle.search(metadata: metadata, phrases: invalidPhrase)
         } catch is EagleInvalidArgumentError {
             invalidArg = true
         }
@@ -161,7 +161,7 @@ class EagleAppTestUITests: BaseTest {
         let invalidPhrase: Set<String> = ["real-time"]
         var invalidArg = false
         do {
-            let _ = try eagle.search(metadata: metadata, phrases: invalidPhrase)
+            _ = try eagle.search(metadata: metadata, phrases: invalidPhrase)
         } catch is EagleInvalidArgumentError {
             invalidArg = true
         }
@@ -182,7 +182,7 @@ class EagleAppTestUITests: BaseTest {
         let invalidPhrase: Set<String> = ["@@!%$"]
         var invalidArg = false
         do {
-            let _ = try eagle.search(metadata: metadata, phrases: invalidPhrase)
+            _ = try eagle.search(metadata: metadata, phrases: invalidPhrase)
         } catch is EagleInvalidArgumentError {
             invalidArg = true
         }

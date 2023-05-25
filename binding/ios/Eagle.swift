@@ -12,7 +12,7 @@ import PvEagle
 
 /// Eagle class for iOS Eagle text-independent speaker recognition engine.
 /// It can determine audio similarity scores given a set of EagleProfiles.
-public class Eagle : EagleBase {
+public class Eagle: EagleBase {
 
     public static let frameLength = Int(pv_eagle_frame_length())
 
@@ -32,7 +32,7 @@ public class Eagle : EagleBase {
 
         var modelPathArg = modelPath
 
-        if (modelPath == nil) {
+        if modelPath == nil {
             let bundle = Bundle(for: type(of: self))
 
             modelPathArg = bundle.path(forResource: "eagle_params", ofType: "pv")
@@ -59,7 +59,7 @@ public class Eagle : EagleBase {
             Int32(speakerCount),
             speakerHandles,
             &handle)
-        if(status != PV_STATUS_SUCCESS) {
+        if status != PV_STATUS_SUCCESS {
             throw pvStatusToEagleError(status, "Eagle init failed")
         }
     }
@@ -71,7 +71,7 @@ public class Eagle : EagleBase {
     /// Releases resources acquired by Eagle.
     public func delete() {
         if handle != nil {
-            pv_eagle_delete(handle);
+            pv_eagle_delete(handle)
             handle = nil
         }
     }
@@ -97,7 +97,7 @@ public class Eagle : EagleBase {
             pcm,
             scores.baseAddress)
 
-        if(status != PV_STATUS_SUCCESS) {
+        if status != PV_STATUS_SUCCESS {
             throw pvStatusToEagleError(status, "Eagle process failed")
         }
 

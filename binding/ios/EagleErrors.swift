@@ -7,8 +7,8 @@
 //  specific language governing permissions and limitations under the License.
 //
 
-public class EagleError : LocalizedError {
-    private let message: String;
+public class EagleError: LocalizedError {
+    private let message: String
 
     public init (_ message: String) {
         self.message = message
@@ -25,24 +25,24 @@ public class EagleError : LocalizedError {
     }
 }
 
-public class EagleMemoryError : EagleError {}
+public class EagleMemoryError: EagleError {}
 
-public class EagleIOError : EagleError {}
+public class EagleIOError: EagleError {}
 
-public class EagleInvalidArgumentError : EagleError {}
+public class EagleInvalidArgumentError: EagleError {}
 
-public class EagleStopIterationError : EagleError {}
+public class EagleStopIterationError: EagleError {}
 
-public class EagleKeyError : EagleError {}
+public class EagleKeyError: EagleError {}
 
-public class EagleInvalidStateError : EagleError {}
+public class EagleInvalidStateError: EagleError {}
 
-public class EagleRuntimeError : EagleError {}
+public class EagleRuntimeError: EagleError {}
 
-public class EagleActivationError : EagleError {}
+public class EagleActivationError: EagleError {}
 
-public class EagleActivationLimitError : EagleError {}
+public class EagleActivationLimitError: EagleError {}
 
-public class EagleActivationThrottledError : EagleError {}
+public class EagleActivationThrottledError: EagleError {}
 
-public class EagleActivationRefusedError : EagleError {}
+public class EagleActivationRefusedError: EagleError {}

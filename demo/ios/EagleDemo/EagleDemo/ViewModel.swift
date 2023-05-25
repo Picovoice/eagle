@@ -40,10 +40,10 @@ class ViewModel: ObservableObject {
     @Published var state: UIState = UIState.INTRO
 
     public func reset() {
-        if (self.state == UIState.ENROLLING) {
+        if self.state == UIState.ENROLLING {
             try? stopEnroll()
         }
-        if (self.state == UIState.TESTING) {
+        if self.state == UIState.TESTING {
             stopTest()
         }
         self.profiles = []
@@ -81,7 +81,7 @@ class ViewModel: ObservableObject {
             errorMessage = "ACCESS_KEY activation refused"
         } catch is EagleActivationLimitError {
             errorMessage = "ACCESS_KEY reached its limit"
-        } catch is EagleActivationThrottledError  {
+        } catch is EagleActivationThrottledError {
             errorMessage = "ACCESS_KEY is throttled"
         } catch {
             errorMessage = "\(error)"
@@ -97,7 +97,7 @@ class ViewModel: ObservableObject {
                 enrollPcmBuffer.removeFirst(minEnrollSamples)
 
                 let (percentage, feedback) = try eagleProfiler.enroll(pcm: enrollFrame)
-                if (percentage >= 100.0) {
+                if percentage >= 100.0 {
                     try stopEnroll(export: true)
                 }
 
@@ -110,7 +110,7 @@ class ViewModel: ObservableObject {
             }
         } catch {
             self.errorMessage = "Failed to process pcm frames for enrollment."
-            try! self.stopEnroll()
+            try? self.stopEnroll()
         }
     }
 
@@ -134,7 +134,7 @@ class ViewModel: ObservableObject {
 
     private func stopEnroll(export: Bool = false) throws {
         VoiceProcessor.shared.stop()
-        if (export == true) {
+        if export == true {
             let newProfile = try eagleProfiler.export()
             DispatchQueue.main.async {
                 self.profiles.append(newProfile)
@@ -142,7 +142,7 @@ class ViewModel: ObservableObject {
             }
         }
 
-        if (eagleProfiler != nil) {
+        if eagleProfiler != nil {
             eagleProfiler.delete()
             eagleProfiler = nil
         }
@@ -169,7 +169,7 @@ class ViewModel: ObservableObject {
             errorMessage = "ACCESS_KEY activation refused"
         } catch is EagleActivationLimitError {
             errorMessage = "ACCESS_KEY reached its limit"
-        } catch is EagleActivationThrottledError  {
+        } catch is EagleActivationThrottledError {
             errorMessage = "ACCESS_KEY is throttled"
         } catch {
             errorMessage = "\(error)"
@@ -209,7 +209,7 @@ class ViewModel: ObservableObject {
     public func stopTest() {
         VoiceProcessor.shared.stop()
 
-        if (eagle != nil) {
+        if eagle != nil {
             eagle.delete()
             eagle = nil
         }
@@ -223,7 +223,7 @@ class ViewModel: ObservableObject {
     private var dumpFile: URL?
 
     private func createDumpFile(filename: String) throws {
-        if (dumpAudio) {
+        if dumpAudio {
             let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
             dumpFile = directory!.appendingPathComponent(filename)
             try Data().write(to: dumpFile!)
@@ -231,7 +231,7 @@ class ViewModel: ObservableObject {
     }
 
     private func appendToDumpFile(pcm: [Int16]) throws {
-        if (dumpAudio) {
+        if dumpAudio {
             let data = Data(bytes: pcm, count: pcm.count * MemoryLayout<Int16>.stride)
             if let fileHandle = FileHandle(forWritingAtPath: dumpFile!.path) {
                 try fileHandle.seekToEnd()

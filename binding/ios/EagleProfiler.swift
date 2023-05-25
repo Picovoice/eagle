@@ -20,7 +20,7 @@ public enum EagleProfilerEnrollFeedback {
 
 /// EagleProfiler class for iOS Eagle text-independent speaker recognition engine.
 /// It enrolls a speaker given a set of utterances and then constructs a profile for the enrolled speaker.
-public class EagleProfiler : EagleBase {
+public class EagleProfiler: EagleBase {
 
     private var handle: OpaquePointer?
 
@@ -35,7 +35,7 @@ public class EagleProfiler : EagleBase {
 
         var modelPathArg = modelPath
 
-        if (modelPath == nil) {
+        if modelPath == nil {
             let bundle = Bundle(for: type(of: self))
 
             modelPathArg = bundle.path(forResource: "eagle_params", ofType: "pv")
@@ -52,7 +52,7 @@ public class EagleProfiler : EagleBase {
             accessKey,
             modelPathArg,
             &handle)
-        if(status != PV_STATUS_SUCCESS) {
+        if status != PV_STATUS_SUCCESS {
             throw pvStatusToEagleError(status, "EagleProfiler init failed")
         }
     }
@@ -64,7 +64,7 @@ public class EagleProfiler : EagleBase {
     /// Releases resources acquired by EagleProfiler.
     public func delete() {
         if handle != nil {
-            pv_eagle_profiler_delete(handle);
+            pv_eagle_profiler_delete(handle)
             handle = nil
         }
     }
@@ -83,8 +83,8 @@ public class EagleProfiler : EagleBase {
             throw EagleInvalidStateError("EagleProfiler must be initialized before enrolling")
         }
 
-        var cEnrollError : pv_eagle_profiler_enroll_feedback_t = PV_EAGLE_PROFILER_ENROLL_FEEDBACK_AUDIO_OK
-        var cPercentage : Float32 = 0
+        var cEnrollError: pv_eagle_profiler_enroll_feedback_t = PV_EAGLE_PROFILER_ENROLL_FEEDBACK_AUDIO_OK
+        var cPercentage: Float32 = 0
         let status = pv_eagle_profiler_enroll(
             handle,
             pcm,
@@ -92,7 +92,7 @@ public class EagleProfiler : EagleBase {
             &cEnrollError,
             &cPercentage)
 
-        if(status != PV_STATUS_SUCCESS) {
+        if status != PV_STATUS_SUCCESS {
             throw pvStatusToEagleError(status, "EagleProfiler enroll failed")
         }
 
@@ -111,12 +111,12 @@ public class EagleProfiler : EagleBase {
         }
 
         let numProfileBytes = try speakerProfileSize()
-        var cProfile = Array<UInt8>(repeating: 0, count: numProfileBytes)
+        var cProfile = [UInt8](repeating: 0, count: numProfileBytes)
         let status = pv_eagle_profiler_export(
             handle,
             &cProfile)
 
-        if(status != PV_STATUS_SUCCESS) {
+        if status != PV_STATUS_SUCCESS {
             throw pvStatusToEagleError(status, "EagleProfiler export failed")
         }
 
@@ -128,12 +128,12 @@ public class EagleProfiler : EagleBase {
             throw EagleInvalidStateError("EagleProfiler must be initialized before checking profile size")
         }
 
-        var cSpeakerProfileSizeBytes: Int32 = 0;
+        var cSpeakerProfileSizeBytes: Int32 = 0
         let status = pv_eagle_profiler_export_size(
             handle,
             &cSpeakerProfileSizeBytes)
 
-        if(status != PV_STATUS_SUCCESS) {
+        if status != PV_STATUS_SUCCESS {
             throw pvStatusToEagleError(status, "EagleProfiler speaker_profile_size failed")
         }
 
@@ -149,7 +149,7 @@ public class EagleProfiler : EagleBase {
 
         let status = pv_eagle_profiler_reset(handle)
 
-        if(status != PV_STATUS_SUCCESS) {
+        if status != PV_STATUS_SUCCESS {
             throw pvStatusToEagleError(status, "EagleProfiler reset failed")
         }
     }
@@ -159,15 +159,15 @@ public class EagleProfiler : EagleBase {
     /// - Returns: Minimum number of samples required for a call to `enroll()`
     public func minEnrollSamples() throws -> Int {
         if handle == nil {
-            throw EagleInvalidStateError("EagleProfiler must be initialized before checking min number of enroll samples")
+            throw EagleInvalidStateError("EagleProfiler must be initialized before checking minEnrollSamples")
         }
 
-        var cMinAudioLengthSamples: Int32 = 0;
+        var cMinAudioLengthSamples: Int32 = 0
         let status = pv_eagle_profiler_enroll_min_audio_length_samples(
             handle,
             &cMinAudioLengthSamples)
 
-        if(status != PV_STATUS_SUCCESS) {
+        if status != PV_STATUS_SUCCESS {
             throw pvStatusToEagleError(status, "EagleProfiler enrollment_min_audio_length_sample failed")
         }
 

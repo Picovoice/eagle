@@ -31,9 +31,9 @@ class PerformanceTest: XCTestCase {
         try XCTSkipIf(indexPerformanceThresholdSec == nil)
 
         let bundle = Bundle(for: type(of: self))
-        let fileURL:URL = bundle.url(forResource: "test", withExtension: "wav")!
+        let fileURL: URL = bundle.url(forResource: "test", withExtension: "wav")!
         let audioData = try Data(contentsOf: fileURL)
-        var pcm = Array<Int16>(repeating: 0, count: (audioData.count - 44) / 2)
+        var pcm = [Int16](repeating: 0, count: (audioData.count - 44) / 2)
         _ = pcm.withUnsafeMutableBytes {
             audioData.copyBytes(to: $0, from: 44..<audioData.count)
         }
@@ -69,12 +69,12 @@ class PerformanceTest: XCTestCase {
 
         let enrollUrls: [URL] = [
             bundle.url(forResource: "speaker_1_utt_1", withExtension: "wav")!,
-            bundle.url(forResource: "speaker_1_utt_2", withExtension: "wav")!,
+            bundle.url(forResource: "speaker_1_utt_2", withExtension: "wav")!
         ]
         let eagleProfiler = try EagleProfiler(accessKey: accessKey)
         for enrollUrl in enrollUrls {
             let audioData = try Data(contentsOf: enrollUrl)
-            var pcm = Array<Int16>(repeating: 0, count: (audioData.count - 44) / 2)
+            var pcm = [Int16](repeating: 0, count: (audioData.count - 44) / 2)
             _ = pcm.withUnsafeMutableBytes {
                 audioData.copyBytes(to: $0, from: 44..<audioData.count)
             }
@@ -86,7 +86,7 @@ class PerformanceTest: XCTestCase {
 
         let testAudioURL: URL = bundle.url(forResource: "test", withExtension: "wav")!
         let audioData = try Data(contentsOf: testAudioURL)
-        var pcm = Array<Int16>(repeating: 0, count: (audioData.count - 44) / 2)
+        var pcm = [Int16](repeating: 0, count: (audioData.count - 44) / 2)
         _ = pcm.withUnsafeMutableBytes {
             audioData.copyBytes(to: $0, from: 44..<audioData.count)
         }

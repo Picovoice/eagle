@@ -10,7 +10,7 @@
 import Foundation
 
 public class EagleProfile {
-    private var profileBytes: Array<UInt8>?
+    private var profileBytes: [UInt8]?
 
     /// Constructor.
     ///

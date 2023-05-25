@@ -16,7 +16,7 @@ struct ContentView: View {
     let dangerRed = Color(red: 1, green: 14/255, blue: 14/255, opacity: 1)
 
     func speakerRow(speakerName: String, score: Float) -> some View {
-        return HStack() {
+        return HStack {
             Text(speakerName)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(3)
@@ -60,10 +60,11 @@ struct ContentView: View {
 
                 ScrollView {
                     VStack(alignment: .center) {
-                        ForEach(Array(viewModel.scores.enumerated()), id: \.offset) {
-                            index, score in speakerRow(speakerName: String(format: "Speaker %d", index), score: viewModel.state == UIState.ENROLLING ? 1.0 : score)
+                        ForEach(Array(viewModel.scores.enumerated()), id: \.offset) { index, score in
+                            speakerRow(speakerName: String(format: "Speaker %d", index),
+                                       score: viewModel.state == UIState.ENROLLING ? 1.0 : score)
                         }
-                        if (viewModel.state == UIState.ENROLLING) {
+                        if viewModel.state == UIState.ENROLLING {
                             speakerRow(speakerName: "New Speaker", score: viewModel.enrollPercentage / 100.0)
                         }
                     }
@@ -78,7 +79,7 @@ struct ContentView: View {
             VStack(alignment: .center) {
                 Text(viewModel.statusText)
                 Text(viewModel.errorMessage)
-                if (viewModel.state == UIState.ENROLLING) {
+                if viewModel.state == UIState.ENROLLING {
                     Text(viewModel.enrollFeedback)
                 }
             }
@@ -91,7 +92,7 @@ struct ContentView: View {
                         try? viewModel.enroll()
                     },
                     label: {
-                        if (viewModel.state == UIState.ENROLLING) {
+                        if viewModel.state == UIState.ENROLLING {
                             ProgressView()
                         } else {
                             Text("Enroll")
@@ -103,14 +104,14 @@ struct ContentView: View {
 
                 Button(
                     action: {
-                        if (viewModel.state == UIState.TESTING) {
+                        if viewModel.state == UIState.TESTING {
                             viewModel.stopTest()
                         } else {
                             try? viewModel.test()
                         }
                     },
                     label: {
-                        if (viewModel.state == UIState.TESTING) {
+                        if viewModel.state == UIState.TESTING {
                             Text("Stop")
                         } else {
                             Text("Test")
@@ -131,4 +132,3 @@ struct ContentView_Previews: PreviewProvider {
         }
     }
 }
-
