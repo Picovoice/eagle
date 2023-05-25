@@ -106,7 +106,7 @@ do {
 ```
 
 The return value `profileScores` represents the degree of similarity between the input audio frame and the enrolled speakers.
-This value is an array of floating-point numbers ranging from 0 to 1, with higher values indicating a greater degree of similarity. Index 0 intidcates the first speaker, index 1 the second, and so on.
+This value is an array of floating-point numbers ranging from 0 to 1, with higher values indicating a greater degree of similarity. Index 0 indicates the first speaker, index 1 the second, and so on.
 
 Finally, when done be sure to explicitly release the resources:
 
