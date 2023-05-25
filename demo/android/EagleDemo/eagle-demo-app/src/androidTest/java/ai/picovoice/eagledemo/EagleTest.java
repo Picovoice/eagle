@@ -62,6 +62,51 @@ public class EagleTest {
         }
 
         @Test
+        public void testInitProfilerFailWithInvalidAccessKey() {
+            boolean didFail = false;
+            try {
+                new EagleProfiler.Builder()
+                        .setAccessKey("")
+                        .setModelPath(defaultModelPath)
+                        .build(appContext);
+            } catch (EagleException e) {
+                didFail = true;
+            }
+
+            assertTrue(didFail);
+        }
+
+        @Test
+        public void testInitProfilerFailWithMissingAccessKey() {
+            boolean didFail = false;
+            try {
+                new EagleProfiler.Builder()
+                        .setModelPath(defaultModelPath)
+                        .build(appContext);
+            } catch (EagleException e) {
+                didFail = true;
+            }
+
+            assertTrue(didFail);
+        }
+
+        @Test
+        public void testInitProfilerFailWithInvalidModelPath() {
+            boolean didFail = false;
+            File modelPath = new File(testResourcesPath, "bad_path/bad_path.pv");
+            try {
+                new EagleProfiler.Builder()
+                        .setAccessKey(accessKey)
+                        .setModelPath(modelPath.getAbsolutePath())
+                        .build(appContext);
+            } catch (EagleException e) {
+                didFail = true;
+            }
+
+            assertTrue(didFail);
+        }
+
+        @Test
         public void testInitFailWithInvalidAccessKey() {
             boolean didFail = false;
             try {
