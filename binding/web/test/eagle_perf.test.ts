@@ -103,9 +103,11 @@ describe('Eagle Profiler performance test', () => {
     const instanceString = instance === EagleProfilerWorker ? 'worker' : 'main';
 
     it(`should be lower than performance threshold (${instanceString})`, () => {
-      cy.getFramesFromFile('audio_samples/test.wav').then(async testPcm => {
-        await testEnrollPerformance(instance, testPcm);
-      });
+      cy.getFramesFromFile('audio_samples/speaker_1_test_utt.wav').then(
+        async testPcm => {
+          await testEnrollPerformance(instance, testPcm);
+        }
+      );
     });
   }
 });
@@ -121,7 +123,7 @@ describe('Eagle performance test', () => {
         async enrollPcm1 => {
           cy.getFramesFromFile('audio_samples/speaker_1_utt_2.wav').then(
             async enrollPcm2 => {
-              cy.getFramesFromFile('audio_samples/test.wav').then(
+              cy.getFramesFromFile('audio_samples/speaker_1_test_utt.wav').then(
                 async testPcm => {
                   await testProcessPerformance(
                     instance,

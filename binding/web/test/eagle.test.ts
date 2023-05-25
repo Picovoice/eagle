@@ -221,7 +221,7 @@ describe('Eagle Profiler', async function () {
       async inputPcm1 => {
         cy.getFramesFromFile('audio_samples/speaker_1_utt_2.wav').then(
           async inputPcm2 => {
-            cy.getFramesFromFile('audio_samples/imposter.wav').then(
+            cy.getFramesFromFile('audio_samples/speaker_2_test_utt.wav').then(
               async imposterPcm => {
                 try {
                   const profiler = await EagleProfiler.create(ACCESS_KEY, {
@@ -315,76 +315,82 @@ describe('Eagle', function () {
     await eagle.terminate();
   });
   it('eagle process with reset', () => {
-    cy.getFramesFromFile('audio_samples/test.wav').then(async testPcm => {
-      try {
-        const eagle = await Eagle.create(
-          ACCESS_KEY,
-          {
-            publicPath: '/test/eagle_params.pv',
-            forceWrite: true,
-          },
-          testProfile
-        );
-        const scores = await getScores(eagle, testPcm);
+    cy.getFramesFromFile('audio_samples/speaker_1_test_utt.wav').then(
+      async testPcm => {
+        try {
+          const eagle = await Eagle.create(
+            ACCESS_KEY,
+            {
+              publicPath: '/test/eagle_params.pv',
+              forceWrite: true,
+            },
+            testProfile
+          );
+          const scores = await getScores(eagle, testPcm);
 
-        expect(Math.max(...scores)).to.be.gt(0.5);
-        await eagle.reset();
+          expect(Math.max(...scores)).to.be.gt(0.5);
+          await eagle.reset();
 
-        const scores2 = await getScores(eagle, testPcm);
+          const scores2 = await getScores(eagle, testPcm);
 
-        expect(scores2).to.be.deep.eq(scores);
-        await eagle.release();
-      } catch (e) {
-        expect(e).to.be.undefined;
+          expect(scores2).to.be.deep.eq(scores);
+          await eagle.release();
+        } catch (e) {
+          expect(e).to.be.undefined;
+        }
       }
-    });
+    );
   });
 
   it('eagle process with reset (worker)', () => {
-    cy.getFramesFromFile('audio_samples/test.wav').then(async testPcm => {
-      try {
-        const eagle = await EagleWorker.create(
-          ACCESS_KEY,
-          {
-            publicPath: '/test/eagle_params.pv',
-            forceWrite: true,
-          },
-          testProfile
-        );
-        const scores = await getScores(eagle, testPcm);
+    cy.getFramesFromFile('audio_samples/speaker_1_test_utt.wav').then(
+      async testPcm => {
+        try {
+          const eagle = await EagleWorker.create(
+            ACCESS_KEY,
+            {
+              publicPath: '/test/eagle_params.pv',
+              forceWrite: true,
+            },
+            testProfile
+          );
+          const scores = await getScores(eagle, testPcm);
 
-        expect(Math.max(...scores)).to.be.gt(0.5);
-        await eagle.reset();
+          expect(Math.max(...scores)).to.be.gt(0.5);
+          await eagle.reset();
 
-        const scores2 = await getScores(eagle, testPcm);
+          const scores2 = await getScores(eagle, testPcm);
 
-        expect(scores2).to.be.deep.eq(scores);
-        await eagle.release();
-        await eagle.terminate();
-      } catch (e) {
-        expect(e).to.be.undefined;
+          expect(scores2).to.be.deep.eq(scores);
+          await eagle.release();
+          await eagle.terminate();
+        } catch (e) {
+          expect(e).to.be.undefined;
+        }
       }
-    });
+    );
   });
 
   it('eagle process imposter', () => {
-    cy.getFramesFromFile('audio_samples/imposter.wav').then(async testPcm => {
-      try {
-        const eagle = await Eagle.create(
-          ACCESS_KEY,
-          {
-            publicPath: '/test/eagle_params.pv',
-            forceWrite: true,
-          },
-          testProfile
-        );
-        const scores = await getScores(eagle, testPcm);
+    cy.getFramesFromFile('audio_samples/speaker_2_test_utt.wav').then(
+      async testPcm => {
+        try {
+          const eagle = await Eagle.create(
+            ACCESS_KEY,
+            {
+              publicPath: '/test/eagle_params.pv',
+              forceWrite: true,
+            },
+            testProfile
+          );
+          const scores = await getScores(eagle, testPcm);
 
-        expect(Math.max(...scores)).to.be.lt(0.5);
-        await eagle.release();
-      } catch (e) {
-        expect(e).to.be.undefined;
+          expect(Math.max(...scores)).to.be.lt(0.5);
+          await eagle.release();
+        } catch (e) {
+          expect(e).to.be.undefined;
+        }
       }
-    });
+    );
   });
 });
