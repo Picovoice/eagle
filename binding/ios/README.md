@@ -116,4 +116,4 @@ eagle.delete()
 
 ## Running Unit Tests
 
-Copy your `AccessKey` into the `accessKey` variable in [`EagleAppTestUITests.swift`](EagleAppTest/OctopusAppTestUITests/OctopusAppTestUITests.swift). Open `EagleAppTest.xcworkspace` with XCode and run the tests with `Product > Test`.
+Copy your `AccessKey` into the `accessKey` variable in [`EagleAppTestUITests.swift`](EagleAppTest/EagleAppTestUITests/EagleAppTestUITests.swift). Open `EagleAppTest.xcworkspace` with XCode and run the tests with `Product > Test`.
