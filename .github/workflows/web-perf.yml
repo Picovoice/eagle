@@ -28,8 +28,8 @@ jobs:
         node-version: [lts/*]
         include:
         - node-version: lts/*
-          enrollPerformanceThresholdSec: 0.0
-          processPerformanceThresholdSec: 0.0
+          enrollPerformanceThresholdSec: 0.5
+          processPerformanceThresholdSec: 0.5
 
     steps:
     - uses: actions/checkout@v3
