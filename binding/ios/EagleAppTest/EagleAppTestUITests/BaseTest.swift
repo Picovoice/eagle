@@ -15,6 +15,18 @@ class BaseTest: XCTestCase {
 
     let accessKey: String = "{TESTING_ACCESS_KEY_HERE}"
 
+    internal func readPcmFromFile(testAudioURL: URL) throws -> [Int16] {
+        var data = try Data(contentsOf: testAudioURL)
+        data.removeFirst(44)
+        
+        var pcmBuffer = [Int16](repeating: 0, count: data.count / 2)
+        _ = pcmBuffer.withUnsafeMutableBytes {
+            data.copyBytes(to: $0)
+        }
+        
+        return pcmBuffer
+    }
+    
     override func setUpWithError() throws {
         continueAfterFailure = true
     }

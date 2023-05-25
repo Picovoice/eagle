@@ -22,8 +22,8 @@ public class EagleBase {
             }
         }
 
-        throw EagleIOError("Could not find file at path '\(filePath)'.
-                            If this is a packaged asset, ensure you have added it to your xcode project.")
+        throw EagleIOError("Could not find file at path '\(filePath)'. " +
+                           "If this is a packaged asset, ensure you have added it to your xcode project.")
     }
 
     /// Given a C pv_status_t enum, return the appropriate EagleError

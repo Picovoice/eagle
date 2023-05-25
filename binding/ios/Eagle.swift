@@ -91,7 +91,7 @@ public class Eagle: EagleBase {
             throw EagleInvalidStateError("Eagle must be initialized before indexing")
         }
 
-        var scores = UnsafeMutableBufferPointer<Float32>.allocate(capacity: speakerCount)
+        let scores = UnsafeMutableBufferPointer<Float32>.allocate(capacity: speakerCount)
         let status = pv_eagle_process(
             handle,
             pcm,
