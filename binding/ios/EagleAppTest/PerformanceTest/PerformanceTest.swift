@@ -45,11 +45,10 @@ class PerformanceTest: XCTestCase {
             var totalNSec = 0.0
 
             let before = CFAbsoluteTimeGetCurrent()
-            let percent, feedback = try eagleProfiler.enroll(pcm: pcm)
+            let (_, _) = try eagleProfiler.enroll(pcm: pcm)
             let after = CFAbsoluteTimeGetCurrent()
             totalNSec += (after - before)
             results.append(totalNSec)
-            feedback.delete()
         }
         eagleProfiler.delete()
 
@@ -79,9 +78,9 @@ class PerformanceTest: XCTestCase {
                 audioData.copyBytes(to: $0, from: 44..<audioData.count)
             }
 
-            let percent, feedback = try eagleProfiler.enroll(pcm: pcm)
+            let (_, _) = try eagleProfiler.enroll(pcm: pcm)
         }
-        let profile = eagleProfiler.export()
+        let profile = try eagleProfiler.export()
         eagleProfiler.delete()
 
         let testAudioURL: URL = bundle.url(forResource: "test", withExtension: "wav")!
@@ -91,19 +90,18 @@ class PerformanceTest: XCTestCase {
             audioData.copyBytes(to: $0, from: 44..<audioData.count)
         }
 
-        let eagle = try Eagle(accessKey: accessKey, profiles: [profile])
+        let eagle = try Eagle(accessKey: accessKey, speakerProfiles: [profile])
 
         var results: [Double] = []
         for _ in 0...numTestIterations {
             var totalNSec = 0.0
 
             let before = CFAbsoluteTimeGetCurrent()
-            try eagle.process(pcm: pcm)
+            let _ = try eagle.process(pcm: pcm)
             let after = CFAbsoluteTimeGetCurrent()
             totalNSec += (after - before)
             results.append(totalNSec)
         }
-        profile.delete()
         eagle.delete()
 
         let avgNSec = results.reduce(0.0, +) / Double(numTestIterations)
