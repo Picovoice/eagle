@@ -117,11 +117,11 @@
                   return;
                 }
 
-                updateSpeakerProgress(speakerProfiles.length + 1, result.feedback, result.percentage)
+                updateSpeakerProgress(speakerProfiles.length + 1, result.feedback, result.percentage);
                 if (result.percentage === 100) {
-                  micEnrollStopUI();
                   await window.WebVoiceProcessor.WebVoiceProcessor.unsubscribe(micEnrollEngine);
                   clearInterval(timer);
+                  micEnrollStopUI();
 
                   try {
                     const profile = await profiler.export();
@@ -165,6 +165,15 @@
         } catch (e) {
           writeMessage(e);
         }
+      }
+
+      async function micEnrollStop() {
+        await window.WebVoiceProcessor.WebVoiceProcessor.unsubscribe(micEnrollEngine);
+        clearInterval(timer);
+        writeMessage(`Enrollment stopped`);
+        updateSpeakerTable();
+        enrollFailUI();
+        micEnrollStopUI();
       }
 
       function writeMessage(message) {
@@ -246,18 +255,21 @@
 
       function micEnrollStartUI() {
         document.getElementById("displayTimer").style.display = "inline";
-        document.getElementById("micEnrollBtn").style.display = "none";
+        document.getElementById("micEnrollStartBtn").style.display = "none";
         document.getElementById("audioFile").disabled = true;
+        document.getElementById("micEnrollStopBtn").style.display = "inline";
       }
 
       function micEnrollStopUI() {
         document.getElementById("displayTimer").style.display = "none";
-        document.getElementById("micEnrollBtn").style.display = "inline";
+        document.getElementById("micEnrollStartBtn").style.display = "inline";
         document.getElementById("audioFile").disabled = false;
+        document.getElementById("micEnrollStopBtn").style.display = "none";
+        document.getElementById("displayTimer").innerText = `0.0`;
       }
 
       function micTestStartUI() {
-        document.getElementById("micEnrollBtn").disabled = true;
+        document.getElementById("micEnrollStartBtn").disabled = true;
         document.getElementById("audioFile").disabled = true;
         document.getElementById("resetBtn").disabled = true;
         document.getElementById("testStartBtn").style.display = "none";
@@ -266,7 +278,7 @@
       }
 
       function micTestStopUI() {
-        document.getElementById("micEnrollBtn").disabled = false;
+        document.getElementById("micEnrollStartBtn").disabled = false;
         document.getElementById("audioFile").disabled = false;
         document.getElementById("resetBtn").disabled = false;
         document.getElementById("testStartBtn").style.display = "inline";
@@ -432,8 +444,9 @@
         accept="audio/*,.wav"
         multiple />
       <p><b>OR</b></p>
-      <label for="micEnrollBtn">Enroll speaker with microphone:</label>
-      <button id="micEnrollBtn" onclick="micEnrollStart()">Record Audio</button>
+      <label for="micEnrollStartBtn">Enroll speaker with microphone:</label>
+      <button id="micEnrollStartBtn" onclick="micEnrollStart()">Record Audio</button>
+      <button id="micEnrollStopBtn" onclick="micEnrollStop()" style="display: none">Stop Enrollment</button>
       <span id="displayTimer" style="display: none;"></span>
       <br />
       <hr/>
