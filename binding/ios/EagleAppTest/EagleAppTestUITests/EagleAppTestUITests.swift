@@ -24,24 +24,24 @@ class EagleAppTestUITests: BaseTest {
         let bundle = Bundle(for: type(of: self))
         return bundle.url(forResource: "speaker_2_test_utt", withExtension: "wav", subdirectory: "audio_samples")!
     }
-    
+
     private func testUrl() -> URL {
         let bundle = Bundle(for: type(of: self))
         return bundle.url(forResource: "speaker_1_test_utt", withExtension: "wav", subdirectory: "audio_samples")!
     }
-    
+
     private func initEagle() throws -> Eagle {
         let enrollUrls = enrollUrls()
-        
+
         let eagleProfiler = try EagleProfiler(accessKey: accessKey)
         for url in enrollUrls {
             let pcm = try readPcmFromFile(testAudioURL: url)
             (_, _) = try eagleProfiler.enroll(pcm: pcm)
         }
-        
+
         let profile = try eagleProfiler.export()
         eagleProfiler.delete()
-        
+
         return try Eagle(accessKey: accessKey, speakerProfiles: [profile])
     }
 
@@ -60,10 +60,10 @@ class EagleAppTestUITests: BaseTest {
         XCTAssert(percentage > 0)
         let profile = try eagleProfiler.export()
         XCTAssertFalse(profile.getBytes().isEmpty)
-    
+
         eagleProfiler.delete()
     }
-    
+
     func testEagleEnrollmentUnknownSpeaker() throws {
         let enrollUrls = enrollUrls()
         let imposterUrl = imposterUrl()
@@ -76,21 +76,21 @@ class EagleAppTestUITests: BaseTest {
             (_, feedback) = try eagleProfiler.enroll(pcm: pcm)
             XCTAssertEqual(feedback, EagleProfilerEnrollFeedback.AUDIO_OK)
         }
-        
+
         let pcm = try readPcmFromFile(testAudioURL: imposterUrl)
         (_, feedback) = try eagleProfiler.enroll(pcm: pcm)
         XCTAssertEqual(feedback, EagleProfilerEnrollFeedback.UNKNOWN_SPEAKER)
-    
+
         eagleProfiler.delete()
     }
-    
+
     func testEagleProcess() throws {
         let testUrl = testUrl()
-        
+
         let eagle = try initEagle()
         let pcm = try readPcmFromFile(testAudioURL: testUrl)
         let numFrames = pcm.count / Eagle.frameLength
-        
+
         var scores: [Float] = []
         for i in 0..<numFrames {
             let start = i * Eagle.frameLength
@@ -99,18 +99,18 @@ class EagleAppTestUITests: BaseTest {
             let score = try eagle.process(pcm: Array(pcm[start..<end]))
             scores.append(score.first!)
         }
-        
+
         XCTAssertGreaterThan(scores.max()!, 0.5)
         eagle.delete()
     }
-    
+
     func testEagleProcessImposter() throws {
         let imposterUrl = imposterUrl()
-        
+
         let eagle = try initEagle()
         let pcm = try readPcmFromFile(testAudioURL: imposterUrl)
         let numFrames = pcm.count / Eagle.frameLength
-        
+
         var scores: [Float] = []
         for i in 0..<numFrames {
             let start = i * Eagle.frameLength
@@ -119,7 +119,7 @@ class EagleAppTestUITests: BaseTest {
             let score = try eagle.process(pcm: Array(pcm[start..<end]))
             scores.append(score.first!)
         }
-        
+
         XCTAssertLessThan(scores.max()!, 0.5)
         eagle.delete()
     }
