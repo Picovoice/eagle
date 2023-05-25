@@ -259,7 +259,7 @@ describe('Eagle', function () {
         publicPath: '/test/eagle_params.pv',
         forceWrite: true,
       },
-      [testProfile]
+      testProfile
     );
     expect(eagle.sampleRate).to.be.gt(0);
     expect(eagle.frameLength).to.be.gt(0);
@@ -274,7 +274,7 @@ describe('Eagle', function () {
         publicPath: '/test/eagle_params.pv',
         forceWrite: true,
       },
-      [testProfile]
+      testProfile
     );
     expect(eagle.sampleRate).to.be.gt(0);
     expect(eagle.frameLength).to.be.gt(0);
@@ -290,7 +290,7 @@ describe('Eagle', function () {
         base64: eagleParams,
         forceWrite: true,
       },
-      [testProfile]
+      testProfile
     );
     expect(eagle.sampleRate).to.be.gt(0);
     expect(eagle.frameLength).to.be.gt(0);
@@ -305,7 +305,7 @@ describe('Eagle', function () {
         base64: eagleParams,
         forceWrite: true,
       },
-      [testProfile]
+      testProfile
     );
     expect(eagle.sampleRate).to.be.gt(0);
     expect(eagle.frameLength).to.be.gt(0);
@@ -323,7 +323,7 @@ describe('Eagle', function () {
             publicPath: '/test/eagle_params.pv',
             forceWrite: true,
           },
-          [testProfile]
+          testProfile
         );
         const scores = await getScores(eagle, testPcm);
 
@@ -349,7 +349,7 @@ describe('Eagle', function () {
             publicPath: '/test/eagle_params.pv',
             forceWrite: true,
           },
-          [testProfile]
+          testProfile
         );
         const scores = await getScores(eagle, testPcm);
 
@@ -376,7 +376,7 @@ describe('Eagle', function () {
             publicPath: '/test/eagle_params.pv',
             forceWrite: true,
           },
-          [testProfile]
+          testProfile
         );
         const scores = await getScores(eagle, testPcm);
 

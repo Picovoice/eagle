@@ -130,13 +130,13 @@ Create an instance of the engine with one or more speaker profiles created by th
 const eagle = await Eagle.create(
         ${ACCESS_KEY},
         eagleModel,
-        speakerProfiles);
+        speakerProfile);
 
 // or, on a worker thread
 const eagle = await EagleWorker.create(
         ${ACCESS_KEY},
         eagleModel,
-        speakerProfiles);
+        speakerProfile);
 ```
 
 When initialized, `eagle.sampleRate` specifies the valid sample rate for Eagle. The expected length of a frame, or the

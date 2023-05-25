@@ -710,21 +710,25 @@ export class Eagle extends EagleBase {
    * Set to a different name to use multiple models across `eagle` instances.
    * @param model.forceWrite Flag to overwrite the model in storage even if it exists.
    * @param model.version Version of the model file. Increment to update the model file in storage.
-   * @param speakerProfiles A list of Eagle profiles. These can be constructed using `EagleProfiler`.
+   * @param speakerProfiles One or more Eagle speaker profiles. These can be constructed using `EagleProfiler`.
    *
    * @return An instance of the Eagle engine.
    */
   public static async create(
     accessKey: string,
     model: EagleModel,
-    speakerProfiles: Uint8Array[]
+    speakerProfiles: Uint8Array[] | Uint8Array
   ): Promise<Eagle> {
     const customWritePath = model.customWritePath
       ? model.customWritePath
       : 'eagle_model';
     const modelPath = await loadModel({ ...model, customWritePath });
 
-    return Eagle._init(accessKey, modelPath, speakerProfiles);
+    return Eagle._init(
+      accessKey,
+      modelPath,
+      !Array.isArray(speakerProfiles) ? [speakerProfiles] : speakerProfiles
+    );
   }
 
   public static async _init(

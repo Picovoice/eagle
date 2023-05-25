@@ -10,10 +10,10 @@
   },
   "keywords": [
     "Picovoice",
-    "Koala",
+    "Eagle",
     "browser",
     "voice ai",
-    "noise suppression"
+    "speaker recognition"
   ],
   "author": "Picovoice Inc",
   "license": "Apache-2.0",

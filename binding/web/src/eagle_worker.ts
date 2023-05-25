@@ -100,7 +100,7 @@ export class EagleWorker {
   public static async create(
     accessKey: string,
     model: EagleModel,
-    speakerProfiles: Uint8Array[]
+    speakerProfiles: Uint8Array[] | Uint8Array
   ): Promise<EagleWorker> {
     const customWritePath = model.customWritePath
       ? model.customWritePath
@@ -142,7 +142,9 @@ export class EagleWorker {
       command: 'init',
       accessKey: accessKey,
       modelPath: modelPath,
-      speakerProfiles: speakerProfiles,
+      speakerProfiles: !Array.isArray(speakerProfiles)
+        ? [speakerProfiles]
+        : speakerProfiles,
       wasm: this._wasm,
       wasmSimd: this._wasmSimd,
     });
@@ -160,22 +162,11 @@ export class EagleWorker {
    * @return A list of similarity scores for each speaker profile. A higher score indicates that the voice
    * belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match.
    */
-  public process(
-    pcm: Int16Array
-    // options: {
-    //   transfer?: boolean;
-    //   transferCallback?: (data: Int16Array) => void;
-    // } = {}
-  ): Promise<number[]> {
-    // const { transfer = false, transferCallback } = options;
-
+  public process(pcm: Int16Array): Promise<number[]> {
     const returnPromise: Promise<number[]> = new Promise((resolve, reject) => {
       this._worker.onmessage = (
         event: MessageEvent<EagleWorkerProcessResponse>
       ): void => {
-        // if (transfer && transferCallback && event.data.inputFrame) {
-        //   transferCallback(new Int16Array(event.data.inputFrame.buffer));
-        // }
         switch (event.data.command) {
           case 'ok':
             resolve(event.data.scores);
@@ -190,17 +181,10 @@ export class EagleWorker {
         }
       };
     });
-
-    // const transferable = transfer ? [pcm.buffer] : [];
-
-    this._worker.postMessage(
-      {
-        command: 'process',
-        inputFrame: pcm,
-        // transfer: transfer,
-      }
-      // transferable
-    );
+    this._worker.postMessage({
+      command: 'process',
+      inputFrame: pcm,
+    });
 
     return returnPromise;
   }
