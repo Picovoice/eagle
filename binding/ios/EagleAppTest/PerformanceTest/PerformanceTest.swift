@@ -45,7 +45,7 @@ class PerformanceTest: XCTestCase {
             var totalNSec = 0.0
 
             let before = CFAbsoluteTimeGetCurrent()
-            let (_, _) = try eagleProfiler.enroll(pcm: pcm)
+            (_, _) = try eagleProfiler.enroll(pcm: pcm)
             let after = CFAbsoluteTimeGetCurrent()
             totalNSec += (after - before)
             results.append(totalNSec)
@@ -78,7 +78,7 @@ class PerformanceTest: XCTestCase {
                 audioData.copyBytes(to: $0, from: 44..<audioData.count)
             }
 
-            let (_, _) = try eagleProfiler.enroll(pcm: pcm)
+            (_, _) = try eagleProfiler.enroll(pcm: pcm)
         }
         let profile = try eagleProfiler.export()
         eagleProfiler.delete()
@@ -97,7 +97,7 @@ class PerformanceTest: XCTestCase {
             var totalNSec = 0.0
 
             let before = CFAbsoluteTimeGetCurrent()
-            let _ = try eagle.process(pcm: pcm)
+            _ = try eagle.process(pcm: pcm)
             let after = CFAbsoluteTimeGetCurrent()
             totalNSec += (after - before)
             results.append(totalNSec)

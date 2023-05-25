@@ -70,7 +70,7 @@ class ViewModel: ObservableObject {
     private func initProfiler() {
         do {
             try eagleProfiler = EagleProfiler(accessKey: ACCESS_KEY)
-            statusText = "Please keep speaking untill the enrollment percentage reaches 100%"
+            statusText = "Please keep speaking until the enrollment percentage reaches 100%"
 
             try createDumpFile(filename: "enroll_dump.pcm")
         } catch is EagleInvalidArgumentError {
