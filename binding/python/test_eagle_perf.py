@@ -32,7 +32,8 @@ class EaglePerformanceTestCase(unittest.TestCase):
     access_key: str
 
     num_test_iterations: int
-    proc_performance_threshold_sec: float
+    recognizer_performance_threshold_sec: float
+    profiler_performance_threshold_sec: float
 
     @staticmethod
     def load_wav_resource(path: str) -> Sequence[int]:
@@ -59,9 +60,9 @@ class EaglePerformanceTestCase(unittest.TestCase):
 
         avg_perf = sum(perf_results) / self.num_test_iterations
         print("Average profiler performance: %s seconds" % avg_perf)
-        self.assertLess(avg_perf, self.proc_performance_threshold_sec)
+        self.assertLess(avg_perf, self.profiler_performance_threshold_sec)
 
-    def test_performance_proc(self) -> None:
+    def test_performance_recognizer(self) -> None:
         # create profile
         eagle_profiler = EagleProfiler(
             access_key=self.access_key,
@@ -94,19 +95,21 @@ class EaglePerformanceTestCase(unittest.TestCase):
         eagle.delete()
 
         avg_perf = sum(perf_results) / self.num_test_iterations
-        print("Average profiler performance: %s seconds" % avg_perf)
-        self.assertLess(avg_perf, self.proc_performance_threshold_sec)
+        print("Average recognizer performance: %s seconds" % avg_perf)
+        self.assertLess(avg_perf, self.recognizer_performance_threshold_sec)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--access-key', required=True)
     parser.add_argument('--num-test-iterations', type=int, required=True)
-    parser.add_argument('--proc-performance-threshold-sec', type=float, required=True)
+    parser.add_argument('--recognizer-performance-threshold-sec', type=float, required=True)
+    parser.add_argument('--profiler-performance-threshold-sec', type=float, required=True)
     args = parser.parse_args()
 
     EaglePerformanceTestCase.access_key = args.access_key
     EaglePerformanceTestCase.num_test_iterations = args.num_test_iterations
-    EaglePerformanceTestCase.proc_performance_threshold_sec = args.proc_performance_threshold_sec
+    EaglePerformanceTestCase.profiler_performance_threshold_sec = args.profiler_performance_threshold_sec
+    EaglePerformanceTestCase.recognizer_performance_threshold_sec = args.recognizer_performance_threshold_sec
 
     unittest.main(argv=sys.argv[:1])

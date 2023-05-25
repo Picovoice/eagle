@@ -64,4 +64,5 @@ jobs:
         python3 test_eagle_perf.py 
         --access-key ${{secrets.PV_VALID_ACCESS_KEY}} 
         --num-test-iterations 20
-        --proc-performance-threshold-sec 0.6
+        --profiler-performance-threshold-sec 0.6
+        --recognizer-performance-threshold-sec 0.6
