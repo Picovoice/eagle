@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import ai.picovoice.eagle.*;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String ACCESS_KEY = "Tw4jothrMMLyRYQ793yD/XF3DeithcbeNVsYlNN0Dc1vY26suWNOkg==";
+    private static final String ACCESS_KEY = "${YOUR_ACCESS_KEY_HERE}";
 
     private final MicrophoneReader microphoneReader = new MicrophoneReader();
 
@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
 
     private float[] smoothScores;
 
-    private final boolean enableDump = true;
+    private final boolean enableDump = false;
     private AudioDump eagleDump;
 
     private void setUIState(UIState state) {
