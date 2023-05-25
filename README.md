@@ -112,6 +112,16 @@ For more information about Python demos go to [demo/python](./demo/python).
 
 ### iOS
 
+To run the demo, go to [demo/ios/EagleDemo](./demo/ios/EagleDemo) and run:
+
+```console
+pod install
+```
+
+Replace `let accessKey = "${YOUR_ACCESS_KEY_HERE}"` in the file [ViewModel.swift](./demo/ios/EagleDemo/EagleDemo/ViewModel.swift) with your `AccessKey`.
+
+Then, using [Xcode](https://developer.apple.com/xcode/), open the generated `EagleDemo.xcworkspace` and run the application.
+
 ### C
 
 Build the demo:
@@ -227,6 +237,77 @@ eagle.delete()
 ### Android
 
 ### iOS
+
+The Eagle iOS binding is available via [CocoaPods](https://cocoapods.org/pods/Eagle-iOS). To import it into your iOS project, add the following line to your Podfile and run `pod install`:
+
+```ruby
+pod 'Eagle-iOS'
+```
+
+#### Speaker Enrollment
+
+Create an instance of the profiler:
+
+```swift
+import pveagle
+
+let accessKey : String = // .. AccessKey provided by Picovoice Console (https://console.picovoice.ai/)
+let eagleProfiler = try EagleProfiler(accessKey: accessKey)
+```
+
+Create a new speaker profile:
+
+```swift
+func get_next_enroll_audio_data() -> [Int16] {
+    // ...
+}
+
+do {
+    var percentage = 0.0
+    var feedback: EagleProfilerEnrollFeedback?
+    while (percentage < 100.0) {
+        (percentage, feedback) = try eagleProfiler.enroll(pcm: get_next_enroll_audio_data())
+    }
+} catch { }
+```
+
+Export the speaker profile once enrollment is complete:
+
+```swift
+let speakerProfile = try eagleProfiler.export()
+```
+
+Release the resources acquired by the profiler:
+
+```swift
+eagleProfiler.delete()
+```
+
+#### Speaker Recognition
+
+Create an instance of the engine using the speaker profile exported before:
+
+```swift
+let eagle = Eagle(accessKey: accessKey, speakerProfiles: [speakerProfile])
+```
+
+Process incoming audio frames:
+
+```swift
+func get_next_audio_frame() -> [Int16] {
+    // ...
+}
+
+do {
+    let profileScores = try eagle.process(pcm: get_next_audio_frame())
+} catch { }
+```
+
+Finally, when done be sure to explicitly release the resources:
+
+```swift
+eagle.delete()
+```
 
 ### C
 
