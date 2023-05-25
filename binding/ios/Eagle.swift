@@ -10,10 +10,10 @@
 import Foundation
 import PvEagle
 
-/// iOS binding for Octopus Speech-to-Index engine. It transforms audio into searchable metadata.
+/// Eagle class for iOS Eagle text-independent speaker recognition engine.
+/// It can determine audio similarity scores given a set of EagleProfiles.
 public class Eagle : EagleBase {
 
-    /// Required audio sample rate for PCM data
     public static let frameLength = Int(pv_eagle_frame_length())
 
     private var speakerCount = 0
@@ -24,11 +24,12 @@ public class Eagle : EagleBase {
     ///
     /// - Parameters:
     ///   - accessKey: AccessKey obtained from the Picovoice Console (https://console.picovoice.ai/)
+    ///   - speakerProfiles: An array of EagleProfile objects obtained from EagleProfiler.
     ///   - modelPath: Absolute path to file containing model parameters.
-    /// - Throws: OctopusError
+    /// - Throws: EagleError
     public init(accessKey: String, speakerProfiles: [EagleProfile], modelPath: String? = nil) throws {
         super.init()
-        
+
         var modelPathArg = modelPath
 
         if (modelPath == nil) {
@@ -67,7 +68,7 @@ public class Eagle : EagleBase {
         self.delete()
     }
 
-    /// Releases resources acquired by Octopus.
+    /// Releases resources acquired by Eagle.
     public func delete() {
         if handle != nil {
             pv_eagle_delete(handle);
@@ -75,13 +76,15 @@ public class Eagle : EagleBase {
         }
     }
 
-    /// Indexes raw PCM data.
+    /// Processes given audio data and returns its speaker likelihood scores.
     ///
     /// - Parameters:
-    ///   - pcm: An array of audio samples. The audio needs to have a sample rate
-    ///          equal to `.pcmDataSampleRate` and be single-channel, 16-bit linearly-encoded.
-    /// - Throws: OctopusError
-    /// - Returns: OctopusMetadata object that is used to perform searches
+    ///   - pcm: An array of audio samples. The number of samples per frame can be attained
+    ///          by calling `.frameLength`. The audio needs to have a sample rate
+    ///          equal to `.sampleRate` and be single-channel, 16-bit linearly-encoded.
+    /// - Throws: EagleError
+    /// - Returns: Similarity scores for each enrolled speaker.
+    ///            The scores are in the range [0, 1] with 1 being a perfect match.
     public func process(pcm: [Int16]) throws -> [Float] {
 
         if handle == nil {

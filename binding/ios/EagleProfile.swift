@@ -15,16 +15,16 @@ public class EagleProfile {
     /// Constructor.
     ///
     /// - Parameters:
-    ///   - metadataBytes: A byte array that was previously obtained via `getBytes`
+    ///   - profileBytes: A byte array that was previously obtained via `getBytes`
     public init(profileBytes: [UInt8]) {
         self.profileBytes = profileBytes
     }
 
-    /// Gets a binary representation of the metadata
+    /// Gets a binary representation of the speaker profile
     ///
-    /// - Throws: OctopusError
-    /// - Returns: A byte array of the metadata
-    public func getBytes() -> [UInt8] {        
+    /// - Throws: EagleError
+    /// - Returns: A byte array of the speaker profile
+    public func getBytes() -> [UInt8] {
         return profileBytes!
     }
 

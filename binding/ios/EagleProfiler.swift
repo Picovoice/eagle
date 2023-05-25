@@ -32,7 +32,7 @@ public class EagleProfiler : EagleBase {
     /// - Throws: EagleError
     public init(accessKey: String, modelPath: String? = nil) throws {
         super.init()
-            
+
         var modelPathArg = modelPath
 
         if (modelPath == nil) {
@@ -53,7 +53,7 @@ public class EagleProfiler : EagleBase {
             modelPathArg,
             &handle)
         if(status != PV_STATUS_SUCCESS) {
-            throw pvStatusToEagleError(status, "Eagle Profiler init failed")
+            throw pvStatusToEagleError(status, "EagleProfiler init failed")
         }
     }
 
@@ -61,7 +61,7 @@ public class EagleProfiler : EagleBase {
         self.delete()
     }
 
-    /// Releases resources acquired by Eagle.
+    /// Releases resources acquired by EagleProfiler.
     public func delete() {
         if handle != nil {
             pv_eagle_profiler_delete(handle);
@@ -72,14 +72,15 @@ public class EagleProfiler : EagleBase {
     /// Enrolls a speaker.
     /// - Parameters:
     ///   - pcm: An array of audio samples. The audio needs to have a sample rate
-    ///          equal to `.pcmDataSampleRate` and be single-channel, 16-bit linearly-encoded.
-    ///          In addition it must be at least <TODO> samples long.
+    ///          equal to `.sampleRate` and be single-channel, 16-bit linearly-encoded.
+    ///          In addition it must be at least `.minEnrollSamples` samples long.
     /// - Throws: EagleError
-    /// - Returns: EagleMetadata object that is used to perform searches
+    /// - Returns: A tuple containing a the percentage of enrollment completed as a Float and
+    ///            an enum representing the feedback code.
     public func enroll(pcm: [Int16]) throws -> (Float, EagleProfilerEnrollFeedback) {
 
         if handle == nil {
-            throw EagleInvalidStateError("Eagle must be initialized before enrolling")
+            throw EagleInvalidStateError("EagleProfiler must be initialized before enrolling")
         }
 
         var cEnrollError : pv_eagle_profiler_enroll_feedback_t = PV_EAGLE_PROFILER_ENROLL_FEEDBACK_AUDIO_OK
@@ -97,20 +98,16 @@ public class EagleProfiler : EagleBase {
 
         let enrollFeedback = pvProfilerEnrollmentErrorToEnrollFeedback(cEnrollError)
         let percentage = Float(cPercentage)
-        
+
         return (percentage, enrollFeedback)
     }
 
-    /// Enrolls a speaker.
-    /// - Parameters:
-    ///   - pcm: An array of audio samples. The audio needs to have a sample rate
-    ///          equal to `.pcmDataSampleRate` and be single-channel, 16-bit linearly-encoded.
-    ///          In addition it must be at least <TODO> samples long.
+    /// Exports the speaker profile. The exported profile can be used in `Eagle` or stored for later use.
     /// - Throws: EagleError
-    /// - Returns: EagleMetadata object that is used to perform searches
+    /// - Returns: EagleProfile object that is used to perform recognition
     public func export() throws -> EagleProfile {
         if handle == nil {
-            throw EagleInvalidStateError("Eagle must be initialized before enrolling")
+            throw EagleInvalidStateError("EagleProfiler must be initialized before enrolling")
         }
 
         let numProfileBytes = try speakerProfileSize()
@@ -128,7 +125,7 @@ public class EagleProfiler : EagleBase {
 
     private func speakerProfileSize() throws -> Int {
         if handle == nil {
-            throw EagleInvalidStateError("Eagle must be initialized before checking profile size")
+            throw EagleInvalidStateError("EagleProfiler must be initialized before checking profile size")
         }
 
         var cSpeakerProfileSizeBytes: Int32 = 0;
@@ -143,9 +140,11 @@ public class EagleProfiler : EagleBase {
         return Int(cSpeakerProfileSizeBytes)
     }
 
+    /// Resets EagleProfiler and removes all enrollment data. It must be called before enrolling a new speaker.
+    /// - Throws: EagleError
     public func reset() throws {
         if handle == nil {
-            throw EagleInvalidStateError("Eagle must be initialized before resetting")
+            throw EagleInvalidStateError("EagleProfiler must be initialized before resetting")
         }
 
         let status = pv_eagle_profiler_reset(handle)
@@ -155,9 +154,12 @@ public class EagleProfiler : EagleBase {
         }
     }
 
+    /// Getter for the minimum length of the input pcm required by `enroll()`.
+    /// - Throws: EagleError
+    /// - Returns: Minimum number of samples required for a call to `enroll()`
     public func minEnrollSamples() throws -> Int {
         if handle == nil {
-            throw EagleInvalidStateError("Eagle must be initialized before checking min number of enroll samples")
+            throw EagleInvalidStateError("EagleProfiler must be initialized before checking min number of enroll samples")
         }
 
         var cMinAudioLengthSamples: Int32 = 0;

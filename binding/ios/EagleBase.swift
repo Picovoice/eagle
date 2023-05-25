@@ -1,11 +1,12 @@
 import PvEagle
 
+/// Base class providing shared utilities and functions for Eagle and EagleProfiler
 public class EagleBase {
 
     /// Required audio sample rate for PCM data
     public static let sampleRate = Int(pv_sample_rate())
 
-    /// EagleProfiler version
+    /// Eagle/EagleProfiler version
     public static let version = String(cString: pv_eagle_version())
 
     /// Given a path, return the full path to the resource.
@@ -24,7 +25,13 @@ public class EagleBase {
         throw EagleIOError("Could not find file at path '\(filePath)'. If this is a packaged asset, ensure you have added it to your xcode project.")
     }
 
-    public func pvStatusToEagleError(_ status: pv_status_t, _ message: String) -> EagleError {
+    /// Given a C pv_status_t enum, return the appropriate EagleError
+    ///
+    /// - Parameters:
+    ///   - status: C enum value.
+    ///   - message: message to include with the EagleError.
+    /// - Returns: An EagleError.
+    internal func pvStatusToEagleError(_ status: pv_status_t, _ message: String) -> EagleError {
         switch status {
         case PV_STATUS_OUT_OF_MEMORY:
             return EagleMemoryError(message)
@@ -54,7 +61,12 @@ public class EagleBase {
         }
     }
 
-    public func pvProfilerEnrollmentErrorToEnrollFeedback(_ status: pv_eagle_profiler_enroll_feedback_t) -> EagleProfilerEnrollFeedback {
+    /// Given a C pv_eagle_profiler_enroll_feedback_t enum value, return the equivalent Swift enum value.
+    ///
+    /// - Parameters:
+    ///   - status: C enum value.
+    /// - Returns: The equivalent Swift enum value.
+    internal func pvProfilerEnrollmentErrorToEnrollFeedback(_ status: pv_eagle_profiler_enroll_feedback_t) -> EagleProfilerEnrollFeedback {
         switch status {
         case PV_EAGLE_PROFILER_ENROLL_FEEDBACK_AUDIO_OK:
             return EagleProfilerEnrollFeedback.AUDIO_OK
