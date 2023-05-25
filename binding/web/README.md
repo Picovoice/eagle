@@ -88,13 +88,14 @@ function getAudioData(numSamples): Int16Array {
 let percentage = 0;
 while (percentage < 100) {
   const audioData = getAudioData(eagleProfiler.minEnrollSamples);
+  
   const result: EagleProfilerEnrollResult = await eagleProfiler.enroll(audioData);
-  percentage = result.percentage;
   if (result.feedback === EagleProfilerEnrollFeedback.AUDIO_OK) {
       // audio is good!
   } else {
       // feedback code will tell you why audio was not used in enrollment
   }
+  percentage = result.percentage;
 }
 ```
 
