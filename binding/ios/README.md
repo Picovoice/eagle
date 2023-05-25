@@ -49,10 +49,9 @@ do {
 } catch { }
 ```
 
-`EagleProfiler` is responsible for processing and enrolling PCM audio data, with the valid audio sample rate determined by `eagleProfiler.sampleRate`. The audio data must be 16-bit linearly-encoded and single-channel.
+`EagleProfiler` is responsible for processing and enrolling PCM audio data, with the valid audio sample rate determined by `EagleProfiler.sampleRate`. The audio data must be 16-bit linearly-encoded and single-channel.
 
-When passing samples to `eagleProfiler.enroll`, the number of samples must be at
-least `eagleProfiler.minEnrollSamples` to ensure sufficient data for enrollment. The percentage value obtained from this process indicates the progress of enrollment, while the feedback value can be utilized to determine the status of the enrollment process.
+When passing samples to `eagleProfiler.enroll()`, the number of samples must be at least `eagleProfiler.minEnrollSamples()` to ensure sufficient data for enrollment. The percentage value obtained from this process indicates the progress of enrollment, while the feedback value can be utilized to determine the status of the enrollment process.
 
 ```swift
 func get_next_enroll_audio_data() -> [Int16] {
@@ -61,67 +60,60 @@ func get_next_enroll_audio_data() -> [Int16] {
 
 do {
     var percentage = 0.0
-    var feedback = nil
+    var feedback: EagleProfilerEnrollFeedback?
     while (percentage < 100.0) {
-
+        (percentage, feedback) = try eagleProfiler.enroll(pcm: get_next_enroll_audio_data())
     }
 } catch { }
-
-percentage = 0.0
-while percentage < 100.0:
-    percentage, feedback = eagle_profiler.enroll(get_next_enroll_audio_data())
-    print(feedback.name)
 ```
 
 After the percentage reaches 100%, the enrollment process is considered complete. While it is possible to continue
 providing additional audio data to the profiler to improve the accuracy of the voiceprint, it is not necessary to do so.
-Moreover, if the audio data submitted is unsuitable for enrollment, the feedback value will indicate the reason, and the
-enrollment progress will remain unchanged.
+Moreover, if the audio data submitted is unsuitable for enrollment, the feedback value will indicate the reason, and the enrollment progress will remain unchanged.
 
-```python
-speaker_profile = eagle_profiler.export()
+```swift
+let speakerProfile = try eagleProfiler.export()
 ```
 
-To reset the profiler and enroll a new speaker, the `eagle_profiler.reset()` method can be used. This method clears all
-previously stored data, making it possible to start a new enrollment session with a different speaker.
+To reset the profiler and enroll a new speaker, the `eagleProfiler.reset()` method can be used. This method clears all previously stored data, making it possible to start a new enrollment session with a different speaker.
 
 Finally, when done be sure to explicitly release the resources:
 
-```python
-eagle_profiler.delete()
+```swift
+eagleProfiler.delete()
 ```
 
 ### Speaker Recognition
 
 Create an instance of the engine:
 
-```python
-eagle = pveagle.create_recognizer(access_key, speaker_profile)
+```swift
+let eagle = Eagle(accessKey: accessKey, speakerProfiles: [speakerProfile])
 ```
 
-When initialized, `eagle.sample_rate` specifies the valid sample rate for Eagle. The expected length of a frame, or the
-number of audio samples in an input array, is defined by `eagle.frame_length`.
+`Eagle.sampleRate` specifies the valid sample rate for Eagle. The expected length of a frame, or the number of audio samples in an input array, is defined by `Eagle.frameLength`.
 
 Like the profiler, Eagle is designed to work with single-channel audio that is encoded using 16-bit linear PCM.
 
-```python
-def get_next_audio_frame():
-    pass
+```swift
+func get_next_audio_frame() -> [Int16] {
+    // ...
+}
 
-
-while True:
-    score = eagle.process(get_next_audio_frame())
+do {
+    let profileScores = try eagle.process(pcm: get_next_audio_frame())
+} catch { }
 ```
 
-The return value `score` represents the degree of similarity between the input audio frame and the enrolled speakers.
-This value is a floating-point number ranging from 0 to 1, with higher values indicating a greater degree of similarity.
+The return value `profileScores` represents the degree of similarity between the input audio frame and the enrolled speakers.
+This value is an array of floating-point numbers ranging from 0 to 1, with higher values indicating a greater degree of similarity. Index 0 intidcates the first speaker, index 1 the second, and so on.
 
 Finally, when done be sure to explicitly release the resources:
 
-```python
+```swift
 eagle.delete()
 ```
 
 ## Running Unit Tests
 
-Copy your `AccessKey` into the `accessKey` variable in [`OctopusAppTestUITests.swift`](OctopusAppTest/OctopusAppTestUITests/OctopusAppTestUITests.swift). Open `OctopusAppTest.xcworkspace` with XCode and run the tests with `Product > Test`.
+Copy your `AccessKey` into the `accessKey` variable in [`EagleAppTestUITests.swift`](EagleAppTest/OctopusAppTestUITests/OctopusAppTestUITests.swift). Open `EagleAppTest.xcworkspace` with XCode and run the tests with `Product > Test`.
