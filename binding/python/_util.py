@@ -67,13 +67,13 @@ def default_library_path(relative: str = '') -> str:
                 relative,
                 'lib/raspberry-pi/%s/libpv_eagle.so' % linux_machine)
     elif platform.system() == 'Windows':
-        return os.path.join(os.path.dirname(__file__), relative, 'lib/windows/amd64/libpv_eagle.dll')
+        return os.path.join(os.path.dirname(__file__), relative, 'lib', 'windows', 'amd64', 'libpv_eagle.dll')
 
     raise NotImplementedError('Unsupported platform.')
 
 
 def default_model_path(relative: str = '') -> str:
-    return os.path.join(os.path.dirname(__file__), relative, 'lib/common/eagle_params.pv')
+    return os.path.join(os.path.dirname(__file__), relative, 'lib', 'common', 'eagle_params.pv')
 
 
 __all__ = ['default_library_path', 'default_model_path']

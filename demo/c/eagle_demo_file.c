@@ -207,7 +207,7 @@ void speaker_enrollment(
 
         int wav_audio_path_wchars_num = MultiByteToWideChar(CP_UTF8, UTF8_COMPOSITION_FLAG, wav_audio_path, NULL_TERMINATED, NULL, 0);
             wchar_t wav_audio_path_wchars[wav_audio_path_wchars_num];
-            MultiByteToWideChar(CP_UTF8, UTF8_COMPOSITION_FLAG, input_path, NULL_TERMINATED, wav_audio_path_wchars, wav_audio_path_wchars_num);
+            MultiByteToWideChar(CP_UTF8, UTF8_COMPOSITION_FLAG, wav_audio_path, NULL_TERMINATED, wav_audio_path_wchars, wav_audio_path_wchars_num);
             int drwav_init_file_status = drwav_init_file_w(&wav_audio_file, wav_audio_path_wchars, NULL);
 
 #else
@@ -315,7 +315,7 @@ void speaker_enrollment(
     int output_profile_path_wchars_num = MultiByteToWideChar(CP_UTF8, UTF8_COMPOSITION_FLAG, output_profile_path, NULL_TERMINATED, NULL, 0);
         wchar_t output_profile_path_wchars[output_profile_path_wchars_num];
         MultiByteToWideChar(CP_UTF8, UTF8_COMPOSITION_FLAG, output_profile_path, NULL_TERMINATED, output_profile_path_wchars, output_profile_path_wchars_num);
-        output_profile_file = _wfopen(output_profile_path_wchars, "wb")
+        output_profile_file = _wfopen(output_profile_path_wchars, L"wb");
 
 #else
 
@@ -402,7 +402,7 @@ void speaker_recognition(
     int input_profile_path_wchars_num = MultiByteToWideChar(CP_UTF8, UTF8_COMPOSITION_FLAG, input_profile_path, NULL_TERMINATED, NULL, 0);
         wchar_t input_profile_path_wchars[input_profile_path_wchars_num];
         MultiByteToWideChar(CP_UTF8, UTF8_COMPOSITION_FLAG, input_profile_path, NULL_TERMINATED, input_profile_path_wchars, input_profile_path_wchars_num);
-        input_profile_file = _wfopen(input_profile_path_wchars, "rb")
+        input_profile_file = _wfopen(input_profile_path_wchars, L"rb");
 
 #else
 
@@ -456,7 +456,7 @@ void speaker_recognition(
 
         int wav_audio_path_wchars_num = MultiByteToWideChar(CP_UTF8, UTF8_COMPOSITION_FLAG, wav_audio_path, NULL_TERMINATED, NULL, 0);
             wchar_t wav_audio_path_wchars[wav_audio_path_wchars_num];
-            MultiByteToWideChar(CP_UTF8, UTF8_COMPOSITION_FLAG, input_path, NULL_TERMINATED, wav_audio_path_wchars, wav_audio_path_wchars_num);
+            MultiByteToWideChar(CP_UTF8, UTF8_COMPOSITION_FLAG, wav_audio_path, NULL_TERMINATED, wav_audio_path_wchars, wav_audio_path_wchars_num);
             int drwav_init_file_status = drwav_init_file_w(&wav_audio_file, wav_audio_path_wchars, NULL);
 
 #else
