@@ -42,8 +42,8 @@ public class BaseTest {
             "audio_samples/speaker_1_utt_1.wav",
             "audio_samples/speaker_1_utt_2.wav"
     };
-    protected final String testPath = "audio_samples/test.wav";
-    protected final String imposterPath = "audio_samples/imposter.wav";
+    protected final String testPath = "audio_samples/speaker_1_test_utt.wav";
+    protected final String imposterPath = "audio_samples/speaker_2_test_utt.wav";
 
 
     @Rule
