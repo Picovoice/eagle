@@ -24,6 +24,9 @@ public class EagleProfiler: EagleBase {
 
     private var handle: OpaquePointer?
 
+    private var speakerProfileSize: Int?
+    private var minEnrollSamples: Int?
+
     /// Constructor.
     ///
     /// - Parameters:
@@ -55,6 +58,24 @@ public class EagleProfiler: EagleBase {
         if status != PV_STATUS_SUCCESS {
             throw pvStatusToEagleError(status, "EagleProfiler init failed")
         }
+
+        var cSpeakerProfileSizeBytes: Int32 = 0
+        let status = pv_eagle_profiler_export_size(
+            handle,
+            &cSpeakerProfileSizeBytes)
+        if status != PV_STATUS_SUCCESS {
+            throw pvStatusToEagleError(status, "EagleProfiler speaker_profile_size failed")
+        }
+        speakerProfileSize = Int(cSpeakerProfileSizeBytes)
+
+        var cMinAudioLengthSamples: Int32 = 0
+        let status = pv_eagle_profiler_enroll_min_audio_length_samples(
+            handle,
+            &cMinAudioLengthSamples)
+        if status != PV_STATUS_SUCCESS {
+            throw pvStatusToEagleError(status, "EagleProfiler enrollment_min_audio_length_sample failed")
+        }
+        minEnrollSamples = Int(cMinAudioLengthSamples)
     }
 
     deinit {
@@ -110,8 +131,7 @@ public class EagleProfiler: EagleBase {
             throw EagleInvalidStateError("EagleProfiler must be initialized before enrolling")
         }
 
-        let numProfileBytes = try speakerProfileSize()
-        var cProfile = [UInt8](repeating: 0, count: numProfileBytes)
+        var cProfile = [UInt8](repeating: 0, count: speakerProfileSize!)
         let status = pv_eagle_profiler_export(
             handle,
             &cProfile)
@@ -121,23 +141,6 @@ public class EagleProfiler: EagleBase {
         }
 
         return EagleProfile(profileBytes: cProfile)
-    }
-
-    private func speakerProfileSize() throws -> Int {
-        if handle == nil {
-            throw EagleInvalidStateError("EagleProfiler must be initialized before checking profile size")
-        }
-
-        var cSpeakerProfileSizeBytes: Int32 = 0
-        let status = pv_eagle_profiler_export_size(
-            handle,
-            &cSpeakerProfileSizeBytes)
-
-        if status != PV_STATUS_SUCCESS {
-            throw pvStatusToEagleError(status, "EagleProfiler speaker_profile_size failed")
-        }
-
-        return Int(cSpeakerProfileSizeBytes)
     }
 
     /// Resets EagleProfiler and removes all enrollment data. It must be called before enrolling a new speaker.
@@ -159,18 +162,9 @@ public class EagleProfiler: EagleBase {
     /// - Returns: Minimum number of samples required for a call to `enroll()`
     public func minEnrollSamples() throws -> Int {
         if handle == nil {
-            throw EagleInvalidStateError("EagleProfiler must be initialized before checking minEnrollSamples")
+            throw EagleInvalidStateError("EagleProfiler must be initialized before calling minEnrollSamples")
         }
 
-        var cMinAudioLengthSamples: Int32 = 0
-        let status = pv_eagle_profiler_enroll_min_audio_length_samples(
-            handle,
-            &cMinAudioLengthSamples)
-
-        if status != PV_STATUS_SUCCESS {
-            throw pvStatusToEagleError(status, "EagleProfiler enrollment_min_audio_length_sample failed")
-        }
-
-        return Int(cMinAudioLengthSamples)
+        return minEnrollSamples!
     }
 }

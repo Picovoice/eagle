@@ -30,6 +30,10 @@ public class Eagle: EagleBase {
     public init(accessKey: String, speakerProfiles: [EagleProfile], modelPath: String? = nil) throws {
         super.init()
 
+        if speakerProfiles.isEmpty {
+            throw EagleInvalidArgumentError("`speakerProfiles` must contain at least one profile")
+        }
+
         var modelPathArg = modelPath
 
         if modelPath == nil {
@@ -62,6 +66,20 @@ public class Eagle: EagleBase {
         if status != PV_STATUS_SUCCESS {
             throw pvStatusToEagleError(status, "Eagle init failed")
         }
+    }
+
+    /// Constructor.
+    ///
+    /// - Parameters:
+    ///   - accessKey: AccessKey obtained from the Picovoice Console (https://console.picovoice.ai/)
+    ///   - speakerProfile: An EagleProfile object obtained from EagleProfiler.
+    ///   - modelPath: Absolute path to file containing model parameters.
+    /// - Throws: EagleError
+    public convenience init(accessKey: String, speakerProfile: EagleProfile, modelPath: String? = nil) throws {
+        try self.init(
+            accessKey: accessKey,
+            speakerProfiles: [speakerProfile],
+            modelPath: modelPath)
     }
 
     deinit {
@@ -102,5 +120,23 @@ public class Eagle: EagleBase {
         }
 
         return Array(scores)
+    }
+
+    /// Resets the internal state of the Eagle engine.
+    /// It must be called before processing a new sequence of audio frames.
+    ///
+    /// - Parameters:
+    /// - Throws: EagleError
+    public func reset() throws {
+
+        if handle == nil {
+            throw EagleInvalidStateError("Eagle must be initialized before indexing")
+        }
+
+        let status = pv_eagle_reset(handle)
+
+        if status != PV_STATUS_SUCCESS {
+            throw pvStatusToEagleError(status, "Eagle reset failed")
+        }
     }
 }

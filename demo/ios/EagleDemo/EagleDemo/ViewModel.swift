@@ -21,7 +21,7 @@ enum UIState {
 
 class ViewModel: ObservableObject {
 
-    private let ACCESS_KEY = "{YOUR_ACCESS_KEY_HERE}"
+    private let accessKey = "{YOUR_ACCESS_KEY_HERE}"
 
     private var eagleProfiler: EagleProfiler!
     private var eagle: Eagle!
@@ -69,20 +69,20 @@ class ViewModel: ObservableObject {
 
     private func initProfiler() {
         do {
-            try eagleProfiler = EagleProfiler(accessKey: ACCESS_KEY)
+            try eagleProfiler = EagleProfiler(accessKey: accessKey)
             statusText = "Please keep speaking until the enrollment percentage reaches 100%"
 
             try createDumpFile(filename: "enroll_dump.pcm")
-        } catch is EagleInvalidArgumentError {
-            errorMessage = "ACCESS_KEY '\(ACCESS_KEY)' is invalid"
+        } catch let error as EagleInvalidArgumentError {
+            errorMessage = "\(error.localizedDescription)\nEnsure your accessKey '\(accessKey)' is valid"
         } catch is EagleActivationError {
-            errorMessage = "ACCESS_KEY activation error"
+            errorMessage = "AccessKey activation error"
         } catch is EagleActivationRefusedError {
-            errorMessage = "ACCESS_KEY activation refused"
+            errorMessage = "AccessKey activation refused"
         } catch is EagleActivationLimitError {
-            errorMessage = "ACCESS_KEY reached its limit"
+            errorMessage = "AccessKey reached its limit"
         } catch is EagleActivationThrottledError {
-            errorMessage = "ACCESS_KEY is throttled"
+            errorMessage = "AccessKey is throttled"
         } catch {
             errorMessage = "\(error)"
         }
@@ -157,20 +157,20 @@ class ViewModel: ObservableObject {
 
     private func initEagle() {
         do {
-            try eagle = Eagle(accessKey: ACCESS_KEY, speakerProfiles: profiles)
+            try eagle = Eagle(accessKey: accessKey, speakerProfiles: profiles)
             statusText = ""
 
             try createDumpFile(filename: "test_dump.pcm")
-        } catch is EagleInvalidArgumentError {
-            errorMessage = "ACCESS_KEY '\(ACCESS_KEY)' is invalid"
+        } catch let error as EagleInvalidArgumentError {
+            errorMessage = "\(error.localizedDescription)\nEnsure your accessKey '\(accessKey)' is valid"
         } catch is EagleActivationError {
-            errorMessage = "ACCESS_KEY activation error"
+            errorMessage = "AccessKey activation error"
         } catch is EagleActivationRefusedError {
-            errorMessage = "ACCESS_KEY activation refused"
+            errorMessage = "AccessKey activation refused"
         } catch is EagleActivationLimitError {
-            errorMessage = "ACCESS_KEY reached its limit"
+            errorMessage = "AccessKey reached its limit"
         } catch is EagleActivationThrottledError {
-            errorMessage = "ACCESS_KEY is throttled"
+            errorMessage = "AccessKey is throttled"
         } catch {
             errorMessage = "\(error)"
         }
@@ -197,6 +197,7 @@ class ViewModel: ObservableObject {
 
         guard try VoiceProcessor.shared.hasPermissions() else {
             print("Permissions denied.")
+            self.errorMessage = "App does not have microphone permissions"
             return
         }
 
