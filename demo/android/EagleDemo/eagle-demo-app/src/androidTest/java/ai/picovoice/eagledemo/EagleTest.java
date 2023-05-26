@@ -196,8 +196,8 @@ public class EagleTest {
         public void testEagleEnrollmentUnknownSpeaker() throws Exception {
             File audioFile = new File(testResourcesPath, imposterPath);
             short[] pcm = readAudioFile(audioFile.getAbsolutePath());
-            EagleProfilerEnrollFeedback feedback = eagleProfiler.enroll(pcm);
-            assertEquals(feedback.getFeedback(), EagleProfilerFeedback.UNKNOWN_SPEAKER);
+            EagleProfilerEnrollResult result = eagleProfiler.enroll(pcm);
+            assertEquals(result.getFeedback(), EagleProfilerEnrollFeedback.UNKNOWN_SPEAKER);
         }
 
         @Test

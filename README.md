@@ -112,7 +112,7 @@ For more information about Python demos go to [demo/python](./demo/python).
 
 Using Android Studio, open [demo/android/EagleDemo](./demo/android/EagleDemo) as an Android project and then run the application.
 
-Replace `"${YOUR_ACCESS_KEY_HERE}"` in the file [MainActivity.java](./demo/android/EagleDemo/eagle-demo-app/src/main/java/ai/picovoice/eagledemo/MainActivity.java) with your `AccessKey`.
+Open the file [MainActivity.java](./demo/android/EagleDemo/eagle-demo-app/src/main/java/ai/picovoice/eagledemo/MainActivity.java) and replace `"${YOUR_ACCESS_KEY_HERE}"` in with your `AccessKey`.
 
 
 ### iOS
@@ -262,10 +262,10 @@ public short[] getNextEnrollAudioData() {
     // get audio data
 }
 
-EagleProfilerEnrollFeedback feedback = null;
+EagleProfilerEnrollResult result = null;
 try {
-    while (feedback != null && feedback.getPercentage() < 100.0) {
-        feedback = eagleProfiler.enroll(getNextEnrollAudioData());
+    while (result != null && result.getPercentage() < 100.0) {
+        result = eagleProfiler.enroll(getNextEnrollAudioData());
     }
 } catch (EagleException e) { }
 ```

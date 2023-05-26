@@ -9,7 +9,6 @@ on:
       - '!demo/android/EagleDemo/README.md'
       - '.github/workflows/android-appcenter.yml'
       - 'resources/audio_samples/**'
-      - 'resources/test/**'
   pull_request:
     branches: [ main, 'v[0-9]+.[0-9]+' ]
     paths:
@@ -17,7 +16,6 @@ on:
       - '!demo/android/EagleDemo/README.md'
       - '.github/workflows/android-appcenter.yml'
       - 'resources/audio_samples/**'
-      - 'resources/test/**'
 
 defaults:
   run:
@@ -32,7 +30,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Setup Node.js environment
-      uses: actions/setup-node@v2.4.0
+      uses: actions/setup-node@v3
 
     - name: Install AppCenter CLI
       run: npm install -g appcenter-cli

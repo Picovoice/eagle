@@ -13,24 +13,21 @@
 package ai.picovoice.eagle;
 
 /**
- * Representation of the feedback, given percentage and code.
+ * Enumeration of possible enrollment feedback codes:
+ * - `AUDIO_OK`: The audio is good for enrollment.
+ * - `AUDIO_TOO_SHORT`: Audio length is insufficient for enrollment,
+ *      i.e. it is shorter than`EagleProfiler.getMinEnrollSamples()`.
+ * - `UNKNOWN_SPEAKER`: There is another speaker in the audio that is different from the speaker
+ *      being enrolled. Too much background noise may cause this error as well.
+ * - `NO_VOICE_FOUND`: The audio does not contain any voice, i.e. it is silent or
+ *      has a low signal-to-noise ratio.
+ * - `QUALITY_ISSUE`: The audio quality is too low for enrollment due to a bad microphone
+ *      or recording environment.
  */
-public class EagleProfilerEnrollFeedback {
-
-    private final float percentage;
-    private final EagleProfilerFeedback feedback;
-
-    public EagleProfilerEnrollFeedback(float percentage, int feedbackIdx) {
-        this.percentage = percentage;
-        this.feedback = EagleProfilerFeedback.values()[feedbackIdx];
-    }
-
-    public float getPercentage() {
-        return this.percentage;
-    }
-
-    public EagleProfilerFeedback getFeedback() {
-        return this.feedback;
-    }
-
+public enum EagleProfilerEnrollFeedback {
+    AUDIO_OK,
+    AUDIO_TOO_SHORT,
+    UNKNOWN_SPEAKER,
+    NO_VOICE_FOUND,
+    QUALITY_ISSUE;
 }

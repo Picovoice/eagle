@@ -24,7 +24,7 @@ class EagleProfilerNative {
 
     static native void delete(long object);
 
-    static native EagleProfilerEnrollFeedback enroll(
+    static native EagleProfilerEnrollResult enroll(
             long handle,
             short[] pcm,
             int numSamples) throws EagleException;

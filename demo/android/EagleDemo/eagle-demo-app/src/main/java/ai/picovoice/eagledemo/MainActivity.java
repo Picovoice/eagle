@@ -302,10 +302,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private String getFeedback(EagleProfilerFeedback feedback) {
+    private String getFeedback(EagleProfilerEnrollFeedback feedback) {
         switch (feedback) {
             case AUDIO_OK:
-                return "Audio enrollment success";
+                return "Enrolling speaker..";
             case AUDIO_TOO_SHORT:
                 return "Insufficient audio length";
             case UNKNOWN_SPEAKER:
@@ -354,9 +354,9 @@ public class MainActivity extends AppCompatActivity {
     @SuppressLint("DefaultLocale")
     private void enrollSpeaker(short[] pcmData) {
         try {
-            EagleProfilerEnrollFeedback feedback = eagleProfiler.enroll(pcmData);
+            EagleProfilerEnrollResult result = eagleProfiler.enroll(pcmData);
 
-            if (feedback.getFeedback() == EagleProfilerFeedback.AUDIO_OK && feedback.getPercentage() == 100) {
+            if (result.getFeedback() == EagleProfilerEnrollFeedback.AUDIO_OK && result.getPercentage() == 100) {
                 EagleProfile profile = eagleProfiler.export();
                 profiles.add(profile);
 
@@ -366,7 +366,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     ProgressBar progressBar = findViewById(progressBarIds.get(progressBarIds.size() - 1));
-                    progressBar.setProgress(Math.round(feedback.getPercentage()));
+                    progressBar.setProgress(Math.round(result.getPercentage()));
 
                     ToggleButton enrollButton = findViewById(R.id.enrollButton);
                     enrollButton.performClick();
@@ -376,14 +376,14 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 String finalMessage = String.format(
                         "%s. Keep speaking until the enrollment percentage reaches 100%%.",
-                        getFeedback(feedback.getFeedback()));
+                        getFeedback(result.getFeedback()));
                 runOnUiThread(() -> {
                     if (progressBarIds.size() == 0) {
                         return;
                     }
 
                     ProgressBar progressBar = findViewById(progressBarIds.get(progressBarIds.size() - 1));
-                    progressBar.setProgress(Math.round(feedback.getPercentage()));
+                    progressBar.setProgress(Math.round(result.getPercentage()));
 
                     TextView recordingTextView = findViewById(R.id.recordingTextView);
                     recordingTextView.setText(finalMessage);

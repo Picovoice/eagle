@@ -99,8 +99,8 @@ public class Eagle {
     }
 
     /**
-     * Resets the internal state of the engine. It must be called before
-     * processing a new sequence of audio frames.
+     * Resets the internal state of Eagle Profiler.
+     * It should be called before starting a new enrollment session.
      *
      * @throws EagleException if there is an error while resetting Eagle.
      */

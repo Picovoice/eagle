@@ -30,6 +30,8 @@ public class EagleProfiler {
 
     private static String defaultModelPath;
 
+    private final int minEnrollSamples;
+
     static {
         System.loadLibrary("pv_eagle");
     }
@@ -45,6 +47,7 @@ public class EagleProfiler {
      */
     private EagleProfiler(String accessKey, String modelPath) throws EagleException {
         handle = EagleProfilerNative.init(accessKey, modelPath);
+        minEnrollSamples = EagleProfilerNative.minEnrollSamples(handle);
     }
 
     /**
@@ -73,7 +76,7 @@ public class EagleProfiler {
      *         corresponding to the last enrollment attempt.
      * @throws EagleException if there is an error while enrolling speaker.
      */
-    public EagleProfilerEnrollFeedback enroll(short[] pcm) throws EagleException {
+    public EagleProfilerEnrollResult enroll(short[] pcm) throws EagleException {
         if (handle == 0) {
             throw new EagleInvalidStateException("Attempted to call eagle enroll after delete.");
         }
@@ -128,8 +131,8 @@ public class EagleProfiler {
      *
      * @return minimum length of the input pcm.
      */
-    public int getMinEnrollSamples() throws EagleException {
-        return EagleProfilerNative.minEnrollSamples(handle);
+    public int getMinEnrollSamples() {
+        return this.minEnrollSamples;
     }
 
     /**

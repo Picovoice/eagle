@@ -76,10 +76,10 @@ public short[] getNextEnrollAudioData() {
     // get audio data
 }
 
-EagleProfilerEnrollFeedback feedback = null;
+EagleProfilerEnrollResult result = null;
 try {
-    while (feedback != null && feedback.getPercentage() < 100.0) {
-        feedback = eagleProfiler.enroll(getNextEnrollAudioData());
+    while (result != null && result.getPercentage() < 100.0) {
+        result = eagleProfiler.enroll(getNextEnrollAudioData());
     }
 } catch (EagleException e) { }
 ```
