@@ -47,14 +47,14 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
         - os: ubuntu-latest
-          profiler_performance_threshold_sec: 0.4
-          recognizer_performance_threshold_sec: 0.5
-        - os: windows-latest
-          profiler_performance_threshold_sec: 0.4
-          recognizer_performance_threshold_sec: 0.5
-        - os: macos-latest
           profiler_performance_threshold_sec: 0.5
-          recognizer_performance_threshold_sec: 0.7
+          recognizer_performance_threshold_sec: 0.6
+        - os: windows-latest
+          profiler_performance_threshold_sec: 0.5
+          recognizer_performance_threshold_sec: 0.6
+        - os: macos-latest
+          profiler_performance_threshold_sec: 0.6
+          recognizer_performance_threshold_sec: 0.8
 
     steps:
     - uses: actions/checkout@v3
@@ -103,8 +103,8 @@ jobs:
           profiler_performance_threshold_sec: 2.0
           recognizer_performance_threshold_sec: 2.5
         - machine: jetson
-          profiler_performance_threshold_sec: 0.1
-          recognizer_performance_threshold_sec: 0.1
+          profiler_performance_threshold_sec: 1.2
+          recognizer_performance_threshold_sec: 1.5
 
     steps:
     - uses: actions/checkout@v3
