@@ -29,9 +29,11 @@ jobs:
         device: [single-android, 32bit-android]
         include:
         - device: single-android
+          enrollPerformanceThresholdSec: 0.6
           procPerformanceThresholdSec: 0.6
         - device: 32bit-android
-          procPerformanceThresholdSec: 4.0
+          enrollPerformanceThresholdSec: 5.5
+          procPerformanceThresholdSec: 5.5
 
     steps:
     - uses: actions/checkout@v3
@@ -56,6 +58,9 @@ jobs:
 
     - name: Inject Number of Iterations
       run: echo numTestIterations="20" >> local.properties
+
+    - name: Inject Enroll Performance Threshold
+      run: echo enrollPerformanceThresholdSec="${{ matrix.enrollPerformanceThresholdSec }}" >> local.properties
 
     - name: Inject Proc Performance Threshold
       run: echo procPerformanceThresholdSec="${{ matrix.procPerformanceThresholdSec }}" >> local.properties

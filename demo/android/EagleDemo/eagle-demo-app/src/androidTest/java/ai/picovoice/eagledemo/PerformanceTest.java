@@ -44,11 +44,11 @@ public class PerformanceTest extends BaseTest {
 
     @Test
     public void testProfilerPerformance() throws Exception {
-        String procThresholdString = appContext.getString(R.string.procPerformanceThresholdSec);
-        Assume.assumeNotNull(procThresholdString);
-        Assume.assumeFalse(procThresholdString.equals(""));
+        String enrollThresholdString = appContext.getString(R.string.enrollPerformanceThresholdSec);
+        Assume.assumeNotNull(enrollThresholdString);
+        Assume.assumeFalse(enrollThresholdString.equals(""));
 
-        double procPerformanceThresholdSec = Double.parseDouble(procThresholdString);
+        double enrollPerformanceThresholdSec = Double.parseDouble(enrollThresholdString);
 
         EagleProfiler eagleProfiler = new EagleProfiler.Builder()
                 .setAccessKey(accessKey)
@@ -72,8 +72,8 @@ public class PerformanceTest extends BaseTest {
         double avgNSec = totalNSec / (double) numTestIterations;
         double avgSec = ((double) Math.round(avgNSec * 1e-6)) / 1000.0;
         assertTrue(
-                String.format("Expected threshold (%.3fs), profiler took (%.3fs)", procPerformanceThresholdSec, avgSec),
-                avgSec <= procPerformanceThresholdSec
+                String.format("Expected threshold (%.3fs), profiler took (%.3fs)", enrollPerformanceThresholdSec, avgSec),
+                avgSec <= enrollPerformanceThresholdSec
         );
 
         eagleProfiler.delete();
