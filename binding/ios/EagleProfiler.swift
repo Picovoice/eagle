@@ -25,7 +25,7 @@ public class EagleProfiler: EagleBase {
     private var handle: OpaquePointer?
 
     private var speakerProfileSize: Int?
-    private var minEnrollSamples: Int?
+    private var minEnrollAudioLength: Int?
 
     /// Constructor.
     ///
@@ -51,7 +51,7 @@ public class EagleProfiler: EagleBase {
             modelPathArg = try getResourcePath(modelPathArg!)
         }
 
-        let status = pv_eagle_profiler_init(
+        var status = pv_eagle_profiler_init(
             accessKey,
             modelPathArg,
             &handle)
@@ -60,7 +60,7 @@ public class EagleProfiler: EagleBase {
         }
 
         var cSpeakerProfileSizeBytes: Int32 = 0
-        let status = pv_eagle_profiler_export_size(
+        status = pv_eagle_profiler_export_size(
             handle,
             &cSpeakerProfileSizeBytes)
         if status != PV_STATUS_SUCCESS {
@@ -69,13 +69,13 @@ public class EagleProfiler: EagleBase {
         speakerProfileSize = Int(cSpeakerProfileSizeBytes)
 
         var cMinAudioLengthSamples: Int32 = 0
-        let status = pv_eagle_profiler_enroll_min_audio_length_samples(
+        status = pv_eagle_profiler_enroll_min_audio_length_samples(
             handle,
             &cMinAudioLengthSamples)
         if status != PV_STATUS_SUCCESS {
             throw pvStatusToEagleError(status, "EagleProfiler enrollment_min_audio_length_sample failed")
         }
-        minEnrollSamples = Int(cMinAudioLengthSamples)
+        minEnrollAudioLength = Int(cMinAudioLengthSamples)
     }
 
     deinit {
@@ -165,6 +165,6 @@ public class EagleProfiler: EagleBase {
             throw EagleInvalidStateError("EagleProfiler must be initialized before calling minEnrollSamples")
         }
 
-        return minEnrollSamples!
+        return minEnrollAudioLength!
     }
 }
