@@ -72,7 +72,10 @@ public class PerformanceTest extends BaseTest {
         double avgNSec = totalNSec / (double) numTestIterations;
         double avgSec = ((double) Math.round(avgNSec * 1e-6)) / 1000.0;
         assertTrue(
-                String.format("Expected threshold (%.3fs), profiler took (%.3fs)", enrollPerformanceThresholdSec, avgSec),
+                String.format(
+                    "Expected threshold (%.3fs), profiler took (%.3fs)",
+                    enrollPerformanceThresholdSec,
+                    avgSec),
                 avgSec <= enrollPerformanceThresholdSec
         );
 
