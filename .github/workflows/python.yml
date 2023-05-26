@@ -35,10 +35,11 @@ defaults:
 
 jobs:
   build-github-hosted:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
         python-version: ['3.7', '3.8', '3.9', '3.10']
 
     steps:
@@ -57,3 +58,22 @@ jobs:
 
     - name: Test
       run: python test_eagle.py --access-key ${{secrets.PV_VALID_ACCESS_KEY}}
+
+  build-self-hosted:
+    runs-on: ${{ matrix.machine }}
+
+    strategy:
+      matrix:
+        machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, jetson]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Pre-build dependencies
+      run: python3 -m pip install --upgrade pip
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Test
+      run: python3 test_eagle.py --access-key ${{secrets.PV_VALID_ACCESS_KEY}}

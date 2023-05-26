@@ -29,14 +29,10 @@ for rel_path in INCLUDE_FILES:
 
 os.mkdir(os.path.join(package_folder, 'lib'))
 for platform in INCLUDE_LIBS:
-    # TODO: remove this try/except once we have all the libraries
-    try:
-        shutil.copytree(
-            os.path.join(os.path.dirname(__file__), '../../lib', platform),
-            os.path.join(package_folder, 'lib', platform))
-    except FileNotFoundError:
-        pass
-manifest_in += "recursive-include pveagle/lib/ *\n"
+    shutil.copytree(
+        os.path.join(os.path.dirname(__file__), '../../lib', platform),
+        os.path.join(package_folder, 'lib', platform))
+manifest_in += "recursive-include pveagle/lib *\n"
 
 with open(os.path.join(os.path.dirname(__file__), 'MANIFEST.in'), 'w') as f:
     f.write(manifest_in)

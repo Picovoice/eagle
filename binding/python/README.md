@@ -122,6 +122,7 @@ eagle.delete()
 ```
 
 ## Demos
-
+<!-- markdown-link-check-disable -->
 [pveagledemo](https://pypi.org/project/pveagledemo/) provides command-line utilities for processing real-time
 audio (i.e. microphone) and files using Eagle.
+<!-- markdown-link-check-enable -->

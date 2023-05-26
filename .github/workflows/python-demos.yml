@@ -23,10 +23,11 @@ defaults:
 
 jobs:
   build-github-hosted:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
         python-version: ['3.7', '3.8', '3.9', '3.10']
 
     steps:
@@ -42,7 +43,7 @@ jobs:
 
     - name: Build dependencies
       run: |
-        pip install wheel && cd ../../binding/python && python setup.py sdist bdist_wheel && pip install dist/*.whl
+        pip install wheel && cd ../../binding/python && python setup.py sdist bdist_wheel && pip install dist/pveagle-0.1.0-py3-none-any.whl
 
     - name: Install dependencies
       run: pip install -r requirements.txt
@@ -60,3 +61,37 @@ jobs:
         --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
         --input_profile_paths test.egl
         --test_audio_path ../../resources/audio_samples/speaker_1_test_utt.wav
+
+  build-self-hosted:
+    runs-on: ${{ matrix.machine }}
+
+    strategy:
+      matrix:
+        machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, jetson]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Pre-build dependencies
+        run: python3 -m pip install --upgrade pip
+
+      - name: Build dependencies
+        run: |
+          pip install wheel && cd ../../binding/python && python3 setup.py sdist bdist_wheel && pip install -U dist/*.whl
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Test enroll
+        run: >
+          python3 eagle_demo_file.py enroll
+          --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
+          --enroll_audio_paths ../../resources/audio_samples/speaker_1_utt_1.wav ../../resources/audio_samples/speaker_1_utt_2.wav
+          --output_profile_path test.egl
+
+      - name: Test inference
+        run: >
+          python3 eagle_demo_file.py test
+          --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
+          --input_profile_paths test.egl
+          --test_audio_path ../../resources/audio_samples/speaker_1_test_utt.wav
