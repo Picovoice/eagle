@@ -176,23 +176,12 @@ export class EagleProfilerWorker {
    *    - `QUALITY_ISSUE`: The audio quality is too low for enrollment due to a bad microphone
    *       or recording environment.
    */
-  public enroll(
-    pcm: Int16Array
-    // options: {
-    //   transfer?: boolean;
-    //   transferCallback?: (data: Int16Array) => void;
-    // } = {}
-  ): Promise<EagleProfilerEnrollResult> {
-    // const { transfer = false, transferCallback } = options;
-
+  public enroll(pcm: Int16Array): Promise<EagleProfilerEnrollResult> {
     const returnPromise: Promise<EagleProfilerEnrollResult> = new Promise(
       (resolve, reject) => {
         this._worker.onmessage = (
           event: MessageEvent<EagleProfilerWorkerEnrollResponse>
         ): void => {
-          // if (transfer && transferCallback && event.data.inputFrame) {
-          //   transferCallback(new Int16Array(event.data.inputFrame.buffer));
-          // }
           switch (event.data.command) {
             case 'ok':
               resolve(event.data.result);
@@ -209,16 +198,10 @@ export class EagleProfilerWorker {
       }
     );
 
-    // const transferable = transfer ? [pcm.buffer] : [];
-
-    this._worker.postMessage(
-      {
-        command: 'enroll',
-        inputFrame: pcm,
-        // transfer: transfer,
-      }
-      // transferable
-    );
+    this._worker.postMessage({
+      command: 'enroll',
+      inputFrame: pcm,
+    });
 
     return returnPromise;
   }
