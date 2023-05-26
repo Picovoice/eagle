@@ -43,7 +43,7 @@ Create an instance of the profiler:
 ```swift
 import Eagle
 
-let accessKey : String = // .. AccessKey provided by Picovoice Console (https://console.picovoice.ai/)
+let accessKey : String = // .. AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)
 do {
     let eagleProfiler = try EagleProfiler(accessKey: accessKey)
 } catch { }
