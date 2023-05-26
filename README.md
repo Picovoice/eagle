@@ -258,15 +258,18 @@ let eagleProfiler = try EagleProfiler(accessKey: accessKey)
 Create a new speaker profile:
 
 ```swift
-func get_next_enroll_audio_data() -> [Int16] {
+func get_next_enroll_audio_data(numSamples: Int) -> [Int16] {
     // ...
 }
 
 do {
+    let numSamples = eagleProfiler.minEnrollSamples()
+
     var percentage = 0.0
     var feedback: EagleProfilerEnrollFeedback?
+
     while (percentage < 100.0) {
-        (percentage, feedback) = try eagleProfiler.enroll(pcm: get_next_enroll_audio_data())
+        (percentage, feedback) = try eagleProfiler.enroll(pcm: get_next_enroll_audio_data(numSamples: numSamples))
     }
 } catch { }
 ```

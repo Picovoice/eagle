@@ -54,15 +54,18 @@ do {
 When passing samples to `eagleProfiler.enroll()`, the number of samples must be at least `eagleProfiler.minEnrollSamples()` to ensure sufficient data for enrollment. The percentage value obtained from this process indicates the progress of enrollment, while the feedback value can be utilized to determine the status of the enrollment process.
 
 ```swift
-func get_next_enroll_audio_data() -> [Int16] {
+func get_next_enroll_audio_data(numSamples: Int) -> [Int16] {
     // ...
 }
 
 do {
+    let numSamples = eagleProfiler.minEnrollSamples()
+
     var percentage = 0.0
     var feedback: EagleProfilerEnrollFeedback?
+
     while (percentage < 100.0) {
-        (percentage, feedback) = try eagleProfiler.enroll(pcm: get_next_enroll_audio_data())
+        (percentage, feedback) = try eagleProfiler.enroll(pcm: get_next_enroll_audio_data(numSamples: numSamples))
     }
 } catch { }
 ```
