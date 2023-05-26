@@ -134,9 +134,11 @@ self.onmessage = async function (
     case 'enroll':
       self.postMessage(await enrollRequest(event.data));
       break;
-    case 'export':
-      self.postMessage(await exportRequest());
+    case 'export': {
+      const exportMsg = await exportRequest();
+      self.postMessage(exportMsg, [exportMsg.profile.buffer]);
       break;
+    }
     case 'reset':
       self.postMessage(await resetRequest());
       break;

@@ -102,8 +102,6 @@ export class EagleProfilerWorker {
     accessKey: string,
     model: EagleModel
   ): Promise<EagleProfilerWorker> {
-    // const { processErrorCallback, ...rest } = options;
-
     const customWritePath = model.customWritePath
       ? model.customWritePath
       : 'eagle_model';

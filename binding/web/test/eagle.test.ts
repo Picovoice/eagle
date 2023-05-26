@@ -176,6 +176,7 @@ describe('Eagle Profiler', async function () {
       }
     );
   });
+
   it('should be able to enroll speakers with reset (worker)', () => {
     cy.getFramesFromFile('audio_samples/speaker_1_utt_1.wav').then(
       async inputPcm1 => {
@@ -216,6 +217,7 @@ describe('Eagle Profiler', async function () {
       }
     );
   });
+
   it('should detect unknown speaker during enrollment (worker)', () => {
     cy.getFramesFromFile('audio_samples/speaker_1_utt_1.wav').then(
       async inputPcm1 => {
@@ -267,6 +269,7 @@ describe('Eagle', function () {
     expect(eagle.version).length.to.be.gt(0);
     await eagle.release();
   });
+
   it('eagle init (worker)', async () => {
     const eagle = await EagleWorker.create(
       ACCESS_KEY,
@@ -283,6 +286,7 @@ describe('Eagle', function () {
     await eagle.release();
     await eagle.terminate();
   });
+
   it('eagle init with base64', async () => {
     const eagle = await Eagle.create(
       ACCESS_KEY,
@@ -298,6 +302,7 @@ describe('Eagle', function () {
     expect(eagle.version).length.to.be.gt(0);
     await eagle.release();
   });
+
   it('eagle init with base64 (worker)', async () => {
     const eagle = await EagleWorker.create(
       ACCESS_KEY,
@@ -314,6 +319,7 @@ describe('Eagle', function () {
     await eagle.release();
     await eagle.terminate();
   });
+
   it('eagle process with reset', () => {
     cy.getFramesFromFile('audio_samples/speaker_1_test_utt.wav').then(
       async testPcm => {

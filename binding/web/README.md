@@ -162,7 +162,10 @@ Each value is a floating-point number ranging from 0 to 1, with higher values in
 Finally, when done be sure to explicitly release the resources:
 
 ```typescript
-eagle.release()
+eagle.release();
+
+// if on worker thread
+eagle.terminate();
 ```
 
 ### Eagle Model
