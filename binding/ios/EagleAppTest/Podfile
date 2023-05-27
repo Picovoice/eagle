@@ -1,0 +1,14 @@
+source 'https://cdn.cocoapods.org/'
+platform :ios, '11.0'
+
+target 'EagleAppTest' do
+    pod 'Eagle-iOS', :path => '../../../'
+end
+
+target 'EagleAppTestUITests' do
+    pod 'Eagle-iOS', :path => '../../../'
+end
+
+target 'PerformanceTest' do
+    pod 'Eagle-iOS', :path => '../../../'
+end

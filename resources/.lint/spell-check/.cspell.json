@@ -24,6 +24,17 @@
     "**/*.wasm",
     "**/*.wav",
     "**/*.egl",
-    "../../../lib/ios/**/*"
+    "../../../lib/ios/**/*",
+
+    // ios
+    "**/*.xcconfig",
+    "**/*.podspec",
+    "**/Podfile",
+    "**/*.plist",
+    "**/contents.xcworkspacedata",
+    "**/*.storyboard",
+    "**/*.pbxproj",
+    "**/*.xcscheme",
+    "**/*.m"
   ]
 }
