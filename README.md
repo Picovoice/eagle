@@ -27,17 +27,12 @@ Eagle is an on-device speaker recognition engine. Eagle is:
   - [AccessKey](#accesskey)
   - [Demos](#demos)
     - [Python Demos](#python-demos)
-      - [Speaker Enrollment](#speaker-enrollment)
-      - [Speaker Recognition](#speaker-recognition)
     - [Android Demo](#android-demo)
     - [iOS Demo](#ios-demo)
     - [C Demos](#c-demos)
-      - [Speaker Enrollment](#speaker-enrollment-1)
-      - [Speaker Recognition](#speaker-recognition-1)
     - [Web Demo](#web-demo)
   - [SDKs](#sdks)
     - [Python](#python)
-<<<<<<< HEAD
       - [Speaker Enrollment](#speaker-enrollment)
       - [Speaker Recognition](#speaker-recognition)
     - [Android](#android)
@@ -59,20 +54,14 @@ Eagle is an on-device speaker recognition engine. Eagle is:
       - [Speaker Recognition](#speaker-recognition-4)
   - [Releases](#releases)
     - [v1.0.0 - May x, 2023](#v100---may-x-2023)
-=======
       - [Speaker Enrollment](#speaker-enrollment-2)
       - [Speaker Recognition](#speaker-recognition-2)
     - [Android](#android)
     - [iOS](#ios)
     - [C](#c)
-      - [Speaker Enrollment](#speaker-enrollment-3)
-      - [Speaker Recognition](#speaker-recognition-3)
     - [Web](#web)
-      - [Speaker Enrollment](#speaker-enrollment-4)
-    - [Speaker Recognition](#speaker-recognition-4)
   - [Releases](#releases)
     - [v0.1.0 - May x, 2023](#v010---may-x-2023)
->>>>>>> wip
   - [FAQ](#faq)
 
 ## Overview
@@ -612,7 +601,7 @@ while (percentage < 100) {
 const speakerProfile: Uint8Array = eagleProfiler.export();
 ```
 
-### Speaker Recognition
+#### Speaker Recognition
 
 Create an instance of the engine with one or more speaker profiles created by the `EagleProfiler`:
 
