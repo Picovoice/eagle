@@ -1,5 +1,6 @@
 import {
   Eagle,
+  EagleProfile,
   EagleProfiler,
   EagleProfilerEnrollFeedback,
   EagleProfilerWorker,
@@ -10,13 +11,13 @@ import {
 import eagleParams from './eagle_params';
 
 const ACCESS_KEY = Cypress.env('ACCESS_KEY');
-let testProfile: Uint8Array;
+let testProfile: EagleProfile;
 
 const getProfile = async (
   profiler,
   audioChunks,
   expectedFeedback
-): Promise<Uint8Array> => {
+): Promise<EagleProfile> => {
   let percentage = 0;
   for (let i = 0; i < audioChunks.length; i++) {
     const result = await profiler.enroll(audioChunks[i]);
@@ -155,7 +156,7 @@ describe('Eagle Profiler', async function () {
                   EagleProfilerEnrollFeedback.AUDIO_OK,
                 ]
               );
-              expect(profile.length).to.be.gt(0);
+              expect(profile.bytes.length).to.be.gt(0);
 
               await profiler.reset();
               const profile2 = await getProfile(
@@ -166,7 +167,7 @@ describe('Eagle Profiler', async function () {
                   EagleProfilerEnrollFeedback.AUDIO_OK,
                 ]
               );
-              expect(profile2.length).to.be.eq(profile.length);
+              expect(profile2.bytes.length).to.be.eq(profile.bytes.length);
               await profiler.release();
             } catch (e) {
               expect(e).to.be.undefined;
@@ -196,7 +197,7 @@ describe('Eagle Profiler', async function () {
                   EagleProfilerEnrollFeedback.AUDIO_OK,
                 ]
               );
-              expect(profile.length).to.be.gt(0);
+              expect(profile.bytes.length).to.be.gt(0);
 
               await profiler.reset();
               const profile2 = await getProfile(
@@ -207,7 +208,7 @@ describe('Eagle Profiler', async function () {
                   EagleProfilerEnrollFeedback.AUDIO_OK,
                 ]
               );
-              expect(profile2.length).to.be.eq(profile.length);
+              expect(profile2.bytes.length).to.be.eq(profile.bytes.length);
               await profiler.release();
             } catch (e) {
               expect(e).to.be.undefined;

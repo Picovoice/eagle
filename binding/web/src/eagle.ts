@@ -25,7 +25,7 @@ import {
 
 import { simd } from 'wasm-feature-detect';
 
-import { EagleModel, EagleProfilerEnrollResult } from './types';
+import { EagleModel, EagleProfile, EagleProfilerEnrollResult } from './types';
 
 /**
  * WebAssembly function types
@@ -432,10 +432,10 @@ export class EagleProfiler extends EagleBase {
    * Exports the speaker profile of the current session.
    * Will throw error if the profile is not ready.
    *
-   * @return A byte array containing the speaker profile.
+   * @return An EagleProfile object.
    */
-  public async export(): Promise<Uint8Array> {
-    return new Promise<Uint8Array>((resolve, reject) => {
+  public async export(): Promise<EagleProfile> {
+    return new Promise<EagleProfile>((resolve, reject) => {
       this._functionMutex
         .runExclusive(async () => {
           if (this._wasmMemory === undefined) {
@@ -468,9 +468,9 @@ export class EagleProfiler extends EagleBase {
           );
           await this._pvFree(profileAddress);
 
-          return profile;
+          return { bytes: profile };
         })
-        .then((result: Uint8Array) => {
+        .then((result: EagleProfile) => {
           resolve(result);
         })
         .catch((error: any) => {
@@ -717,7 +717,7 @@ export class Eagle extends EagleBase {
   public static async create(
     accessKey: string,
     model: EagleModel,
-    speakerProfiles: Uint8Array[] | Uint8Array
+    speakerProfiles: EagleProfile[] | EagleProfile
   ): Promise<Eagle> {
     const customWritePath = model.customWritePath
       ? model.customWritePath
@@ -734,7 +734,7 @@ export class Eagle extends EagleBase {
   public static async _init(
     accessKey: string,
     modelPath: string,
-    speakerProfiles: Uint8Array[]
+    speakerProfiles: EagleProfile[]
   ): Promise<Eagle> {
     if (!isAccessKeyValid(accessKey)) {
       throw new Error('Invalid AccessKey');
@@ -882,7 +882,7 @@ export class Eagle extends EagleBase {
   private static async _initWasm(
     accessKey: string,
     modelPath: string,
-    speakerProfiles: Uint8Array[],
+    speakerProfiles: EagleProfile[],
     wasmBase64: string
   ): Promise<EagleWasmOutput> {
     const baseWasmOutput = await super._initBaseWasm(wasmBase64, 3150);
@@ -943,12 +943,12 @@ export class Eagle extends EagleBase {
     for (const profile of speakerProfiles) {
       const profileAddress = await baseWasmOutput.alignedAlloc(
         Uint8Array.BYTES_PER_ELEMENT,
-        profile.length * Uint8Array.BYTES_PER_ELEMENT
+        profile.bytes.length * Uint8Array.BYTES_PER_ELEMENT
       );
       if (profileAddress === 0) {
         throw new Error('malloc failed: Cannot allocate memory');
       }
-      memoryBufferUint8.set(profile, profileAddress);
+      memoryBufferUint8.set(profile.bytes, profileAddress);
       profilesAddressList.push(profileAddress);
     }
     memoryBufferInt32.set(

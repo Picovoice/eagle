@@ -4,6 +4,7 @@ import { EagleWorker } from './eagle_worker';
 
 import {
   EagleModel,
+  EagleProfile,
   EagleProfilerEnrollFeedback,
   EagleProfilerWorkerInitRequest,
   EagleProfilerWorkerEnrollRequest,
@@ -44,6 +45,7 @@ EagleProfilerWorker.setWasmSimd(eagleWasmSimd);
 export {
   Eagle,
   EagleModel,
+  EagleProfile,
   EagleProfiler,
   EagleProfilerEnrollFeedback,
   EagleProfilerWorker,

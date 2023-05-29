@@ -597,8 +597,8 @@ while (percentage < 100) {
   percentage = result.percentage;
 }
 
-// export profile
-const speakerProfile: Uint8Array = eagleProfiler.export();
+// export speaker profile
+const speakerProfile: EagleProfile = eagleProfiler.export();
 ```
 
 #### Speaker Recognition

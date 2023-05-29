@@ -24,6 +24,11 @@ export enum EagleProfilerEnrollFeedback {
   QUALITY_ISSUE,
 }
 
+export type EagleProfile = {
+  /** Buffer containing the speaker profile. */
+  bytes: Uint8Array;
+};
+
 export type EagleProfilerEnrollResult = {
   feedback: EagleProfilerEnrollFeedback;
   percentage: number;
@@ -86,7 +91,7 @@ export type EagleProfilerWorkerExportResponse =
   | EagleProfilerWorkerFailureResponse
   | {
       command: 'ok';
-      profile: Uint8Array;
+      profile: EagleProfile;
     };
 
 export type EagleProfilerWorkerResetResponse =
@@ -112,7 +117,7 @@ export type EagleWorkerInitRequest = {
   command: 'init';
   accessKey: string;
   modelPath: string;
-  speakerProfiles: Uint8Array[];
+  speakerProfiles: EagleProfile[];
   wasm: string;
   wasmSimd: string;
 };

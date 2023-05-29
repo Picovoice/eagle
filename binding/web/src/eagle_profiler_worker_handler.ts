@@ -136,7 +136,7 @@ self.onmessage = async function (
       break;
     case 'export': {
       const exportMsg = await exportRequest();
-      self.postMessage(exportMsg, [exportMsg.profile.buffer]);
+      self.postMessage(exportMsg, [exportMsg.profile.bytes.buffer]);
       break;
     }
     case 'reset':

@@ -105,7 +105,7 @@ Moreover, if the audio data submitted is unsuitable for enrollment, the feedback
 enrollment progress will remain unchanged.
 
 ```typescript
-const speakerProfile: Uint8Array = eagleProfiler.export();
+const speakerProfile: EagleProfile = eagleProfiler.export();
 ```
 
 The `eagleProfiler.export()` function produces a binary array, which can be saved to a file.

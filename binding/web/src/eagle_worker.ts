@@ -17,6 +17,7 @@ import {
   EagleWorkerInitResponse,
   EagleWorkerReleaseResponse,
   EagleWorkerResetResponse,
+  EagleProfile,
 } from './types';
 import { loadModel } from '@picovoice/web-utils';
 
@@ -100,7 +101,7 @@ export class EagleWorker {
   public static async create(
     accessKey: string,
     model: EagleModel,
-    speakerProfiles: Uint8Array[] | Uint8Array
+    speakerProfiles: EagleProfile[] | EagleProfile
   ): Promise<EagleWorker> {
     const customWritePath = model.customWritePath
       ? model.customWritePath

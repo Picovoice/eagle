@@ -13,6 +13,7 @@ import PvWorker from 'web-worker:./eagle_profiler_worker_handler.ts';
 
 import {
   EagleModel,
+  EagleProfile,
   EagleProfilerEnrollResult,
   EagleProfilerWorkerEnrollResponse,
   EagleProfilerWorkerExportResponse,
@@ -208,10 +209,10 @@ export class EagleProfilerWorker {
    * Exports the speaker profile of the current session.
    * Will throw error if the profile is not ready.
    *
-   * @return A byte array containing the speaker profile.
+   * @return An EagleProfile object.
    */
-  public async export(): Promise<Uint8Array> {
-    const returnPromise: Promise<Uint8Array> = new Promise(
+  public async export(): Promise<EagleProfile> {
+    const returnPromise: Promise<EagleProfile> = new Promise(
       (resolve, reject) => {
         this._worker.onmessage = (
           event: MessageEvent<EagleProfilerWorkerExportResponse>
