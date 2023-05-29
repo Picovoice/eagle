@@ -603,7 +603,7 @@ while (true) {
 
 ## Releases
 
-### v0.1.0 - May x, 2023
+### v0.1.0 - May 29, 2023
 
 - Beta release.
 
