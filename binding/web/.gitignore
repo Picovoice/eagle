@@ -1,0 +1,6 @@
+node_modules
+dist
+lib/pv_eagle*.wasm
+test/eagle_params.js
+test/eagle_params.pv
+cypress/fixtures/audio_samples/*.wav
