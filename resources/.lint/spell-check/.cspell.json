@@ -35,6 +35,18 @@
     "**/*.storyboard",
     "**/*.pbxproj",
     "**/*.xcscheme",
-    "**/*.m"
+    "**/*.m",
+    
+    // android & java
+    "**/AndroidManifest.xml",
+    "**/activity_main.xml",
+
+    // java
+    "**/build.gradle",
+    "**/gradle-wrapper.properties",
+    "**/gradle.properties",
+    "**/gradlew",
+    "**/gradlew.bat",
+    "**/proguard-rules.pro"
   ]
 }
