@@ -1,0 +1,82 @@
+plugins {
+    id 'com.android.application'
+}
+
+Properties properties = new Properties()
+if (rootProject.file("local.properties").exists()) {
+    properties.load(rootProject.file("local.properties").newDataInputStream())
+    if (project.hasProperty("pvTestingAccessKey")) {
+        properties.put("pvTestingAccessKey", project.getProperty("pvTestingAccessKey"))
+    }
+    if (project.hasProperty("numTestIterations")) {
+        properties.put("numTestIterations", project.getProperty("numTestIterations"))
+    }
+    if (project.hasProperty("enrollPerformanceThresholdSec")) {
+        properties.put("enrollPerformanceThresholdSec", project.getProperty("enrollPerformanceThresholdSec"))
+    }
+    if (project.hasProperty("procPerformanceThresholdSec")) {
+        properties.put("procPerformanceThresholdSec", project.getProperty("procPerformanceThresholdSec"))
+    }
+}
+
+android {
+    compileSdkVersion defaultTargetSdkVersion
+    buildToolsVersion "30.0.3"
+
+    defaultConfig {
+        applicationId "ai.picovoice.eagledemo"
+        minSdkVersion 21
+        targetSdkVersion defaultTargetSdkVersion
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        resValue 'string', 'pvTestingAccessKey', properties.getProperty("pvTestingAccessKey", "")
+        resValue 'string', 'numTestIterations', properties.getProperty("numTestIterations", "")
+        resValue 'string', 'enrollPerformanceThresholdSec', properties.getProperty("enrollPerformanceThresholdSec", "")
+        resValue 'string', 'procPerformanceThresholdSec', properties.getProperty("procPerformanceThresholdSec", "")
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    sourceSets {
+        androidTest {
+            java {
+                if (properties.getProperty("enrollPerformanceThresholdSec", "").length() == 0 ||
+                    properties.getProperty("procPerformanceThresholdSec", "").length() == 0) {
+                    exclude "**/PerformanceTest.java"
+                } else {
+                    exclude "**/EagleTest.java"
+                }
+            }
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    buildFeatures {
+        viewBinding true
+    }
+}
+
+dependencies {
+
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.8.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'ai.picovoice:eagle-android:0.1.0'
+
+    // Espresso UI Testing
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation('androidx.test.espresso:espresso-core:3.2.0', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+
+    androidTestImplementation('com.microsoft.appcenter:espresso-test-extension:1.4')
+}

@@ -1,0 +1,50 @@
+apply plugin: 'com.android.library'
+
+ext {
+    PUBLISH_GROUP_ID = 'ai.picovoice'
+    PUBLISH_VERSION = '0.1.0'
+    PUBLISH_ARTIFACT_ID = 'eagle-android'
+}
+
+android {
+    compileSdkVersion defaultTargetSdkVersion
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion defaultTargetSdkVersion
+        versionCode 1
+        versionName "0.1"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+if (file("${rootDir}/publish-mavencentral.gradle").exists()) {
+    apply from: "${rootDir}/publish-mavencentral.gradle"
+}
+
+dependencies {
+    implementation fileTree(dir: "libs", include: ["*.jar"])
+}
+
+task copyLibs(type: Copy) {
+    from("${rootDir}/../../lib/android")
+    into("${rootDir}/eagle/src/main/jniLibs")
+}
+
+task copyParams(type: Copy) {
+    from("${rootDir}/../../lib/common")
+    include('eagle_params.pv')
+    into("${rootDir}/eagle/src/main/res/raw")
+}
+
+preBuild.dependsOn(copyLibs)
+preBuild.dependsOn(copyParams)

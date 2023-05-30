@@ -1,0 +1,16 @@
+PODS:
+  - Eagle-iOS (0.1.0)
+
+DEPENDENCIES:
+  - Eagle-iOS (~> 0.1.0)
+
+SPEC REPOS:
+  trunk:
+    - Eagle-iOS
+
+SPEC CHECKSUMS:
+  Eagle-iOS: 2d510466a68b22ba137dd2b39086268c4130c321
+
+PODFILE CHECKSUM: a3a1c94c7c11252c2152ed23f2cead73c1cf3762
+
+COCOAPODS: 1.12.1

@@ -1,0 +1,7 @@
+source 'https://cdn.cocoapods.org/'
+platform :ios, '14.0'
+
+target 'EagleDemo' do
+    pod 'Eagle-iOS', '~> 0.1.0'
+    pod 'ios-voice-processor', '~> 1.0.3'
+end
