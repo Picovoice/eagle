@@ -1,4 +1,5 @@
+*.py linguist-detectable=true
+binding/web/** linguist-detectable=false
 demo/** linguist-detectable=false
 lib/** linguist-detectable=false
 resources/** linguist-detectable=false
-*.py linguist-detectable=true
