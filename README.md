@@ -38,7 +38,6 @@ Eagle is an on-device speaker recognition engine. Eagle is:
     - [C](#c)
     - [Web](#web)
   - [Releases](#releases)
-    - [v0.1.0 - May x, 2023](#v010---may-x-2023)
   - [FAQ](#faq)
 
 ## Overview
