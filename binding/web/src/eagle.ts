@@ -120,9 +120,6 @@ class EagleBase {
   protected _wasmMemory: WebAssembly.Memory | undefined;
   protected readonly _alignedAlloc: CallableFunction;
   protected readonly _pvFree: pv_free_type;
-  protected readonly _memoryBuffer: Int16Array;
-  protected readonly _memoryBufferUint8: Uint8Array;
-  protected readonly _memoryBufferView: DataView;
   protected readonly _functionMutex: Mutex;
 
   protected static _sampleRate: number;
@@ -145,10 +142,6 @@ class EagleBase {
     this._alignedAlloc = handleWasm.alignedAlloc;
     this._pvFree = handleWasm.pvFree;
     this._pvError = handleWasm.pvError;
-
-    this._memoryBuffer = new Int16Array(handleWasm.memory.buffer);
-    this._memoryBufferUint8 = new Uint8Array(handleWasm.memory.buffer);
-    this._memoryBufferView = new DataView(handleWasm.memory.buffer);
 
     this._functionMutex = new Mutex();
   }
@@ -367,9 +360,6 @@ export class EagleProfiler extends EagleBase {
             pcm.length * Int16Array.BYTES_PER_ELEMENT
           );
 
-          const memoryBufferInt16 = new Int16Array(this._wasmMemory.buffer);
-          memoryBufferInt16.set(pcm, pcmAddress / Int16Array.BYTES_PER_ELEMENT);
-
           const feedbackAddress = await this._alignedAlloc(
             Int32Array.BYTES_PER_ELEMENT,
             Int32Array.BYTES_PER_ELEMENT
@@ -385,6 +375,9 @@ export class EagleProfiler extends EagleBase {
             throw new Error('malloc failed: Cannot allocate memory');
           }
 
+          const memoryBufferInt16 = new Int16Array(this._wasmMemory.buffer);
+          memoryBufferInt16.set(pcm, pcmAddress / Int16Array.BYTES_PER_ELEMENT);
+
           const status = await this._pvEagleProfilerEnroll(
             this._objectAddress,
             pcmAddress,
@@ -397,24 +390,29 @@ export class EagleProfiler extends EagleBase {
             await this._pvFree(feedbackAddress);
             await this._pvFree(percentageAddress);
 
+            const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
+
             throw new Error(
               `enroll failed with status ${arrayBufferToStringAtIndex(
-                this._memoryBufferUint8,
+                memoryBufferUint8,
                 await this._pvStatusToString(status)
               )}`
             );
           }
 
-          const feedback = this._memoryBufferView.getInt32(
+          const memoryBufferView = new DataView(this._wasmMemory.buffer);
+
+          const feedback = memoryBufferView.getInt32(
             feedbackAddress,
             true
           );
-          await this._pvFree(feedbackAddress);
 
-          const percentage = this._memoryBufferView.getFloat32(
+          const percentage = memoryBufferView.getFloat32(
             percentageAddress,
             true
           );
+
+          await this._pvFree(feedbackAddress);
           await this._pvFree(percentageAddress);
 
           return { feedback, percentage };
@@ -453,15 +451,18 @@ export class EagleProfiler extends EagleBase {
           );
           if (status !== PV_STATUS_SUCCESS) {
             await this._pvFree(profileAddress);
+            const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
             throw new Error(
               `export failed with status ${arrayBufferToStringAtIndex(
-                this._memoryBufferUint8,
+                memoryBufferUint8,
                 await this._pvStatusToString(status)
               )}`
             );
           }
 
-          const profile = this._memoryBufferUint8.slice(
+          const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
+
+          const profile = memoryBufferUint8.slice(
             profileAddress / Uint8Array.BYTES_PER_ELEMENT,
             profileAddress / Uint8Array.BYTES_PER_ELEMENT +
               EagleProfiler._profileSize
@@ -493,9 +494,10 @@ export class EagleProfiler extends EagleBase {
 
           const status = await this._pvEagleProfilerReset(this._objectAddress);
           if (status !== PV_STATUS_SUCCESS) {
+            const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
             throw new Error(
               `reset failed with status ${arrayBufferToStringAtIndex(
-                this._memoryBufferUint8,
+                memoryBufferUint8,
                 await this._pvStatusToString(status)
               )}`
             );
@@ -808,18 +810,21 @@ export class Eagle extends EagleBase {
           );
           await this._pvFree(pcmAddress);
           if (status !== PV_STATUS_SUCCESS) {
+            const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
             throw new Error(
               `process failed with status ${arrayBufferToStringAtIndex(
-                this._memoryBufferUint8,
+                memoryBufferUint8,
                 await this._pvStatusToString(status)
               )}`
             );
           }
+          
+          const memoryBufferView = new DataView(this._wasmMemory.buffer);
 
           const scores: number[] = [];
           for (let i = 0; i < this._numSpeakers; i++) {
             scores.push(
-              this._memoryBufferView.getFloat32(
+              memoryBufferView.getFloat32(
                 this._scoresAddress + i * Float32Array.BYTES_PER_ELEMENT,
                 true
               )
@@ -852,9 +857,10 @@ export class Eagle extends EagleBase {
 
           const status = await this._pvEagleReset(this._objectAddress);
           if (status !== PV_STATUS_SUCCESS) {
+            const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
             throw new Error(
               `reset failed with status ${arrayBufferToStringAtIndex(
-                this._memoryBufferUint8,
+                memoryBufferUint8,
                 await this._pvStatusToString(status)
               )}`
             );
