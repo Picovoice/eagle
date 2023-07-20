@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@picovoice/eagle-web@0.1.1":
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/@picovoice/eagle-web/-/eagle-web-0.1.1.tgz#7cf8fee37008121a8ec0656c085cada955a5cc1e"
-  integrity sha512-QexOe8xzkRn+DmdC971YJQqYH6vjooknVExlqXlXvYajleapXxtEZmuEywWWM/XWtHBBBHPAnaJkgiZ3BYE6mA==
+"@picovoice/eagle-web@0.1.2":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@picovoice/eagle-web/-/eagle-web-0.1.2.tgz#bd8d4bda135a38fa6f896a992d1ffda77cdae128"
+  integrity sha512-98q4KLxPSuM0m2u5oluTJCieOAqKeJ2aeDdeF0eWvs95Ke07QRMbPwBPiIyg3g71mfAqjOVpvxJtO55uFQOMEw==
   dependencies:
     "@picovoice/web-utils" "=1.3.1"
 
@@ -16,10 +16,12 @@
   dependencies:
     commander "^9.2.0"
 
-"@picovoice/web-voice-processor@~4.0.6":
-  version "4.0.6"
-  resolved "https://registry.yarnpkg.com/@picovoice/web-voice-processor/-/web-voice-processor-4.0.6.tgz#4769283b82f64d3625794f7290d47c6d477a3f41"
-  integrity sha512-Ykfy6hrWFpOklfeN7rSJb5CGim8wDu7J+l8imRYyQxWHWVV1Wu5S8FW69zkJmwiDG2Wx+M2+h0SCMS+hNM5qow==
+"@picovoice/web-voice-processor@~4.0.8":
+  version "4.0.8"
+  resolved "https://registry.yarnpkg.com/@picovoice/web-voice-processor/-/web-voice-processor-4.0.8.tgz#95247a5393cac4d16490a53feb0f413c902ee5fa"
+  integrity sha512-/OSHn8YKniMo0jP5EwGimLOxvLQl/Yx4Hs+LydNmoSu4hfBrDdzhhfhB79118uDiK4aUUKx2A/RAD9TG0mQ/ng==
+  dependencies:
+    "@picovoice/web-utils" "=1.3.1"
 
 ansi-styles@^4.1.0:
   version "4.3.0"
