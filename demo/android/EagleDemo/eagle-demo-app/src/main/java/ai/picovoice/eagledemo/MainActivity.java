@@ -17,11 +17,7 @@ import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
-import android.media.MediaRecorder;
 import android.os.Bundle;
-import android.os.Process;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -37,31 +33,36 @@ import androidx.core.app.ActivityCompat;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import ai.picovoice.eagle.*;
+import ai.picovoice.android.voiceprocessor.VoiceProcessor;
+import ai.picovoice.android.voiceprocessor.VoiceProcessorException;
+import ai.picovoice.eagle.Eagle;
+import ai.picovoice.eagle.EagleActivationException;
+import ai.picovoice.eagle.EagleActivationLimitException;
+import ai.picovoice.eagle.EagleActivationRefusedException;
+import ai.picovoice.eagle.EagleActivationThrottledException;
+import ai.picovoice.eagle.EagleException;
+import ai.picovoice.eagle.EagleInvalidArgumentException;
+import ai.picovoice.eagle.EagleProfile;
+import ai.picovoice.eagle.EagleProfiler;
+import ai.picovoice.eagle.EagleProfilerEnrollFeedback;
+import ai.picovoice.eagle.EagleProfilerEnrollResult;
 
 public class MainActivity extends AppCompatActivity {
     private static final String ACCESS_KEY = "${YOUR_ACCESS_KEY_HERE}";
 
-    private final MicrophoneReader microphoneReader = new MicrophoneReader();
-
+    private final VoiceProcessor voiceProcessor = VoiceProcessor.getInstance();
     private final List<Integer> progressBarIds = new ArrayList<>();
-
-    private UIState currentState;
-    private Eagle eagle = null;
-    private EagleProfiler eagleProfiler;
+    private final ArrayList<Short> enrollmentPcm = new ArrayList<>();
     private final List<EagleProfile> profiles = new ArrayList<>();
-
-    private float[] smoothScores;
-
     private final boolean enableDump = false;
+    private Eagle eagle = null;
+    private EagleProfiler eagleProfiler = null;
+    private float[] smoothScores;
     private AudioDump eagleDump;
 
+    @SuppressLint("SetTextI18n")
     private void setUIState(UIState state) {
-        currentState = state;
 
         runOnUiThread(() -> {
             TextView errorText = findViewById(R.id.errorTextView);
@@ -114,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
     private void handleEagleException(EagleException e) {
         if (e instanceof EagleInvalidArgumentException) {
             displayError(String.format("%s\nEnsure your AccessKey '%s' is valid", e.getMessage(), ACCESS_KEY));
-        } else if  (e instanceof EagleActivationException) {
+        } else if (e instanceof EagleActivationException) {
             displayError("AccessKey activation error");
         } else if (e instanceof EagleActivationLimitException) {
             displayError("AccessKey reached its device limit");
@@ -146,6 +147,8 @@ public class MainActivity extends AppCompatActivity {
         } catch (EagleException e) {
             handleEagleException(e);
         }
+
+        voiceProcessor.addErrorListener(error -> runOnUiThread(() -> displayError(error.toString())));
     }
 
     @Override
@@ -168,10 +171,86 @@ public class MainActivity extends AppCompatActivity {
         testButton.setEnabled(false);
     }
 
-    private boolean hasRecordPermission() {
-        return ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+    private void startEnrolling() {
+        try {
+            eagleProfiler.reset();
+        } catch (EagleException e) {
+            displayError("Failed to reset Eagle\n" + e.getMessage());
+            return;
+        }
+
+        final int frameLength = 1024;
+        enrollmentPcm.clear();
+
+        voiceProcessor.addFrameListener(frame -> {
+            for (short sample : frame) {
+                enrollmentPcm.add(sample);
+            }
+            if (enrollmentPcm.size() > eagleProfiler.getMinEnrollSamples()) {
+                short[] enrollFrame = new short[enrollmentPcm.size()];
+                for (int i = 0; i < enrollmentPcm.size(); i++) {
+                    enrollFrame[i] = enrollmentPcm.get(i);
+                }
+                enrollmentPcm.clear();
+                if (enableDump) {
+                    eagleDump.add(enrollFrame);
+                }
+                enrollSpeaker(enrollFrame);
+            }
+        });
+
+        try {
+            voiceProcessor.start(frameLength, eagleProfiler.getSampleRate());
+        } catch (VoiceProcessorException e) {
+            displayError("Failed to start recording\n" + e.getMessage());
+        }
+    }
+
+    private void startTesting() {
+        voiceProcessor.addFrameListener(frame -> {
+            try {
+                synchronized (voiceProcessor) {
+                    if (eagle == null) {
+                        return;
+                    }
+                    float[] scores = eagle.process(frame);
+                    for (int i = 0; i < scores.length; i++) {
+                        float alpha = 0.25f;
+                        smoothScores[i] = alpha * smoothScores[i] + (1 - alpha) * scores[i];
+                    }
+                    if (enableDump) {
+                        eagleDump.add(frame);
+                    }
+                }
+                runOnUiThread(() -> {
+                    if (progressBarIds.size() == 0) {
+                        return;
+                    }
+
+                    for (int i = 0; i < smoothScores.length; i++) {
+                        ProgressBar progressBar = findViewById(progressBarIds.get(i));
+                        progressBar.setProgress(Math.round(smoothScores[i] * 100));
+                    }
+                });
+            } catch (EagleException e) {
+                runOnUiThread(() -> displayError("Failed to process audio\n" + e.getMessage()));
+            }
+        });
+
+        try {
+            voiceProcessor.start(eagle.getFrameLength(), eagleProfiler.getSampleRate());
+        } catch (VoiceProcessorException e) {
+            displayError("Failed to start recording\n" + e.getMessage());
+        }
+    }
+
+    private void stop() {
+        try {
+            voiceProcessor.stop();
+            voiceProcessor.clearFrameListeners();
+        } catch (VoiceProcessorException e) {
+            displayError("Failed to stop recording\n" + e.getMessage());
+        }
     }
 
     private void requestRecordPermission() {
@@ -201,10 +280,12 @@ public class MainActivity extends AppCompatActivity {
         } else {
             if (enrollButton.isChecked()) {
                 setUIState(UIState.ENROLLING);
+                createSpeaker();
+                startEnrolling();
             } else if (testButton.isChecked()) {
                 setUIState(UIState.TESTING);
+                startTesting();
             }
-            microphoneReader.start();
         }
     }
 
@@ -219,20 +300,16 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (enrollButton.isChecked()) {
-            if (hasRecordPermission()) {
+            if (voiceProcessor.hasRecordAudioPermission(this)) {
                 setUIState(UIState.ENROLLING);
                 createSpeaker();
-                microphoneReader.start();
+                startEnrolling();
             } else {
                 requestRecordPermission();
             }
         } else {
-            try {
-                setUIState(UIState.IDLE);
-                microphoneReader.stop();
-            } catch (InterruptedException e) {
-                displayError("Audio stop command interrupted\n" + e);
-            }
+            setUIState(UIState.IDLE);
+            stop();
         }
     }
 
@@ -254,9 +331,9 @@ public class MainActivity extends AppCompatActivity {
 
                 smoothScores = new float[profiles.size()];
 
-                if (hasRecordPermission()) {
+                if (voiceProcessor.hasRecordAudioPermission(this)) {
                     setUIState(UIState.TESTING);
-                    microphoneReader.start();
+                    startTesting();
                 } else {
                     requestRecordPermission();
                 }
@@ -264,42 +341,43 @@ public class MainActivity extends AppCompatActivity {
                 handleEagleException(e);
             }
         } else {
-            try {
-                setUIState(UIState.IDLE);
-                microphoneReader.stop();
-            } catch (InterruptedException e) {
-                displayError("Audio stop command interrupted\n" + e);
+            setUIState(UIState.IDLE);
+            synchronized (voiceProcessor) {
+                stop();
+                if (enableDump) {
+                    eagleDump.saveFile("eagle_test.wav");
+                }
+                eagle.delete();
+                eagle = null;
             }
 
-            eagle.delete();
-            eagle = null;
+            for (Integer id : progressBarIds) {
+                ProgressBar progressBar = findViewById(id);
+                progressBar.setProgress(100);
+            }
         }
     }
 
     public void onResetClick(View view) {
-        try {
-            microphoneReader.stop();
+        stop();
 
-            ToggleButton enrollButton = findViewById(R.id.enrollButton);
-            if (enrollButton.isChecked()) {
-                enrollButton.performClick();
-            }
-
-            ToggleButton testButton = findViewById(R.id.testButton);
-            if (testButton.isChecked()) {
-                testButton.performClick();
-            }
-
-            TableLayout speakerTableLayout = findViewById(R.id.speakerTableLayout);
-            speakerTableLayout.removeViews(1, progressBarIds.size());
-
-            profiles.clear();
-            progressBarIds.clear();
-
-            setUIState(UIState.IDLE);
-        } catch (InterruptedException e) {
-            displayError("Audio stop command interrupted\n" + e);
+        ToggleButton enrollButton = findViewById(R.id.enrollButton);
+        if (enrollButton.isChecked()) {
+            enrollButton.performClick();
         }
+
+        ToggleButton testButton = findViewById(R.id.testButton);
+        if (testButton.isChecked()) {
+            testButton.performClick();
+        }
+
+        TableLayout speakerTableLayout = findViewById(R.id.speakerTableLayout);
+        speakerTableLayout.removeViews(1, progressBarIds.size());
+
+        profiles.clear();
+        progressBarIds.clear();
+
+        setUIState(UIState.IDLE);
     }
 
     private String getFeedback(EagleProfilerEnrollFeedback feedback) {
@@ -352,11 +430,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @SuppressLint("DefaultLocale")
-    private void enrollSpeaker(short[] pcmData) {
+    private void enrollSpeaker(short[] enrollFrame) {
+
         try {
-            EagleProfilerEnrollResult result = eagleProfiler.enroll(pcmData);
+            EagleProfilerEnrollResult result = eagleProfiler.enroll(enrollFrame);
 
             if (result.getFeedback() == EagleProfilerEnrollFeedback.AUDIO_OK && result.getPercentage() == 100) {
+                stop();
+
                 EagleProfile profile = eagleProfiler.export();
                 profiles.add(profile);
 
@@ -372,7 +453,9 @@ public class MainActivity extends AppCompatActivity {
                     enrollButton.performClick();
                 });
 
-                microphoneReader.stop.set(true);
+                if (enableDump) {
+                    eagleDump.saveFile(String.format("eagle_enroll_speaker_%d.wav", profiles.size()));
+                }
             } else {
                 String finalMessage = String.format(
                         "%s. Keep speaking until the enrollment percentage reaches 100%%.",
@@ -390,7 +473,7 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         } catch (EagleException e) {
-            runOnUiThread(() -> displayError("Failed to enroll\n" + e));
+            runOnUiThread(() -> displayError("Failed to enroll\n" + e.getMessage()));
         }
     }
 
@@ -400,174 +483,5 @@ public class MainActivity extends AppCompatActivity {
         INITIALIZING,
         TESTING,
         ERROR
-    }
-
-    private class MicrophoneReader {
-        private final AtomicBoolean started = new AtomicBoolean(false);
-        private final AtomicBoolean stop = new AtomicBoolean(false);
-        private final AtomicBoolean stopped = new AtomicBoolean(false);
-
-        void start() {
-            if (started.get()) {
-                return;
-            }
-
-            started.set(true);
-
-            if (currentState == UIState.ENROLLING) {
-                Executors.newSingleThreadExecutor().submit((Callable<Void>) () -> {
-                    Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
-                    enroll();
-                    return null;
-                });
-            } else if (currentState == UIState.TESTING) {
-                Executors.newSingleThreadExecutor().submit((Callable<Void>) () -> {
-                    Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
-                    read();
-                    return null;
-                });
-            }
-        }
-
-        void stop() throws InterruptedException {
-            if (!started.get()) {
-                return;
-            }
-
-            stop.set(true);
-
-            synchronized (stopped) {
-                while (!stopped.get()) {
-                    stopped.wait(500);
-                }
-            }
-
-            started.set(false);
-            stop.set(false);
-            stopped.set(false);
-        }
-
-        @SuppressLint("DefaultLocale")
-        private void enroll() throws EagleException {
-            final int bufferSize = AudioRecord.getMinBufferSize(
-                    eagleProfiler.getSampleRate(),
-                    AudioFormat.CHANNEL_IN_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT);
-
-            AudioRecord audioRecord = null;
-
-            short[] buffer = new short[bufferSize];
-
-            eagleProfiler.reset();
-            int numEnrollFrames = (eagleProfiler.getMinEnrollSamples() / bufferSize) + 1;
-            short[] pcmData = new short[bufferSize * numEnrollFrames];
-
-            try {
-                audioRecord = new AudioRecord(
-                        MediaRecorder.AudioSource.MIC,
-                        eagleProfiler.getSampleRate(),
-                        AudioFormat.CHANNEL_IN_MONO,
-                        AudioFormat.ENCODING_PCM_16BIT,
-                        bufferSize);
-                audioRecord.startRecording();
-
-                while (!stop.get()) {
-                    int i = 0;
-                    while (i < numEnrollFrames) {
-                        if (stop.get()) {
-                            break;
-                        }
-                        if (audioRecord.read(buffer, 0, buffer.length) == buffer.length) {
-                            System.arraycopy(buffer, 0, pcmData, i * buffer.length, buffer.length);
-                            if (enableDump) {
-                                Executors.newSingleThreadExecutor().submit((Callable<Void>) () -> {
-                                    eagleDump.add(buffer);
-                                    return null;
-                                });
-                            }
-                        }
-                        i++;
-                    }
-                    enrollSpeaker(pcmData);
-                }
-
-                audioRecord.stop();
-                if (enableDump) {
-                    eagleDump.saveFile(String.format("eagle_enroll_speaker_%d.wav", profiles.size()));
-                }
-            } catch (IllegalArgumentException | IllegalStateException | SecurityException e) {
-                throw new EagleException(e);
-            } finally {
-                if (audioRecord != null) {
-                    audioRecord.release();
-                }
-
-                stopped.set(true);
-                stopped.notifyAll();
-            }
-        }
-
-        private void read() throws EagleException {
-            final int minBufferSize = AudioRecord.getMinBufferSize(
-                    eagle.getSampleRate(),
-                    AudioFormat.CHANNEL_IN_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT);
-            final int bufferSize = Math.max(eagle.getSampleRate() / 2, minBufferSize);
-
-            AudioRecord audioRecord = null;
-
-            short[] buffer = new short[eagle.getFrameLength()];
-
-            try {
-                audioRecord = new AudioRecord(
-                        MediaRecorder.AudioSource.MIC,
-                        eagle.getSampleRate(),
-                        AudioFormat.CHANNEL_IN_MONO,
-                        AudioFormat.ENCODING_PCM_16BIT,
-                        bufferSize);
-                audioRecord.startRecording();
-
-
-                while (!stop.get()) {
-                    if (audioRecord.read(buffer, 0, buffer.length) == buffer.length) {
-                        float[] scores = eagle.process(buffer);
-                        for (int i = 0; i < scores.length; i++) {
-                            float alpha = 0.25f;
-                            smoothScores[i] = alpha * smoothScores[i] + (1 - alpha) * scores[i];
-                        }
-                        runOnUiThread(() -> {
-                            if (progressBarIds.size() == 0) {
-                                return;
-                            }
-
-                            for (int i = 0; i < smoothScores.length; i++) {
-                                ProgressBar progressBar = findViewById(progressBarIds.get(i));
-                                progressBar.setProgress(Math.round(smoothScores[i] * 100));
-                            }
-                        });
-                        if (enableDump) {
-                            Executors.newSingleThreadExecutor().submit((Callable<Void>) () -> {
-                                eagleDump.add(buffer);
-                                return null;
-                            });
-                        }
-                    }
-                }
-
-                audioRecord.stop();
-                if (enableDump) {
-                    eagleDump.saveFile("eagle_test.wav");
-                }
-            } catch (IllegalArgumentException | IllegalStateException | SecurityException e) {
-                throw new EagleException(e);
-            } finally {
-                if (audioRecord != null) {
-                    audioRecord.release();
-                }
-
-                stopped.set(true);
-                stopped.notifyAll();
-            }
-        }
     }
 }
