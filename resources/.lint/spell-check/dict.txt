@@ -39,3 +39,4 @@ appcompat
 appbar
 eagledemo
 gradlew
+testapp
