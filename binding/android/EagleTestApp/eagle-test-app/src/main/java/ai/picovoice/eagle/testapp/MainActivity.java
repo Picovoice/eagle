@@ -91,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
             results.add(result);
         }
 
+        result = new TestResult();
         result.testName = "Test Enroll Speaker";
         EagleProfile profile = null;
         try {
@@ -222,7 +223,7 @@ public class MainActivity extends AppCompatActivity {
             extractFile(audioPath);
         }
 
-        short[] pcm = readAudioFile(audioPath);
+        short[] pcm = readAudioFile(testAudio.getAbsolutePath());
         e.enroll(pcm);
 
         return e.export();
