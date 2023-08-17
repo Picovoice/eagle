@@ -10,7 +10,7 @@
     limitations under the License.
 */
 
-package ai.picovoice.eagledemo;
+package ai.picovoice.eagle.testapp;
 
 import static org.junit.Assert.assertTrue;
 
@@ -25,7 +25,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
-import ai.picovoice.eagle.*;
+import ai.picovoice.eagle.Eagle;
+import ai.picovoice.eagle.EagleProfile;
+import ai.picovoice.eagle.EagleProfiler;
 
 @RunWith(AndroidJUnit4.class)
 public class PerformanceTest extends BaseTest {

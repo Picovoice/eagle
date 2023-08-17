@@ -10,12 +10,13 @@
     limitations under the License.
 */
 
-package ai.picovoice.eagledemo;
+package ai.picovoice.eagle.testapp;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
@@ -27,7 +28,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import ai.picovoice.eagle.*;
+import ai.picovoice.eagle.Eagle;
+import ai.picovoice.eagle.EagleException;
+import ai.picovoice.eagle.EagleProfile;
+import ai.picovoice.eagle.EagleProfiler;
+import ai.picovoice.eagle.EagleProfilerEnrollFeedback;
+import ai.picovoice.eagle.EagleProfilerEnrollResult;
 
 
 @RunWith(Enclosed.class)
@@ -197,7 +203,7 @@ public class EagleTest {
             File audioFile = new File(testResourcesPath, imposterPath);
             short[] pcm = readAudioFile(audioFile.getAbsolutePath());
             EagleProfilerEnrollResult result = eagleProfiler.enroll(pcm);
-            assertEquals(result.getFeedback(), EagleProfilerEnrollFeedback.UNKNOWN_SPEAKER);
+            Assert.assertEquals(result.getFeedback(), EagleProfilerEnrollFeedback.UNKNOWN_SPEAKER);
         }
 
         @Test

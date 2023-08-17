@@ -10,7 +10,7 @@
     limitations under the License.
 */
 
-package ai.picovoice.eagledemo;
+package ai.picovoice.eagle.testapp;
 
 import android.content.Context;
 import android.content.res.AssetManager;
