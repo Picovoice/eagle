@@ -1,5 +1,7 @@
 *.py linguist-detectable=true
 binding/web/** linguist-detectable=false
+binding/web/src/eagle.ts linguist-detectable=true
+binding/android/EagleTestApp/** linguist-detectable=false
 demo/** linguist-detectable=false
 lib/** linguist-detectable=false
 resources/** linguist-detectable=false
