@@ -93,10 +93,19 @@ static struct option long_options[] = {
         {"test",                required_argument, NULL, 't'},
 };
 
-void print_usage(const char *program_name) {
+pv_status_t (*pv_get_error_stack_func)(char ***, int32_t *) = NULL;
+void (*pv_free_error_stack_func)(char **) = NULL;
+
+static void print_usage(const char *program_name) {
     fprintf(stdout,
             "Usage: %s [-e OUTPUT_PROFILE_PATH | -t INPUT_PROFILE_PATH] [-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY WAV_AUDIO_PATH_1 WAV_AUDIO_PATH_2 ...]\n",
             program_name);
+}
+
+static void print_error_message(char **message_stack, int32_t message_stack_depth) {
+    for (int32_t i = 0; i < message_stack_depth; i++) {
+        fprintf(stderr, "  [%d] %s\n", i, message_stack[i]);
+    }
 }
 
 void speaker_enrollment(
@@ -109,7 +118,7 @@ void speaker_enrollment(
 
     const char *(*pv_status_to_string_func)(pv_status_t) = load_symbol(eagle_library, "pv_status_to_string");
     if (!pv_status_to_string_func) {
-        print_dl_error("failed to load 'pv_status_to_string'");
+        print_dl_error("Failed to load 'pv_status_to_string'");
         exit(EXIT_FAILURE);
     }
 
@@ -118,21 +127,21 @@ void speaker_enrollment(
             const char *,
             pv_eagle_profiler_t **) = load_symbol(eagle_library, "pv_eagle_profiler_init");
     if (!pv_eagle_profiler_init_func) {
-        print_dl_error("failed to load 'pv_eagle_profiler_init'");
+        print_dl_error("Failed to load 'pv_eagle_profiler_init'");
         exit(EXIT_FAILURE);
     }
 
     void (*pv_eagle_profiler_delete_func)(pv_eagle_profiler_t *)
     = load_symbol(eagle_library, "pv_eagle_profiler_delete");
     if (!pv_eagle_profiler_delete_func) {
-        print_dl_error("failed to load 'pv_eagle_profiler_delete'");
+        print_dl_error("Failed to load 'pv_eagle_profiler_delete'");
         exit(EXIT_FAILURE);
     }
 
     const char *(*pv_eagle_profiler_enroll_feedback_to_string_func)(pv_eagle_profiler_enroll_feedback_t)
     = load_symbol(eagle_library, "pv_eagle_profiler_enroll_feedback_to_string");
     if (!pv_eagle_profiler_enroll_feedback_to_string_func) {
-        print_dl_error("failed to load 'pv_eagle_profiler_enroll_feedback_to_string'");
+        print_dl_error("Failed to load 'pv_eagle_profiler_enroll_feedback_to_string'");
         exit(EXIT_FAILURE);
     }
 
@@ -143,14 +152,14 @@ void speaker_enrollment(
             pv_eagle_profiler_enroll_feedback_t *,
             float *) = load_symbol(eagle_library, "pv_eagle_profiler_enroll");
     if (!pv_eagle_profiler_enroll_func) {
-        print_dl_error("failed to load 'pv_eagle_profiler_enroll'");
+        print_dl_error("Failed to load 'pv_eagle_profiler_enroll'");
         exit(EXIT_FAILURE);
     }
 
     pv_status_t (*pv_eagle_profiler_enroll_min_audio_length_samples_func)(const pv_eagle_profiler_t *, int32_t *)
     = load_symbol(eagle_library, "pv_eagle_profiler_enroll_min_audio_length_samples");
     if (!pv_eagle_profiler_enroll_min_audio_length_samples_func) {
-        print_dl_error("failed to load 'pv_eagle_profiler_enroll_min_audio_length_samples'");
+        print_dl_error("Failed to load 'pv_eagle_profiler_enroll_min_audio_length_samples'");
         exit(EXIT_FAILURE);
     }
 
@@ -158,7 +167,7 @@ void speaker_enrollment(
             const pv_eagle_profiler_t *,
             void *) = load_symbol(eagle_library, "pv_eagle_profiler_export");
     if (!pv_eagle_profiler_export_func) {
-        print_dl_error("failed to load 'pv_eagle_profiler_export'");
+        print_dl_error("Failed to load 'pv_eagle_profiler_export'");
         exit(EXIT_FAILURE);
     }
 
@@ -166,22 +175,26 @@ void speaker_enrollment(
             const pv_eagle_profiler_t *,
             int32_t *) = load_symbol(eagle_library, "pv_eagle_profiler_export_size");
     if (!pv_eagle_profiler_export_size_func) {
-        print_dl_error("failed to load 'pv_eagle_profiler_export_size'");
+        print_dl_error("Failed to load 'pv_eagle_profiler_export_size'");
         exit(EXIT_FAILURE);
     }
 
     pv_status_t (*pv_eagle_profiler_reset_func)(
             pv_eagle_profiler_t *) = load_symbol(eagle_library, "pv_eagle_profiler_reset");
     if (!pv_eagle_profiler_reset_func) {
-        print_dl_error("failed to load 'pv_eagle_profiler_reset'");
+        print_dl_error("Failed to load 'pv_eagle_profiler_reset'");
         exit(EXIT_FAILURE);
     }
 
     int32_t (*pv_sample_rate_func)() = load_symbol(eagle_library, "pv_sample_rate");
     if (!pv_sample_rate_func) {
-        print_dl_error("failed to load 'pv_sample_rate'");
+        print_dl_error("Failed to load 'pv_sample_rate'");
         exit(EXIT_FAILURE);
     }
+
+    char **message_stack = NULL;
+    int32_t message_stack_depth = 0;
+    pv_status_t error_status = PV_STATUS_RUNTIME_ERROR;
 
     pv_eagle_profiler_t *eagle_profiler = NULL;
     pv_status_t eagle_profiler_status = pv_eagle_profiler_init_func(
@@ -189,7 +202,21 @@ void speaker_enrollment(
             model_path,
             &eagle_profiler);
     if (eagle_profiler_status != PV_STATUS_SUCCESS) {
-        fprintf(stderr, "failed to create an instance of eagle profiler\n");
+        fprintf(stderr, "Failed to create an instance of eagle profiler");
+        error_status = pv_get_error_stack_func(&message_stack, &message_stack_depth);
+        if (error_status != PV_STATUS_SUCCESS) {
+            fprintf(
+                    stderr,
+                    ".\nUnable to get Eagle error state with '%s'.\n",
+                    pv_status_to_string_func(error_status));
+            exit(EXIT_FAILURE);
+        }
+
+        if (message_stack_depth > 0) {
+            fprintf(stderr, ":\n");
+            print_error_message(message_stack, message_stack_depth);
+            pv_free_error_stack_func(message_stack);
+        }
         exit(EXIT_FAILURE);
     }
 
@@ -217,7 +244,7 @@ void speaker_enrollment(
 #endif
 
         if (!drwav_init_file_status) {
-            fprintf(stderr, "failed to open wav file at '%s'.", wav_audio_path);
+            fprintf(stderr, "Failed to open wav file at '%s'.", wav_audio_path);
             exit(EXIT_FAILURE);
         }
 
@@ -239,7 +266,7 @@ void speaker_enrollment(
         size_t num_enroll_samples = wav_audio_file.totalPCMFrameCount;
         int16_t *enroll_pcm = calloc(num_enroll_samples, sizeof(int16_t));
         if (!enroll_pcm) {
-            fprintf(stderr, "failed to allocate memory for enrollment audio.\n");
+            fprintf(stderr, "Failed to allocate memory for enrollment audio.\n");
             exit(EXIT_FAILURE);
         }
 
@@ -257,7 +284,21 @@ void speaker_enrollment(
                 &feedback,
                 &enroll_percentage);
         if (eagle_profiler_status != PV_STATUS_SUCCESS) {
-            fprintf(stderr, "failed to enroll audio: %s\n", pv_status_to_string_func(eagle_profiler_status));
+            fprintf(stderr, "Failed to enroll audio: %s", pv_status_to_string_func(eagle_profiler_status));
+            error_status = pv_get_error_stack_func(&message_stack, &message_stack_depth);
+            if (error_status != PV_STATUS_SUCCESS) {
+                fprintf(
+                        stderr,
+                        ".\nUnable to get Eagle error state with '%s'.\n",
+                        pv_status_to_string_func(error_status));
+                exit(EXIT_FAILURE);
+            }
+
+            if (message_stack_depth > 0) {
+                fprintf(stderr, ":\n");
+                print_error_message(message_stack, message_stack_depth);
+                pv_free_error_stack_func(message_stack);
+            }
             exit(EXIT_FAILURE);
         }
         struct timeval after;
@@ -288,13 +329,27 @@ void speaker_enrollment(
     int32_t profile_size_bytes = 0;
     eagle_profiler_status = pv_eagle_profiler_export_size_func(eagle_profiler, &profile_size_bytes);
     if (eagle_profiler_status != PV_STATUS_SUCCESS) {
-        (void) fprintf(stderr, "failed to get profile size with `%s`",
+        (void) fprintf(stderr, "Failed to get profile size with `%s`",
                        pv_status_to_string_func(eagle_profiler_status));
+        error_status = pv_get_error_stack_func(&message_stack, &message_stack_depth);
+        if (error_status != PV_STATUS_SUCCESS) {
+            fprintf(
+                    stderr,
+                    ".\nUnable to get Eagle error state with '%s'.\n",
+                    pv_status_to_string_func(error_status));
+        exit(EXIT_FAILURE);
+        }
+
+        if (message_stack_depth > 0) {
+            fprintf(stderr, ":\n");
+            print_error_message(message_stack, message_stack_depth);
+            pv_free_error_stack_func(message_stack);
+        }
         exit(EXIT_FAILURE);
     }
     void *speaker_profile = calloc(profile_size_bytes, sizeof(uint8_t));
     if (!speaker_profile) {
-        (void) fprintf(stderr, "failed to allocate memory for profile");
+        (void) fprintf(stderr, "Failed to allocate memory for profile");
         exit(EXIT_FAILURE);
     }
 
@@ -302,8 +357,22 @@ void speaker_enrollment(
             eagle_profiler,
             speaker_profile);
     if (eagle_profiler_status != PV_STATUS_SUCCESS) {
-        (void) fprintf(stderr, "failed to export profile with `%s`",
+        (void) fprintf(stderr, "Failed to export profile with `%s`",
                        pv_status_to_string_func(eagle_profiler_status));
+        error_status = pv_get_error_stack_func(&message_stack, &message_stack_depth);
+        if (error_status != PV_STATUS_SUCCESS) {
+            fprintf(
+                    stderr,
+                    ".\nUnable to get Eagle error state with '%s'.\n",
+                    pv_status_to_string_func(error_status));
+        exit(EXIT_FAILURE);
+        }
+
+        if (message_stack_depth > 0) {
+            fprintf(stderr, ":\n");
+            print_error_message(message_stack, message_stack_depth);
+            pv_free_error_stack_func(message_stack);
+        }
         exit(EXIT_FAILURE);
     }
     pv_eagle_profiler_delete_func(eagle_profiler);
@@ -324,7 +393,7 @@ void speaker_enrollment(
 #endif
 
     if (!output_profile_file) {
-        fprintf(stderr, "failed to open '%s' for writing\n", output_profile_path);
+        fprintf(stderr, "Failed to open '%s' for writing\n", output_profile_path);
         exit(EXIT_FAILURE);
     }
 
@@ -346,7 +415,7 @@ void speaker_recognition(
 
     const char *(*pv_status_to_string_func)(pv_status_t) = load_symbol(eagle_library, "pv_status_to_string");
     if (!pv_status_to_string_func) {
-        print_dl_error("failed to load 'pv_status_to_string'");
+        print_dl_error("Failed to load 'pv_status_to_string'");
         exit(EXIT_FAILURE);
     }
 
@@ -357,13 +426,13 @@ void speaker_recognition(
             const void *const *,
             pv_eagle_t **) = load_symbol(eagle_library, "pv_eagle_init");
     if (!pv_eagle_init_func) {
-        print_dl_error("failed to load 'pv_eagle_init'");
+        print_dl_error("Failed to load 'pv_eagle_init'");
         exit(EXIT_FAILURE);
     }
 
     void (*pv_eagle_delete_func)(pv_eagle_t *) = load_symbol(eagle_library, "pv_eagle_delete");
     if (!pv_eagle_delete_func) {
-        print_dl_error("failed to load 'pv_eagle_delete'");
+        print_dl_error("Failed to load 'pv_eagle_delete'");
         exit(EXIT_FAILURE);
     }
 
@@ -372,26 +441,26 @@ void speaker_recognition(
             const int16_t *,
             float *) = load_symbol(eagle_library, "pv_eagle_process");
     if (!pv_eagle_process_func) {
-        print_dl_error("failed to load 'pv_eagle_process'");
+        print_dl_error("Failed to load 'pv_eagle_process'");
         exit(EXIT_FAILURE);
     }
 
     int32_t (*pv_eagle_reset_func)(pv_eagle_t *)
     = load_symbol(eagle_library, "pv_eagle_reset");
     if (!pv_eagle_reset_func) {
-        print_dl_error("failed to load 'pv_eagle_reset'");
+        print_dl_error("Failed to load 'pv_eagle_reset'");
         exit(EXIT_FAILURE);
     }
 
     int32_t (*pv_sample_rate_func)() = load_symbol(eagle_library, "pv_sample_rate");
     if (!pv_sample_rate_func) {
-        print_dl_error("failed to load 'pv_sample_rate'");
+        print_dl_error("Failed to load 'pv_sample_rate'");
         exit(EXIT_FAILURE);
     }
 
     int32_t (*pv_eagle_frame_length_func)() = load_symbol(eagle_library, "pv_eagle_frame_length");
     if (!pv_eagle_frame_length_func) {
-        print_dl_error("failed to load 'pv_eagle_frame_length'");
+        print_dl_error("Failed to load 'pv_eagle_frame_length'");
         exit(EXIT_FAILURE);
     }
 
@@ -411,7 +480,7 @@ void speaker_recognition(
 #endif
 
     if (!input_profile_file) {
-        fprintf(stderr, "failed to open speaker profile file at '%s'.\n", input_profile_path);
+        fprintf(stderr, "Failed to open speaker profile file at '%s'.\n", input_profile_path);
         exit(EXIT_FAILURE);
     }
 
@@ -423,9 +492,13 @@ void speaker_recognition(
     size_t num_bytes = fread(speaker_profile, sizeof(uint8_t), speaker_profile_size, input_profile_file);
     fclose(input_profile_file);
     if (num_bytes != speaker_profile_size) {
-        fprintf(stderr, "failed to read speaker profile from '%s'.\n", input_profile_path);
+        fprintf(stderr, "Failed to read speaker profile from '%s'.\n", input_profile_path);
         exit(EXIT_FAILURE);
     }
+
+    char **message_stack = NULL;
+    int32_t message_stack_depth = 0;
+    pv_status_t error_status = PV_STATUS_RUNTIME_ERROR;
 
     pv_eagle_t *eagle = NULL;
     pv_status_t eagle_status = pv_eagle_init_func(
@@ -435,7 +508,21 @@ void speaker_recognition(
             (const void *const *) &speaker_profile,
             &eagle);
     if (eagle_status != PV_STATUS_SUCCESS) {
-        fprintf(stderr, "failed to create an instance of eagle with '%s'\n", pv_status_to_string_func(eagle_status));
+        fprintf(stderr, "Failed to create an instance of eagle with '%s'", pv_status_to_string_func(eagle_status));
+        error_status = pv_get_error_stack_func(&message_stack, &message_stack_depth);
+        if (error_status != PV_STATUS_SUCCESS) {
+            fprintf(
+                    stderr,
+                    ".\nUnable to get Eagle error state with '%s'.\n",
+                    pv_status_to_string_func(error_status));
+            exit(EXIT_FAILURE);
+        }
+
+        if (message_stack_depth > 0) {
+            fprintf(stderr, ":\n");
+            print_error_message(message_stack, message_stack_depth);
+            pv_free_error_stack_func(message_stack);
+        }
         exit(EXIT_FAILURE);
     }
 
@@ -466,7 +553,7 @@ void speaker_recognition(
 #endif
 
         if (!drwav_init_file_status) {
-            fprintf(stderr, "failed to open wav file at '%s'.", wav_audio_path);
+            fprintf(stderr, "Failed to open wav file at '%s'.", wav_audio_path);
             exit(EXIT_FAILURE);
         }
 
@@ -494,7 +581,21 @@ void speaker_recognition(
             float score = 0.f;
             eagle_status = pv_eagle_process_func(eagle, pcm, &score);
             if (eagle_status != PV_STATUS_SUCCESS) {
-                fprintf(stderr, "failed to process audio with '%s'\n", pv_status_to_string_func(eagle_status));
+                fprintf(stderr, "Failed to process audio with '%s'", pv_status_to_string_func(eagle_status));
+                error_status = pv_get_error_stack_func(&message_stack, &message_stack_depth);
+                if (error_status != PV_STATUS_SUCCESS) {
+                    fprintf(
+                            stderr,
+                            ".\nUnable to get Eagle error state with '%s'.\n",
+                            pv_status_to_string_func(error_status));
+                    exit(EXIT_FAILURE);
+                }
+
+                if (message_stack_depth > 0) {
+                    fprintf(stderr, ":\n");
+                    print_error_message(message_stack, message_stack_depth);
+                    pv_free_error_stack_func(message_stack);
+                }
                 exit(EXIT_FAILURE);
             }
 
@@ -578,25 +679,37 @@ int picovoice_main(int argc, char *argv[]) {
 
     void *eagle_library = open_dl(library_path);
     if (!eagle_library) {
-        fprintf(stderr, "failed to open library at '%s'.\n", library_path);
+        fprintf(stderr, "Failed to open library at '%s'.\n", library_path);
         exit(EXIT_FAILURE);
     }
 
     int32_t (*pv_sample_rate_func)() = load_symbol(eagle_library, "pv_sample_rate");
     if (!pv_sample_rate_func) {
-        print_dl_error("failed to load 'pv_sample_rate'");
+        print_dl_error("Failed to load 'pv_sample_rate'");
         exit(EXIT_FAILURE);
     }
 
     int32_t (*pv_eagle_frame_length_func)() = load_symbol(eagle_library, "pv_eagle_frame_length");
     if (!pv_eagle_frame_length_func) {
-        print_dl_error("failed to load 'pv_eagle_frame_length'");
+        print_dl_error("Failed to load 'pv_eagle_frame_length'");
         exit(EXIT_FAILURE);
     }
 
     char *(*pv_eagle_version_func)() = load_symbol(eagle_library, "pv_eagle_version");
     if (!pv_eagle_version_func) {
-        print_dl_error("failed to load 'pv_eagle_version'");
+        print_dl_error("Failed to load 'pv_eagle_version'");
+        exit(EXIT_FAILURE);
+    }
+
+    pv_get_error_stack_func = load_symbol(eagle_library, "pv_get_error_stack");
+    if (!pv_get_error_stack_func) {
+        print_dl_error("Failed to load 'pv_get_error_stack'");
+        exit(EXIT_FAILURE);
+    }
+
+    pv_free_error_stack_func = load_symbol(eagle_library, "pv_free_error_stack");
+    if (!pv_free_error_stack_func) {
+        print_dl_error("Failed to load 'pv_free_error_stack'");
         exit(EXIT_FAILURE);
     }
 
@@ -631,7 +744,7 @@ int main(int argc, char *argv[]) {
 
     LPWSTR *wargv = CommandLineToArgvW(GetCommandLineW(), &argc);
     if (wargv == NULL) {
-        fprintf(stderr, "CommandLineToArgvW failed\n");
+        fprintf(stderr, "CommandLineToArgvW Failed\n");
         exit(EXIT_FAILURE);
     }
 
@@ -642,7 +755,7 @@ int main(int argc, char *argv[]) {
         int arg_chars_num = WideCharToMultiByte(CP_UTF8, UTF8_COMPOSITION_FLAG, wargv[i], NULL_TERMINATED, NULL, 0, NULL, NULL);
         utf8_argv[i] = (char *) malloc(arg_chars_num * sizeof(char));
         if (!utf8_argv[i]) {
-            fprintf(stderr, "failed to to allocate memory for converting args");
+            fprintf(stderr, "Failed to to allocate memory for converting args");
         }
         WideCharToMultiByte(CP_UTF8, UTF8_COMPOSITION_FLAG, wargv[i], NULL_TERMINATED, utf8_argv[i], arg_chars_num, NULL, NULL);
     }
