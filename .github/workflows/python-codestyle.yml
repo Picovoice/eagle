@@ -3,7 +3,7 @@ name: Python Codestyle
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [ main ]
     paths:
       - '**/*.py'
   pull_request:
