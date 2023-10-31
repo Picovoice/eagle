@@ -19,6 +19,7 @@ from typing import Sequence
 
 from _eagle import (
     Eagle,
+    EagleError,
     EagleProfiler,
     EagleProfilerEnrollFeedback
 )
@@ -119,6 +120,35 @@ class EagleTestCase(unittest.TestCase):
 
     def test_frame_length(self) -> None:
         self.assertGreater(self.eagle.frame_length, 0)
+
+    def test_message_stack(self):
+        relative_path = '../..'
+        profile = self.eagle_profiler.export()
+
+        error = None
+        try:
+            eagle = Eagle(
+                access_key='invalid',
+                model_path=default_model_path(relative_path),
+                library_path=default_library_path(relative_path),
+                speaker_profiles=[profile])
+            self.assertIsNone(eagle)
+        except EagleError as e:
+            error = e.message_stack
+
+        self.assertIsNotNone(error)
+        self.assertGreater(len(error), 0)
+
+        try:
+            eagle = Eagle(
+                access_key='invalid',
+                model_path=default_model_path(relative_path),
+                library_path=default_library_path(relative_path),
+                speaker_profiles=[profile])
+            self.assertIsNone(eagle)
+        except EagleError as e:
+            self.assertEqual(len(error), len(e.message_stack))
+            self.assertListEqual(list(error), list(e.message_stack))
 
 
 if __name__ == '__main__':

@@ -1,2 +1,2 @@
-pveagle==0.1.0
+pveagle==0.2.0
 pvrecorder==1.2.1
