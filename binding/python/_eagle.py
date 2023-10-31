@@ -15,7 +15,7 @@ from enum import Enum
 from typing import Sequence, Tuple
 
 
-class EagleError(Exception):    
+class EagleError(Exception):
     def __init__(self, message: str = '', message_stack: Sequence[str] = None):
         super().__init__(message)
 
