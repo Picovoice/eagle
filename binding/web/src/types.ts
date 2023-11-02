@@ -11,6 +11,21 @@
 
 import { PvModel } from '@picovoice/web-utils';
 
+export enum PvStatus {
+  SUCCESS = 10000,
+  OUT_OF_MEMORY,
+  IO_ERROR,
+  INVALID_ARGUMENT,
+  STOP_ITERATION,
+  KEY_ERROR,
+  INVALID_STATE,
+  RUNTIME_ERROR,
+  ACTIVATION_ERROR,
+  ACTIVATION_LIMIT_REACHED,
+  ACTIVATION_THROTTLED,
+  ACTIVATION_REFUSED,
+}
+
 /**
  * EagleModel types
  */
@@ -40,6 +55,7 @@ export type EagleProfilerWorkerInitRequest = {
   modelPath: string;
   wasm: string;
   wasmSimd: string;
+  sdk: string;
 };
 
 export type EagleProfilerWorkerEnrollRequest = {
@@ -68,7 +84,9 @@ export type EagleProfilerWorkerRequest =
 
 export type EagleProfilerWorkerFailureResponse = {
   command: 'failed' | 'error';
-  message: string;
+  status: PvStatus;
+  shortMessage: string;
+  messageStack: string[];
 };
 
 export type EagleProfilerWorkerInitResponse =
@@ -120,6 +138,7 @@ export type EagleWorkerInitRequest = {
   speakerProfiles: EagleProfile[];
   wasm: string;
   wasmSimd: string;
+  sdk: string;
 };
 
 export type EagleWorkerProcessRequest = {
@@ -143,7 +162,9 @@ export type EagleWorkerRequest =
 
 export type EagleWorkerFailureResponse = {
   command: 'failed' | 'error';
-  message: string;
+  status: PvStatus;
+  shortMessage: string;
+  messageStack: string[];
 };
 
 export type EagleWorkerInitResponse =

@@ -15,7 +15,9 @@ import {
   EagleProfilerWorkerEnrollRequest,
   EagleProfilerWorkerInitRequest,
   EagleProfilerWorkerRequest,
+  PvStatus,
 } from './types';
+import { EagleError } from "./eagle_errors";
 
 let profiler: EagleProfiler | null = null;
 
@@ -25,12 +27,14 @@ const initRequest = async (
   if (profiler !== null) {
     return {
       command: 'error',
-      message: 'Eagle profiler already initialized',
+      status: PvStatus.INVALID_STATE,
+      shortMessage: 'Eagle profiler already initialized',
     };
   }
   try {
     EagleProfiler.setWasm(request.wasm);
     EagleProfiler.setWasmSimd(request.wasmSimd);
+    EagleProfiler.setSdk(request.sdk);
     profiler = await EagleProfiler._init(request.accessKey, request.modelPath);
     return {
       command: 'ok',
@@ -39,10 +43,20 @@ const initRequest = async (
       version: profiler.version,
     };
   } catch (e: any) {
-    return {
-      command: 'error',
-      message: e.message,
-    };
+    if (e instanceof EagleError) {
+      return {
+        command: 'error',
+        status: e.status,
+        shortMessage: e.shortMessage,
+        messageStack: e.messageStack
+      };
+    } else {
+      return {
+        command: 'error',
+        status: PvStatus.RUNTIME_ERROR,
+        shortMessage: e.message
+      };
+    }
   }
 };
 
@@ -52,7 +66,8 @@ const enrollRequest = async (
   if (profiler === null) {
     return {
       command: 'error',
-      message: 'Eagle profiler not initialized',
+      status: PvStatus.INVALID_STATE,
+      shortMessage: 'Eagle profiler not initialized',
     };
   }
   try {
@@ -62,10 +77,20 @@ const enrollRequest = async (
       result,
     };
   } catch (e: any) {
-    return {
-      command: 'error',
-      message: e.message,
-    };
+    if (e instanceof EagleError) {
+      return {
+        command: 'error',
+        status: e.status,
+        shortMessage: e.shortMessage,
+        messageStack: e.messageStack
+      };
+    } else {
+      return {
+        command: 'error',
+        status: PvStatus.RUNTIME_ERROR,
+        shortMessage: e.message
+      };
+    }
   }
 };
 
@@ -73,7 +98,8 @@ const exportRequest = async (): Promise<any> => {
   if (profiler === null) {
     return {
       command: 'error',
-      message: 'Eagle profiler not initialized',
+      status: PvStatus.INVALID_STATE,
+      shortMessage: 'Eagle profiler not initialized',
     };
   }
   try {
@@ -83,10 +109,20 @@ const exportRequest = async (): Promise<any> => {
       profile,
     };
   } catch (e: any) {
-    return {
-      command: 'error',
-      message: e.message,
-    };
+    if (e instanceof EagleError) {
+      return {
+        command: 'error',
+        status: e.status,
+        shortMessage: e.shortMessage,
+        messageStack: e.messageStack
+      };
+    } else {
+      return {
+        command: 'error',
+        status: PvStatus.RUNTIME_ERROR,
+        shortMessage: e.message
+      };
+    }
   }
 };
 
@@ -94,7 +130,8 @@ const resetRequest = async (): Promise<any> => {
   if (profiler === null) {
     return {
       command: 'error',
-      message: 'Eagle not initialized',
+      status: PvStatus.INVALID_STATE,
+      shortMessage: 'Eagle profiler not initialized',
     };
   }
   try {
@@ -103,10 +140,20 @@ const resetRequest = async (): Promise<any> => {
       command: 'ok',
     };
   } catch (e: any) {
-    return {
-      command: 'error',
-      message: e.message,
-    };
+    if (e instanceof EagleError) {
+      return {
+        command: 'error',
+        status: e.status,
+        shortMessage: e.shortMessage,
+        messageStack: e.messageStack
+      };
+    } else {
+      return {
+        command: 'error',
+        status: PvStatus.RUNTIME_ERROR,
+        shortMessage: e.message
+      };
+    }
   }
 };
 

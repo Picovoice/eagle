@@ -9,6 +9,7 @@ import {
 
 // @ts-ignore
 import eagleParams from './eagle_params';
+import { EagleError } from "../src/eagle_errors";
 
 const ACCESS_KEY = Cypress.env('ACCESS_KEY');
 let testProfile: EagleProfile;
@@ -252,6 +253,106 @@ describe('Eagle Profiler', async function () {
       }
     );
   });
+
+  it(`should return correct error message stack`, async () => {
+    let messageStack = [];
+    try {
+      const eagle = await EagleProfiler.create(
+        "invalidAccessKey",
+        { base64: eagleParams, forceWrite: true }
+      );
+      await eagle.release();
+      expect(eagle).to.be.undefined;
+    } catch (e: any) {
+      messageStack = e.messageStack;
+    }
+
+    expect(messageStack.length).to.be.gt(0);
+    expect(messageStack.length).to.be.lte(8);
+
+    try {
+      const eagle = await EagleProfiler.create(
+        "invalidAccessKey",
+        { base64: eagleParams, forceWrite: true }
+      );
+      await eagle.release();
+      expect(eagle).to.be.undefined;
+    } catch (e: any) {
+      expect(messageStack.length).to.be.eq(e.messageStack.length);
+    }
+  });
+
+  it(`should return correct error message stack (worker)`, async () => {
+    let messageStack = [];
+    try {
+      const eagle = await EagleProfilerWorker.create(
+        "invalidAccessKey",
+        { base64: eagleParams, forceWrite: true }
+      );
+      eagle.terminate();
+      expect(eagle).to.be.undefined;
+    } catch (e: any) {
+      messageStack = e.messageStack;
+    }
+
+    expect(messageStack.length).to.be.gt(0);
+    expect(messageStack.length).to.be.lte(8);
+
+    try {
+      const eagle = await EagleProfilerWorker.create(
+        "invalidAccessKey",
+        { base64: eagleParams, forceWrite: true }
+      );
+      eagle.terminate();
+      expect(eagle).to.be.undefined;
+    } catch (e: any) {
+      expect(messageStack.length).to.be.eq(e.messageStack.length);
+    }
+  });
+
+  it(`should return enroll/export error message stack`, async () => {
+    let error: EagleError | null = null;
+
+    const eagle = await EagleProfiler.create(
+      ACCESS_KEY,
+      { base64: eagleParams, forceWrite: true }
+    );
+
+    const testPcm = new Int16Array(eagle.minEnrollSamples);
+    // @ts-ignore
+    const objectAddress = eagle._objectAddress;
+
+    // @ts-ignore
+    eagle._objectAddress = 0;
+
+    try {
+      await eagle.enroll(testPcm);
+    } catch (e: any) {
+      error = e;
+    }
+
+    expect(error).to.not.be.null;
+    if (error) {
+      expect((error as EagleError).messageStack.length).to.be.gt(0);
+      expect((error as EagleError).messageStack.length).to.be.lte(8);
+    }
+
+    try {
+      await eagle.export();
+    } catch (e: any) {
+      error = e;
+    }
+
+    expect(error).to.not.be.null;
+    if (error) {
+      expect((error as EagleError).messageStack.length).to.be.gt(0);
+      expect((error as EagleError).messageStack.length).to.be.lte(8);
+    }
+
+    // @ts-ignore
+    eagle._objectAddress = objectAddress;
+    await eagle.release();
+  });
 });
 
 describe('Eagle', function () {
@@ -319,6 +420,98 @@ describe('Eagle', function () {
     expect(eagle.version).length.to.be.gt(0);
     await eagle.release();
     await eagle.terminate();
+  });
+
+  it(`should return correct error message stack`, async () => {
+    let messageStack = [];
+    try {
+      const eagle = await Eagle.create(
+        "invalidAccessKey",
+        { base64: eagleParams, forceWrite: true },
+        testProfile
+      );
+      await eagle.release();
+      expect(eagle).to.be.undefined;
+    } catch (e: any) {
+      messageStack = e.messageStack;
+    }
+
+    expect(messageStack.length).to.be.gt(0);
+    expect(messageStack.length).to.be.lte(8);
+
+    try {
+      const eagle = await Eagle.create(
+        "invalidAccessKey",
+        { base64: eagleParams, forceWrite: true },
+        testProfile
+      );
+      await eagle.release();
+      expect(eagle).to.be.undefined;
+    } catch (e: any) {
+      expect(messageStack.length).to.be.eq(e.messageStack.length);
+    }
+  });
+
+  it(`should return correct error message stack (worker)`, async () => {
+    let messageStack = [];
+    try {
+      const eagle = await EagleWorker.create(
+        "invalidAccessKey",
+        { base64: eagleParams, forceWrite: true },
+        testProfile
+      );
+      eagle.terminate();
+      expect(eagle).to.be.undefined;
+    } catch (e: any) {
+      messageStack = e.messageStack;
+    }
+
+    expect(messageStack.length).to.be.gt(0);
+    expect(messageStack.length).to.be.lte(8);
+
+    try {
+      const eagle = await EagleWorker.create(
+        "invalidAccessKey",
+        { base64: eagleParams, forceWrite: true },
+        testProfile
+      );
+      eagle.terminate();
+      expect(eagle).to.be.undefined;
+    } catch (e: any) {
+      expect(messageStack.length).to.be.eq(e.messageStack.length);
+    }
+  });
+
+  it(`should return process error message stack`, async () => {
+    let error: EagleError | null = null;
+
+    const eagle = await Eagle.create(
+      ACCESS_KEY,
+      { base64: eagleParams, forceWrite: true },
+      testProfile
+    );
+    const testPcm = new Int16Array(eagle.frameLength);
+    // @ts-ignore
+    const objectAddress = eagle._objectAddress;
+
+    // @ts-ignore
+    eagle._objectAddress = 0;
+
+    try {
+      await eagle.process(testPcm);
+    } catch (e: any) {
+      error = e;
+    }
+
+    // @ts-ignore
+    eagle._objectAddress = objectAddress;
+    await eagle.release();
+
+    expect(error).to.not.be.null;
+    if (error) {
+      expect((error as EagleError).messageStack.length).to.be.gt(0);
+      expect((error as EagleError).messageStack.length).to.be.lte(8);
+    }
   });
 
   it('eagle process with reset', () => {

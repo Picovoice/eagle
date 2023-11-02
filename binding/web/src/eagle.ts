@@ -25,7 +25,15 @@ import {
 
 import { simd } from 'wasm-feature-detect';
 
-import { EagleModel, EagleProfile, EagleProfilerEnrollResult } from './types';
+import {
+  EagleModel,
+  EagleProfile,
+  EagleProfilerEnrollResult,
+  PvStatus
+} from './types';
+
+import * as EagleErrors from './eagle_errors';
+import { pvStatusToException } from './eagle_errors';
 
 /**
  * WebAssembly function types
@@ -74,6 +82,12 @@ type pv_eagle_frame_length_type = () => Promise<number>;
 type pv_eagle_version_type = () => Promise<number>;
 type pv_sample_rate_type = () => Promise<number>;
 type pv_status_to_string_type = (status: number) => Promise<number>;
+type pv_set_sdk_type = (sdk: number) => Promise<void>;
+type pv_get_error_stack_type = (
+  messageStack: number,
+  messageStackDepth: number
+) => Promise<number>;
+type pv_free_error_stack_type = (messageStack: number) => Promise<void>;
 
 type EagleBaseWasmOutput = {
   memory: WebAssembly.Memory;
@@ -84,7 +98,13 @@ type EagleBaseWasmOutput = {
   sampleRate: number;
   version: string;
 
+  messageStackAddressAddressAddress: number;
+  messageStackDepthAddress: number;
+
   pvStatusToString: pv_status_to_string_type;
+  pvGetErrorStack: pv_get_error_stack_type;
+  pvFreeErrorStack: pv_free_error_stack_type;
+
   exports: any;
 };
 
@@ -122,11 +142,18 @@ class EagleBase {
   protected readonly _pvFree: pv_free_type;
   protected readonly _functionMutex: Mutex;
 
+  protected readonly _pvGetErrorStack: pv_get_error_stack_type;
+  protected readonly _pvFreeErrorStack: pv_free_error_stack_type;
+
+  protected readonly _messageStackAddressAddressAddress: number;
+  protected readonly _messageStackDepthAddress: number;
+
   protected static _sampleRate: number;
   protected static _version: string;
 
   protected static _wasm: string;
   protected static _wasmSimd: string;
+  protected static _sdk: string = 'web';
 
   protected static _eagleMutex = new Mutex();
 
@@ -142,6 +169,12 @@ class EagleBase {
     this._alignedAlloc = handleWasm.alignedAlloc;
     this._pvFree = handleWasm.pvFree;
     this._pvError = handleWasm.pvError;
+
+    this._pvGetErrorStack = handleWasm.pvGetErrorStack;
+    this._pvFreeErrorStack = handleWasm.pvFreeErrorStack;
+
+    this._messageStackAddressAddressAddress = handleWasm.messageStackAddressAddressAddress;
+    this._messageStackDepthAddress = handleWasm.messageStackDepthAddress;
 
     this._functionMutex = new Mutex();
   }
@@ -180,6 +213,10 @@ class EagleBase {
     }
   }
 
+  public static setSdk(sdk: string): void {
+    EagleBase._sdk = sdk;
+  }
+
   protected static async _initBaseWasm(
     wasmBase64: string,
     wasmMemorySize: number
@@ -196,6 +233,11 @@ class EagleBase {
     const pv_sample_rate = exports.pv_sample_rate as pv_sample_rate_type;
     const pv_status_to_string =
       exports.pv_status_to_string as pv_status_to_string_type;
+    const pv_set_sdk = exports.pv_set_sdk as pv_set_sdk_type;
+    const pv_get_error_stack =
+      exports.pv_get_error_stack as pv_get_error_stack_type;
+    const pv_free_error_stack =
+      exports.pv_free_error_stack as pv_free_error_stack_type;
 
     const sampleRate = await pv_sample_rate();
     const versionAddress = await pv_eagle_version();
@@ -203,6 +245,40 @@ class EagleBase {
       memoryBufferUint8,
       versionAddress
     );
+
+    const sdkEncoded = new TextEncoder().encode(this._sdk);
+    const sdkAddress = await aligned_alloc(
+      Uint8Array.BYTES_PER_ELEMENT,
+      (sdkEncoded.length + 1) * Uint8Array.BYTES_PER_ELEMENT
+    );
+    if (!sdkAddress) {
+      throw new EagleErrors.EagleOutOfMemoryError(
+        'malloc failed: Cannot allocate memory'
+      );
+    }
+    memoryBufferUint8.set(sdkEncoded, sdkAddress);
+    memoryBufferUint8[sdkAddress + sdkEncoded.length] = 0;
+    await pv_set_sdk(sdkAddress);
+
+    const messageStackDepthAddress = await aligned_alloc(
+      Int32Array.BYTES_PER_ELEMENT,
+      Int32Array.BYTES_PER_ELEMENT
+    );
+    if (!messageStackDepthAddress) {
+      throw new EagleErrors.EagleOutOfMemoryError(
+        'malloc failed: Cannot allocate memory'
+      );
+    }
+
+    const messageStackAddressAddressAddress = await aligned_alloc(
+      Int32Array.BYTES_PER_ELEMENT,
+      Int32Array.BYTES_PER_ELEMENT
+    );
+    if (!messageStackAddressAddressAddress) {
+      throw new EagleErrors.EagleOutOfMemoryError(
+        'malloc failed: Cannot allocate memory'
+      );
+    }
 
     return {
       memory: memory,
@@ -213,9 +289,58 @@ class EagleBase {
       sampleRate: sampleRate,
       version: version,
 
+      messageStackAddressAddressAddress: messageStackAddressAddressAddress,
+      messageStackDepthAddress: messageStackDepthAddress,
+
       pvStatusToString: pv_status_to_string,
+      pvGetErrorStack: pv_get_error_stack,
+      pvFreeErrorStack: pv_free_error_stack,
+
       exports: exports,
     };
+  }
+
+  protected static async getMessageStack(
+    pv_get_error_stack: pv_get_error_stack_type,
+    pv_free_error_stack: pv_free_error_stack_type,
+    messageStackAddressAddressAddress: number,
+    messageStackDepthAddress: number,
+    memoryBufferView: DataView,
+    memoryBufferUint8: Uint8Array
+  ): Promise<string[]> {
+    const status = await pv_get_error_stack(
+      messageStackAddressAddressAddress,
+      messageStackDepthAddress
+    );
+    if (status !== PvStatus.SUCCESS) {
+      throw pvStatusToException(status, 'Unable to get Eagle error state');
+    }
+
+    const messageStackAddressAddress = memoryBufferView.getInt32(
+      messageStackAddressAddressAddress,
+      true
+    );
+
+    const messageStackDepth = memoryBufferView.getInt32(
+      messageStackDepthAddress,
+      true
+    );
+    const messageStack: string[] = [];
+    for (let i = 0; i < messageStackDepth; i++) {
+      const messageStackAddress = memoryBufferView.getInt32(
+        messageStackAddressAddress + i * Int32Array.BYTES_PER_ELEMENT,
+        true
+      );
+      const message = arrayBufferToStringAtIndex(
+        memoryBufferUint8,
+        messageStackAddress
+      );
+      messageStack.push(message);
+    }
+
+    await pv_free_error_stack(messageStackAddressAddress);
+
+    return messageStack;
   }
 }
 
@@ -289,7 +414,7 @@ export class EagleProfiler extends EagleBase {
     modelPath: string
   ): Promise<EagleProfiler> {
     if (!isAccessKeyValid(accessKey)) {
-      throw new Error('Invalid AccessKey');
+      throw new EagleErrors.EagleInvalidArgumentError('Invalid AccessKey');
     }
 
     return new Promise<EagleProfiler>((resolve, reject) => {
@@ -339,11 +464,11 @@ export class EagleProfiler extends EagleBase {
    */
   public async enroll(pcm: Int16Array): Promise<EagleProfilerEnrollResult> {
     if (!(pcm instanceof Int16Array)) {
-      throw new Error("The argument 'pcm' must be provided as an Int16Array");
+      throw new EagleErrors.EagleInvalidArgumentError("The argument 'pcm' must be provided as an Int16Array");
     }
 
     if (pcm.length > EagleProfiler._maxEnrollSamples) {
-      throw new Error(
+      throw new EagleErrors.EagleInvalidArgumentError(
         `'pcm' size must be smaller than ${EagleProfiler._maxEnrollSamples}`
       );
     }
@@ -352,7 +477,7 @@ export class EagleProfiler extends EagleBase {
       this._functionMutex
         .runExclusive(async () => {
           if (this._wasmMemory === undefined) {
-            throw new Error('Attempted to call `.enroll()` after release');
+            throw new EagleErrors.EagleInvalidStateError('Attempted to call `.enroll()` after release');
           }
 
           const pcmAddress = await this._alignedAlloc(
@@ -365,14 +490,14 @@ export class EagleProfiler extends EagleBase {
             Int32Array.BYTES_PER_ELEMENT
           );
           if (feedbackAddress === 0) {
-            throw new Error('malloc failed: Cannot allocate memory');
+            throw new EagleErrors.EagleOutOfMemoryError('malloc failed: Cannot allocate memory');
           }
           const percentageAddress = await this._alignedAlloc(
             Int32Array.BYTES_PER_ELEMENT,
             Int32Array.BYTES_PER_ELEMENT
           );
           if (percentageAddress === 0) {
-            throw new Error('malloc failed: Cannot allocate memory');
+            throw new EagleErrors.EagleOutOfMemoryError('malloc failed: Cannot allocate memory');
           }
 
           const memoryBufferInt16 = new Int16Array(this._wasmMemory.buffer);
@@ -390,14 +515,19 @@ export class EagleProfiler extends EagleBase {
             await this._pvFree(feedbackAddress);
             await this._pvFree(percentageAddress);
 
+            const memoryBufferView = new DataView(this._wasmMemory.buffer);
             const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
 
-            throw new Error(
-              `enroll failed with status ${arrayBufferToStringAtIndex(
-                memoryBufferUint8,
-                await this._pvStatusToString(status)
-              )}`
+            const messageStack = await EagleProfiler.getMessageStack(
+              this._pvGetErrorStack,
+              this._pvFreeErrorStack,
+              this._messageStackAddressAddressAddress,
+              this._messageStackDepthAddress,
+              memoryBufferView,
+              memoryBufferUint8
             );
+
+            throw pvStatusToException(status, "EagleProfiler enroll failed", messageStack);
           }
 
           const memoryBufferView = new DataView(this._wasmMemory.buffer);
@@ -437,7 +567,7 @@ export class EagleProfiler extends EagleBase {
       this._functionMutex
         .runExclusive(async () => {
           if (this._wasmMemory === undefined) {
-            throw new Error('Attempted to call `.export()` after release');
+            throw new EagleErrors.EagleInvalidStateError('Attempted to call `.export()` after release');
           }
 
           const profileAddress = await this._alignedAlloc(
@@ -451,13 +581,20 @@ export class EagleProfiler extends EagleBase {
           );
           if (status !== PV_STATUS_SUCCESS) {
             await this._pvFree(profileAddress);
+
+            const memoryBufferView = new DataView(this._wasmMemory.buffer);
             const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
-            throw new Error(
-              `export failed with status ${arrayBufferToStringAtIndex(
-                memoryBufferUint8,
-                await this._pvStatusToString(status)
-              )}`
+
+            const messageStack = await EagleProfiler.getMessageStack(
+              this._pvGetErrorStack,
+              this._pvFreeErrorStack,
+              this._messageStackAddressAddressAddress,
+              this._messageStackDepthAddress,
+              memoryBufferView,
+              memoryBufferUint8
             );
+
+            throw pvStatusToException(status, "EagleProfiler export failed", messageStack);
           }
 
           const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
@@ -489,18 +626,24 @@ export class EagleProfiler extends EagleBase {
       this._functionMutex
         .runExclusive(async () => {
           if (this._wasmMemory === undefined) {
-            throw new Error('Attempted to call `.reset()` after release');
+            throw new EagleErrors.EagleInvalidStateError('Attempted to call `.reset()` after release');
           }
 
           const status = await this._pvEagleProfilerReset(this._objectAddress);
           if (status !== PV_STATUS_SUCCESS) {
+            const memoryBufferView = new DataView(this._wasmMemory.buffer);
             const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
-            throw new Error(
-              `reset failed with status ${arrayBufferToStringAtIndex(
-                memoryBufferUint8,
-                await this._pvStatusToString(status)
-              )}`
+
+            const messageStack = await EagleProfiler.getMessageStack(
+              this._pvGetErrorStack,
+              this._pvFreeErrorStack,
+              this._messageStackAddressAddressAddress,
+              this._messageStackDepthAddress,
+              memoryBufferView,
+              memoryBufferUint8
             );
+
+            throw pvStatusToException(status, "EagleProfiler reset failed", messageStack);
           }
         })
         .then(() => {
@@ -550,7 +693,7 @@ export class EagleProfiler extends EagleBase {
       Int32Array.BYTES_PER_ELEMENT
     );
     if (objectAddressAddress === 0) {
-      throw new Error('malloc failed: Cannot allocate memory');
+      throw new EagleErrors.EagleOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
 
     const accessKeyAddress = await baseWasmOutput.alignedAlloc(
@@ -558,7 +701,7 @@ export class EagleProfiler extends EagleBase {
       (accessKey.length + 1) * Uint8Array.BYTES_PER_ELEMENT
     );
     if (accessKeyAddress === 0) {
-      throw new Error('malloc failed: Cannot allocate memory');
+      throw new EagleErrors.EagleOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
     for (let i = 0; i < accessKey.length; i++) {
       memoryBufferUint8[accessKeyAddress + i] = accessKey.charCodeAt(i);
@@ -571,7 +714,7 @@ export class EagleProfiler extends EagleBase {
       (modelPathEncoded.length + 1) * Uint8Array.BYTES_PER_ELEMENT
     );
     if (modelPathAddress === 0) {
-      throw new Error('malloc failed: Cannot allocate memory');
+      throw new EagleErrors.EagleOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
     memoryBufferUint8.set(modelPathEncoded, modelPathAddress);
     memoryBufferUint8[modelPathAddress + modelPathEncoded.length] = 0;
@@ -583,18 +726,22 @@ export class EagleProfiler extends EagleBase {
     );
     await baseWasmOutput.pvFree(accessKeyAddress);
     await baseWasmOutput.pvFree(modelPathAddress);
-    if (status !== PV_STATUS_SUCCESS) {
-      const msg = `'pv_eagle_profiler_init' failed with status ${arrayBufferToStringAtIndex(
-        memoryBufferUint8,
-        await baseWasmOutput.pvStatusToString(status)
-      )}`;
-
-      throw new Error(
-        `${msg}\nDetails: ${baseWasmOutput.pvError.getErrorString()}`
-      );
-    }
 
     const memoryBufferView = new DataView(baseWasmOutput.memory.buffer);
+
+    if (status !== PV_STATUS_SUCCESS) {
+      const messageStack = await EagleProfiler.getMessageStack(
+        baseWasmOutput.pvGetErrorStack,
+        baseWasmOutput.pvFreeErrorStack,
+        baseWasmOutput.messageStackAddressAddressAddress,
+        baseWasmOutput.messageStackDepthAddress,
+        memoryBufferView,
+        memoryBufferUint8
+      );
+
+      throw pvStatusToException(status, "EagleProfiler init failed", messageStack, baseWasmOutput.pvError);
+    }
+
     const objectAddress = memoryBufferView.getInt32(objectAddressAddress, true);
     await baseWasmOutput.pvFree(objectAddressAddress);
 
@@ -603,7 +750,7 @@ export class EagleProfiler extends EagleBase {
       Int32Array.BYTES_PER_ELEMENT
     );
     if (minEnrollSamplesAddress === 0) {
-      throw new Error('malloc failed: Cannot allocate memory');
+      throw new EagleErrors.EagleOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
 
     status = await pv_eagle_profiler_enroll_min_audio_length_samples(
@@ -611,14 +758,18 @@ export class EagleProfiler extends EagleBase {
       minEnrollSamplesAddress
     );
     if (status !== PV_STATUS_SUCCESS) {
-      const msg = `'pv_eagle_profiler_enroll_min_audio_length_samples' failed with status ${arrayBufferToStringAtIndex(
-        memoryBufferUint8,
-        await baseWasmOutput.pvStatusToString(status)
-      )}`;
-      throw new Error(
-        `${msg}\nDetails: ${baseWasmOutput.pvError.getErrorString()}`
+      const messageStack = await EagleProfiler.getMessageStack(
+        baseWasmOutput.pvGetErrorStack,
+        baseWasmOutput.pvFreeErrorStack,
+        baseWasmOutput.messageStackAddressAddressAddress,
+        baseWasmOutput.messageStackDepthAddress,
+        memoryBufferView,
+        memoryBufferUint8
       );
+
+      throw pvStatusToException(status, "EagleProfiler failed to get min enroll audio length", messageStack, baseWasmOutput.pvError);
     }
+
     const minEnrollSamples = memoryBufferView.getInt32(
       minEnrollSamplesAddress,
       true
@@ -630,7 +781,7 @@ export class EagleProfiler extends EagleBase {
       Int32Array.BYTES_PER_ELEMENT
     );
     if (profileSizeAddress === 0) {
-      throw new Error('malloc failed: Cannot allocate memory');
+      throw new EagleErrors.EagleOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
 
     status = await pv_eagle_profiler_export_size(
@@ -638,13 +789,16 @@ export class EagleProfiler extends EagleBase {
       profileSizeAddress
     );
     if (status !== PV_STATUS_SUCCESS) {
-      const msg = `'pv_eagle_profiler_export_size' failed with status ${arrayBufferToStringAtIndex(
-        memoryBufferUint8,
-        await baseWasmOutput.pvStatusToString(status)
-      )}`;
-      throw new Error(
-        `${msg}\nDetails: ${baseWasmOutput.pvError.getErrorString()}`
+      const messageStack = await EagleProfiler.getMessageStack(
+        baseWasmOutput.pvGetErrorStack,
+        baseWasmOutput.pvFreeErrorStack,
+        baseWasmOutput.messageStackAddressAddressAddress,
+        baseWasmOutput.messageStackDepthAddress,
+        memoryBufferView,
+        memoryBufferUint8
       );
+
+      throw pvStatusToException(status, "EagleProfiler failed to get export size", messageStack, baseWasmOutput.pvError);
     }
 
     const profileSize = memoryBufferView.getInt32(profileSizeAddress, true);
@@ -704,7 +858,7 @@ export class Eagle extends EagleBase {
   /**
    * Creates an instance of the Picovoice Eagle Speaker Recognition Engine.
    *
-   * @param accessKey: AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)
+   * @param accessKey AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)
    * @param model Eagle model options.
    * @param model.base64 The model in base64 string to initialize Eagle.
    * @param model.publicPath The model path relative to the public directory.
@@ -739,11 +893,11 @@ export class Eagle extends EagleBase {
     speakerProfiles: EagleProfile[]
   ): Promise<Eagle> {
     if (!isAccessKeyValid(accessKey)) {
-      throw new Error('Invalid AccessKey');
+      throw new EagleErrors.EagleInvalidArgumentError('Invalid AccessKey');
     }
 
     if (!speakerProfiles || speakerProfiles.length === 0) {
-      throw new Error('No speaker profiles provided');
+      throw new EagleErrors.EagleInvalidArgumentError('No speaker profiles provided');
     }
 
     return new Promise<Eagle>((resolve, reject) => {
@@ -779,11 +933,11 @@ export class Eagle extends EagleBase {
    */
   public async process(pcm: Int16Array): Promise<number[]> {
     if (!(pcm instanceof Int16Array)) {
-      throw new Error("The argument 'pcm' must be provided as an Int16Array");
+      throw new EagleErrors.EagleInvalidArgumentError("The argument 'pcm' must be provided as an Int16Array");
     }
 
     if (pcm.length !== Eagle._frameLength) {
-      throw new Error(
+      throw new EagleErrors.EagleInvalidArgumentError(
         `Length of input frame (${pcm.length}) does not match required frame length (${Eagle._frameLength})`
       );
     }
@@ -792,7 +946,7 @@ export class Eagle extends EagleBase {
       this._functionMutex
         .runExclusive(async () => {
           if (this._wasmMemory === undefined) {
-            throw new Error('Attempted to call `.process` after release');
+            throw new EagleErrors.EagleInvalidStateError('Attempted to call `.process` after release');
           }
 
           const pcmAddress = await this._alignedAlloc(
@@ -810,15 +964,21 @@ export class Eagle extends EagleBase {
           );
           await this._pvFree(pcmAddress);
           if (status !== PV_STATUS_SUCCESS) {
+            const memoryBufferView = new DataView(this._wasmMemory.buffer);
             const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
-            throw new Error(
-              `process failed with status ${arrayBufferToStringAtIndex(
-                memoryBufferUint8,
-                await this._pvStatusToString(status)
-              )}`
+
+            const messageStack = await EagleProfiler.getMessageStack(
+              this._pvGetErrorStack,
+              this._pvFreeErrorStack,
+              this._messageStackAddressAddressAddress,
+              this._messageStackDepthAddress,
+              memoryBufferView,
+              memoryBufferUint8
             );
+
+            throw pvStatusToException(status, "Eagle process failed", messageStack);
           }
-          
+
           const memoryBufferView = new DataView(this._wasmMemory.buffer);
 
           const scores: number[] = [];
@@ -852,18 +1012,24 @@ export class Eagle extends EagleBase {
       this._functionMutex
         .runExclusive(async () => {
           if (this._wasmMemory === undefined) {
-            throw new Error('Attempted to call `.reset` after release');
+            throw new EagleErrors.EagleInvalidStateError('Attempted to call `.reset` after release');
           }
 
           const status = await this._pvEagleReset(this._objectAddress);
           if (status !== PV_STATUS_SUCCESS) {
+            const memoryBufferView = new DataView(this._wasmMemory.buffer);
             const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
-            throw new Error(
-              `reset failed with status ${arrayBufferToStringAtIndex(
-                memoryBufferUint8,
-                await this._pvStatusToString(status)
-              )}`
+
+            const messageStack = await EagleProfiler.getMessageStack(
+              this._pvGetErrorStack,
+              this._pvFreeErrorStack,
+              this._messageStackAddressAddressAddress,
+              this._messageStackDepthAddress,
+              memoryBufferView,
+              memoryBufferUint8
             );
+
+            throw pvStatusToException(status, "Eagle reset failed", messageStack);
           }
         })
         .then(() => {
@@ -911,7 +1077,7 @@ export class Eagle extends EagleBase {
       Int32Array.BYTES_PER_ELEMENT
     );
     if (objectAddressAddress === 0) {
-      throw new Error('malloc failed: Cannot allocate memory');
+      throw new EagleErrors.EagleOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
 
     const accessKeyAddress = await baseWasmOutput.alignedAlloc(
@@ -919,7 +1085,7 @@ export class Eagle extends EagleBase {
       (accessKey.length + 1) * Uint8Array.BYTES_PER_ELEMENT
     );
     if (accessKeyAddress === 0) {
-      throw new Error('malloc failed: Cannot allocate memory');
+      throw new EagleErrors.EagleOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
     for (let i = 0; i < accessKey.length; i++) {
       memoryBufferUint8[accessKeyAddress + i] = accessKey.charCodeAt(i);
@@ -932,7 +1098,7 @@ export class Eagle extends EagleBase {
       (modelPathEncoded.length + 1) * Uint8Array.BYTES_PER_ELEMENT
     );
     if (modelPathAddress === 0) {
-      throw new Error('malloc failed: Cannot allocate memory');
+      throw new EagleErrors.EagleOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
     memoryBufferUint8.set(modelPathEncoded, modelPathAddress);
     memoryBufferUint8[modelPathAddress + modelPathEncoded.length] = 0;
@@ -943,7 +1109,7 @@ export class Eagle extends EagleBase {
       numSpeakers * Int32Array.BYTES_PER_ELEMENT
     );
     if (profilesAddressAddress === 0) {
-      throw new Error('malloc failed: Cannot allocate memory');
+      throw new EagleErrors.EagleOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
     const profilesAddressList: number[] = [];
     for (const profile of speakerProfiles) {
@@ -952,7 +1118,7 @@ export class Eagle extends EagleBase {
         profile.bytes.length * Uint8Array.BYTES_PER_ELEMENT
       );
       if (profileAddress === 0) {
-        throw new Error('malloc failed: Cannot allocate memory');
+        throw new EagleErrors.EagleOutOfMemoryError('malloc failed: Cannot allocate memory');
       }
       memoryBufferUint8.set(profile.bytes, profileAddress);
       profilesAddressList.push(profileAddress);
@@ -971,18 +1137,22 @@ export class Eagle extends EagleBase {
     await baseWasmOutput.pvFree(accessKeyAddress);
     await baseWasmOutput.pvFree(modelPathAddress);
     await baseWasmOutput.pvFree(profilesAddressAddress);
-    if (status !== PV_STATUS_SUCCESS) {
-      const msg = `'pv_eagle_init' failed with status ${arrayBufferToStringAtIndex(
-        memoryBufferUint8,
-        await baseWasmOutput.pvStatusToString(status)
-      )}`;
-
-      throw new Error(
-        `${msg}\nDetails: ${baseWasmOutput.pvError.getErrorString()}`
-      );
-    }
 
     const memoryBufferView = new DataView(baseWasmOutput.memory.buffer);
+
+    if (status !== PV_STATUS_SUCCESS) {
+      const messageStack = await EagleProfiler.getMessageStack(
+        baseWasmOutput.pvGetErrorStack,
+        baseWasmOutput.pvFreeErrorStack,
+        baseWasmOutput.messageStackAddressAddressAddress,
+        baseWasmOutput.messageStackDepthAddress,
+        memoryBufferView,
+        memoryBufferUint8
+      );
+
+      throw pvStatusToException(status, "Eagle init failed", messageStack, baseWasmOutput.pvError);
+    }
+
     const objectAddress = memoryBufferView.getInt32(objectAddressAddress, true);
     await baseWasmOutput.pvFree(objectAddressAddress);
 
@@ -991,7 +1161,7 @@ export class Eagle extends EagleBase {
       numSpeakers * Float32Array.BYTES_PER_ELEMENT
     );
     if (scoresAddress === 0) {
-      throw new Error('malloc failed: Cannot allocate memory');
+      throw new EagleErrors.EagleOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
 
     const frameLength = await pv_eagle_frame_length();
