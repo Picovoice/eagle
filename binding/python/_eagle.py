@@ -407,6 +407,21 @@ class EagleProfiler(object):
 
         return self._version
 
+    def _get_error_stack(self) -> Sequence[str]:
+        message_stack_ref = POINTER(c_char_p)()
+        message_stack_depth = c_int()
+        status = self._get_error_stack_func(byref(message_stack_ref), byref(message_stack_depth))
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](message='Unable to get Eagle error state')
+
+        message_stack = list()
+        for i in range(message_stack_depth.value):
+            message_stack.append(message_stack_ref[i].decode('utf-8'))
+
+        self._free_error_stack_func(message_stack_ref)
+
+        return message_stack
+
 
 class Eagle(object):
     """
