@@ -1,6 +1,7 @@
 import { Eagle, EagleProfiler } from './eagle';
 import { EagleProfilerWorker } from './eagle_profiler_worker';
 import { EagleWorker } from './eagle_worker';
+import * as EagleErrors from './eagle_errors';
 
 import {
   EagleModel,
@@ -47,6 +48,7 @@ EagleProfilerWorker.setWasmSimd(eagleWasmSimd);
 
 export {
   Eagle,
+  EagleErrors,
   EagleModel,
   EagleProfile,
   EagleProfiler,

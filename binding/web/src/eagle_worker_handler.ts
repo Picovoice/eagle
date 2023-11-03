@@ -15,7 +15,9 @@ import {
   EagleWorkerProcessRequest,
   EagleWorkerInitRequest,
   EagleWorkerRequest,
+  PvStatus,
 } from './types';
+import { EagleError } from "./eagle_errors";
 
 let eagle: Eagle | null = null;
 
@@ -23,12 +25,14 @@ const initRequest = async (request: EagleWorkerInitRequest): Promise<any> => {
   if (eagle !== null) {
     return {
       command: 'error',
-      message: 'Eagle has already been initialized',
+      status: PvStatus.INVALID_STATE,
+      shortMessage: 'Eagle has already been initialized',
     };
   }
   try {
     Eagle.setWasm(request.wasm);
     Eagle.setWasmSimd(request.wasmSimd);
+    Eagle.setSdk(request.sdk);
     eagle = await Eagle._init(
       request.accessKey,
       request.modelPath,
@@ -41,10 +45,20 @@ const initRequest = async (request: EagleWorkerInitRequest): Promise<any> => {
       version: eagle.version,
     };
   } catch (e: any) {
-    return {
-      command: 'error',
-      message: e.message,
-    };
+    if (e instanceof EagleError) {
+      return {
+        command: 'error',
+        status: e.status,
+        shortMessage: e.shortMessage,
+        messageStack: e.messageStack
+      };
+    } else {
+      return {
+        command: 'error',
+        status: PvStatus.RUNTIME_ERROR,
+        shortMessage: e.message
+      };
+    }
   }
 };
 
@@ -54,7 +68,8 @@ const processRequest = async (
   if (eagle === null) {
     return {
       command: 'error',
-      message: 'Eagle has not been initialized',
+      status: PvStatus.INVALID_STATE,
+      shortMessage: 'Eagle has not been initialized',
     };
   }
   try {
@@ -64,10 +79,20 @@ const processRequest = async (
       scores,
     };
   } catch (e: any) {
-    return {
-      command: 'error',
-      message: e.message,
-    };
+    if (e instanceof EagleError) {
+      return {
+        command: 'error',
+        status: e.status,
+        shortMessage: e.shortMessage,
+        messageStack: e.messageStack
+      };
+    } else {
+      return {
+        command: 'error',
+        status: PvStatus.RUNTIME_ERROR,
+        shortMessage: e.message
+      };
+    }
   }
 };
 
@@ -75,7 +100,8 @@ const resetRequest = async (): Promise<any> => {
   if (eagle === null) {
     return {
       command: 'error',
-      message: 'Eagle has not been initialized',
+      status: PvStatus.INVALID_STATE,
+      shortMessage: 'Eagle has not been initialized',
     };
   }
   try {
@@ -84,10 +110,20 @@ const resetRequest = async (): Promise<any> => {
       command: 'ok',
     };
   } catch (e: any) {
-    return {
-      command: 'error',
-      message: e.message,
-    };
+    if (e instanceof EagleError) {
+      return {
+        command: 'error',
+        status: e.status,
+        shortMessage: e.shortMessage,
+        messageStack: e.messageStack
+      };
+    } else {
+      return {
+        command: 'error',
+        status: PvStatus.RUNTIME_ERROR,
+        shortMessage: e.message
+      };
+    }
   }
 };
 

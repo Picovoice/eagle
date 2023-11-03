@@ -22,6 +22,7 @@ import {
   EagleProfilerWorkerResetResponse,
 } from './types';
 import { loadModel } from '@picovoice/web-utils';
+import { pvStatusToException } from "./eagle_errors";
 
 export class EagleProfilerWorker {
   private readonly _worker: Worker;
@@ -31,6 +32,7 @@ export class EagleProfilerWorker {
 
   private static _wasm: string;
   private static _wasmSimd: string;
+  private static _sdk: string = "web";
 
   private constructor(
     worker: Worker,
@@ -85,6 +87,10 @@ export class EagleProfilerWorker {
     }
   }
 
+  public static setSdk(sdk: string): void {
+    EagleProfilerWorker._sdk = sdk;
+  }
+
   /**
    * Creates an instance of profiler component of the Eagle Speaker Recognition Engine.
    *
@@ -129,11 +135,11 @@ export class EagleProfilerWorker {
               break;
             case 'failed':
             case 'error':
-              reject(event.data.message);
+              reject(pvStatusToException(event.data.status, event.data.shortMessage, event.data.messageStack));
               break;
             default:
               // @ts-ignore
-              reject(`Unrecognized command: ${event.data.command}`);
+              reject(pvStatusToException(PvStatus.RUNTIME_ERROR, `Unrecognized command: ${event.data.command}`));
           }
         };
       }
@@ -145,6 +151,7 @@ export class EagleProfilerWorker {
       modelPath: modelPath,
       wasm: this._wasm,
       wasmSimd: this._wasmSimd,
+      sdk: this._sdk,
     });
 
     return returnPromise;
@@ -187,11 +194,11 @@ export class EagleProfilerWorker {
               break;
             case 'failed':
             case 'error':
-              reject(event.data.message);
+              reject(pvStatusToException(event.data.status, event.data.shortMessage, event.data.messageStack));
               break;
             default:
               // @ts-ignore
-              reject(`Unrecognized command: ${event.data.command}`);
+              reject(pvStatusToException(PvStatus.RUNTIME_ERROR, `Unrecognized command: ${event.data.command}`));
           }
         };
       }
@@ -223,11 +230,11 @@ export class EagleProfilerWorker {
               break;
             case 'failed':
             case 'error':
-              reject(event.data.message);
+              reject(pvStatusToException(event.data.status, event.data.shortMessage, event.data.messageStack));
               break;
             default:
               // @ts-ignore
-              reject(`Unrecognized command: ${event.data.command}`);
+              reject(pvStatusToException(PvStatus.RUNTIME_ERROR, `Unrecognized command: ${event.data.command}`));
           }
         };
       }
@@ -254,11 +261,11 @@ export class EagleProfilerWorker {
             break;
           case 'failed':
           case 'error':
-            reject(event.data.message);
+            reject(pvStatusToException(event.data.status, event.data.shortMessage, event.data.messageStack));
             break;
           default:
             // @ts-ignore
-            reject(`Unrecognized command: ${event.data.command}`);
+            reject(pvStatusToException(PvStatus.RUNTIME_ERROR, `Unrecognized command: ${event.data.command}`));
         }
       };
     });
@@ -283,11 +290,11 @@ export class EagleProfilerWorker {
             break;
           case 'failed':
           case 'error':
-            reject(event.data.message);
+            reject(pvStatusToException(event.data.status, event.data.shortMessage, event.data.messageStack));
             break;
           default:
             // @ts-ignore
-            reject(`Unrecognized command: ${event.data.command}`);
+            reject(pvStatusToException(PvStatus.RUNTIME_ERROR, `Unrecognized command: ${event.data.command}`));
         }
       };
     });

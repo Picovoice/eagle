@@ -3,7 +3,7 @@
   "description": "Eagle Speaker Recognition engine for web browsers (via WebAssembly)",
   "author": "Picovoice Inc",
   "license": "Apache-2.0",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "keywords": [
     "eagle",
     "web",
@@ -67,6 +67,6 @@
     "wasm-feature-detect": "^1.5.0"
   },
   "engines": {
-    "node": ">=14"
+    "node": ">=16"
   }
 }

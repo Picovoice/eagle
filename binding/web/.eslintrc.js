@@ -148,7 +148,7 @@ module.exports = {
     // disallow division operators explicitly at beginning of regular expression
     'no-div-regex': 2,
     // disallow else after a return in an if
-    'no-else-return': 2,
+    'no-else-return': 0,
     // disallow use of empty destructuring patterns
     'no-empty-pattern': 2,
     // disallow comparisons to null without a type-checking operator
