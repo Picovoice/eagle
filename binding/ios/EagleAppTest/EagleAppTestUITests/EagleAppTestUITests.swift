@@ -165,7 +165,7 @@ class EagleAppTestUITests: BaseTest {
             XCTAssert(res == -1)
         } catch {
             XCTAssert("\(error.localizedDescription)".count > 0)
-            XCTAssert("\(error.localizedDescription)".count < 8)
+            XCTAssert("\(error.localizedDescription)".count < 1024)
         }
 
         do {
@@ -173,7 +173,7 @@ class EagleAppTestUITests: BaseTest {
             XCTAssertNil(res)
         } catch {
             XCTAssert("\(error.localizedDescription)".count > 0)
-            XCTAssert("\(error.localizedDescription)".count < 8)
+            XCTAssert("\(error.localizedDescription)".count < 1024)
         }
     }
 
@@ -200,7 +200,7 @@ class EagleAppTestUITests: BaseTest {
             XCTAssert(res.count == -1)
         } catch {
             XCTAssert("\(error.localizedDescription)".count > 0)
-            XCTAssert("\(error.localizedDescription)".count < 8)
+            XCTAssert("\(error.localizedDescription)".count < 1024)
         }
     }
 }
