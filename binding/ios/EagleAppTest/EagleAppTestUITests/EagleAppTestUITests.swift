@@ -123,4 +123,84 @@ class EagleAppTestUITests: BaseTest {
         XCTAssertLessThan(scores.max()!, 0.5)
         eagle.delete()
     }
+
+    func testMessageStack() throws {
+        let enrollUrls = enrollUrls()
+        
+        let eagleProfiler = try EagleProfiler(accessKey: accessKey)
+        for url in enrollUrls {
+            let pcm = try readPcmFromFile(testAudioURL: url)
+            (_, _) = try eagleProfiler.enroll(pcm: pcm)
+        }
+
+        let profile = try eagleProfiler.export()
+        eagleProfiler.delete()
+
+        var first_error: String = ""
+        do {
+            let eagle = try Eagle(accessKey: "invalid", speakerProfiles: [profile])
+            XCTAssertNil(eagle)
+        } catch {
+            first_error = "\(error.localizedDescription)"
+            XCTAssert(first_error.count < 1024)
+        }
+
+        do {
+            let eagle = try Eagle(accessKey: "invalid", speakerProfiles: [profile])
+            XCTAssertNil(eagle)
+        } catch {
+            XCTAssert("\(error.localizedDescription)".count == first_error.count)
+        }
+    }
+
+    func testEnrollExportMessageStack() throws {
+        let e = try EagleProfiler.init(accessKey: accessKey)
+        e.delete()
+
+        var testPcm: [Int16] = []
+        testPcm.reserveCapacity(Int(Eagle.frameLength))
+
+        do {
+            let (res, _) = try e.enroll(pcm: testPcm)
+            XCTAssert(res == -1)
+        } catch {
+            XCTAssert("\(error.localizedDescription)".count > 0)
+            XCTAssert("\(error.localizedDescription)".count < 8)
+        }
+
+        do {
+            let res = try e.export()
+            XCTAssertNil(res)
+        } catch {
+            XCTAssert("\(error.localizedDescription)".count > 0)
+            XCTAssert("\(error.localizedDescription)".count < 8)
+        }
+    }
+
+    func testProcessMessageStack() throws {
+        let enrollUrls = enrollUrls()
+        
+        let eagleProfiler = try EagleProfiler(accessKey: accessKey)
+        for url in enrollUrls {
+            let pcm = try readPcmFromFile(testAudioURL: url)
+            (_, _) = try eagleProfiler.enroll(pcm: pcm)
+        }
+
+        let profile = try eagleProfiler.export()
+        eagleProfiler.delete()
+
+        let e = try Eagle.init(accessKey: accessKey, speakerProfiles: [profile])
+        e.delete()
+
+        var testPcm: [Int16] = []
+        testPcm.reserveCapacity(Int(Eagle.frameLength))
+
+        do {
+            let res = try e.process(pcm: testPcm)
+            XCTAssert(res.count == -1)
+        } catch {
+            XCTAssert("\(error.localizedDescription)".count > 0)
+            XCTAssert("\(error.localizedDescription)".count < 8)
+        }
+    }
 }

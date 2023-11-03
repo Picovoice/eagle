@@ -1,16 +1,16 @@
 PODS:
-  - Eagle-iOS (0.1.0)
+  - Eagle-iOS (0.2.0)
 
 DEPENDENCIES:
-  - Eagle-iOS (~> 0.1.0)
+  - Eagle-iOS (from `https://raw.githubusercontent.com/Picovoice/eagle/v0.2-ios/binding/ios/Eagle-iOS.podspec`)
 
-SPEC REPOS:
-  trunk:
-    - Eagle-iOS
+EXTERNAL SOURCES:
+  Eagle-iOS:
+    :podspec: https://raw.githubusercontent.com/Picovoice/eagle/v0.2-ios/binding/ios/Eagle-iOS.podspec
 
 SPEC CHECKSUMS:
-  Eagle-iOS: 2d510466a68b22ba137dd2b39086268c4130c321
+  Eagle-iOS: 155eb54e73e37533a0accf3ea5fa1a37d8c999ad
 
-PODFILE CHECKSUM: a3a1c94c7c11252c2152ed23f2cead73c1cf3762
+PODFILE CHECKSUM: 6ecb4b66367607455bddf4dcad4ec1f8c70935a7
 
-COCOAPODS: 1.12.1
+COCOAPODS: 1.11.3
