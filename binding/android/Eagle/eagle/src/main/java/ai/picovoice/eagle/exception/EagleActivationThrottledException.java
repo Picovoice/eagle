@@ -20,4 +20,8 @@ public class EagleActivationThrottledException extends EagleException {
     public EagleActivationThrottledException(String message) {
         super(message);
     }
+
+    public EagleActivationThrottledException(String message, String[] messageStack) {
+        super(message, messageStack);
+    }
 }

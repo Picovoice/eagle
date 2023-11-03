@@ -28,6 +28,7 @@ import java.io.OutputStream;
 public class Eagle {
 
     private static String defaultModelPath;
+    private static String _sdk = "android";
 
     static {
         System.loadLibrary("pv_eagle");
@@ -35,6 +36,10 @@ public class Eagle {
 
     private long handle;
     private int numSpeakers;
+
+    public static void setSdk(String sdk) {
+        Eagle._sdk = sdk;
+    }
 
     /**
      * Constructor.
@@ -54,6 +59,7 @@ public class Eagle {
             profileHandles[i] = speakerProfiles[i].profileNative.handle;
         }
 
+        EagleNative.setSdk(Eagle._sdk);
         handle = EagleNative.init(
                 accessKey,
                 modelPath,

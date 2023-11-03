@@ -20,4 +20,8 @@ public class EagleMemoryException extends EagleException {
     public EagleMemoryException(String message) {
         super(message);
     }
+
+    public EagleMemoryException(String message, String[] messageStack) {
+        super(message, messageStack);
+    }
 }

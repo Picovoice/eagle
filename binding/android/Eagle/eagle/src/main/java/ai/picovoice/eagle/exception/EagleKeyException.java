@@ -20,4 +20,8 @@ public class EagleKeyException extends EagleException {
     public EagleKeyException(String message) {
         super(message);
     }
+
+    public EagleKeyException(String message, String[] messageStack) {
+        super(message, messageStack);
+    }
 }
