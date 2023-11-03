@@ -20,4 +20,8 @@ public class EagleStopIterationException extends EagleException {
     public EagleStopIterationException(String message) {
         super(message);
     }
+
+    public EagleStopIterationException(String message, String[] messageStack) {
+        super(message, messageStack);
+    }
 }

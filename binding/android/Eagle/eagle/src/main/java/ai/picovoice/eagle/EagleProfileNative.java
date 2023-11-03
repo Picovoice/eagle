@@ -39,5 +39,5 @@ class EagleProfileNative {
 
     private native byte[] getBytesNative(long handle, int numBytes);
 
-    private native long setBytesNative(byte[] metadataBytes, int numBytes);
+    private native long setBytesNative(byte[] profileBytes, int numBytes);
 }

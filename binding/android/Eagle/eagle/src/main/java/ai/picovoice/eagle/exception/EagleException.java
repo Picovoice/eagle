@@ -13,11 +13,44 @@
 package ai.picovoice.eagle;
 
 public class EagleException extends Exception {
+    private final String message;
+    private final String[] messageStack;
+
     public EagleException(Throwable cause) {
         super(cause);
+        this.message = cause.getMessage();
+        this.messageStack = null;
     }
 
     public EagleException(String message) {
         super(message);
+        this.message = message;
+        this.messageStack = null;
+    }
+
+    public EagleException(String message, String[] messageStack) {
+        super(message);
+        this.message = message;
+        this.messageStack = messageStack;
+    }
+
+    public String[] getMessageStack() {
+        return this.messageStack;
+    }
+
+    @Override
+    public String getMessage() {
+        StringBuilder sb = new StringBuilder(message);
+        if (messageStack != null) {
+            if (messageStack.length > 0) {
+                sb.append(":");
+                for (int i = 0; i < messageStack.length; i++) {
+                    sb.append(String.format("\n  [%d] %s", i, messageStack[i]));
+                }
+            } else {
+                sb.append(".");
+            }
+        }
+        return sb.toString();
     }
 }

@@ -20,4 +20,8 @@ public class EagleActivationRefusedException extends EagleException {
     public EagleActivationRefusedException(String message) {
         super(message);
     }
+
+    public EagleActivationRefusedException(String message, String[] messageStack) {
+        super(message, messageStack);
+    }
 }

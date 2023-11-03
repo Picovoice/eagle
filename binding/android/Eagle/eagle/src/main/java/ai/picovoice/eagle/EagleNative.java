@@ -16,11 +16,13 @@ import java.util.HashMap;
 
 class EagleNative {
 
+    static native String getVersion();
+
     static native int getFrameLength();
 
     static native int getSampleRate();
 
-    static native String getVersion();
+    static native void setSdk(String sdk);
 
     static native long init(
             String accessKey,

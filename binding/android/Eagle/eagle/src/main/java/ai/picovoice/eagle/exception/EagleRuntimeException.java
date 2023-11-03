@@ -20,4 +20,8 @@ public class EagleRuntimeException extends EagleException {
     public EagleRuntimeException(String message) {
         super(message);
     }
+
+    public EagleRuntimeException(String message, String[] messageStack) {
+        super(message, messageStack);
+    }
 }
