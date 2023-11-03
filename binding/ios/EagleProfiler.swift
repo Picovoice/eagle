@@ -51,12 +51,15 @@ public class EagleProfiler: EagleBase {
             modelPathArg = try getResourcePath(modelPathArg!)
         }
 
+        pv_set_sdk(self.sdk)
+
         var status = pv_eagle_profiler_init(
             accessKey,
             modelPathArg,
             &handle)
         if status != PV_STATUS_SUCCESS {
-            throw pvStatusToEagleError(status, "EagleProfiler init failed")
+            let messageStack = try getMessageStack()
+            throw pvStatusToEagleError(status, "EagleProfiler init failed", messageStack)
         }
 
         var cSpeakerProfileSizeBytes: Int32 = 0
@@ -64,7 +67,8 @@ public class EagleProfiler: EagleBase {
             handle,
             &cSpeakerProfileSizeBytes)
         if status != PV_STATUS_SUCCESS {
-            throw pvStatusToEagleError(status, "EagleProfiler speaker_profile_size failed")
+            let messageStack = try getMessageStack()
+            throw pvStatusToEagleError(status, "EagleProfiler speaker_profile_size failed", messageStack)
         }
         speakerProfileSize = Int(cSpeakerProfileSizeBytes)
 
@@ -73,7 +77,8 @@ public class EagleProfiler: EagleBase {
             handle,
             &cMinAudioLengthSamples)
         if status != PV_STATUS_SUCCESS {
-            throw pvStatusToEagleError(status, "EagleProfiler enrollment_min_audio_length_sample failed")
+            let messageStack = try getMessageStack()
+            throw pvStatusToEagleError(status, "EagleProfiler enrollment_min_audio_length_sample failed", messageStack)
         }
         minEnrollAudioLength = Int(cMinAudioLengthSamples)
     }
@@ -114,7 +119,8 @@ public class EagleProfiler: EagleBase {
             &cPercentage)
 
         if status != PV_STATUS_SUCCESS {
-            throw pvStatusToEagleError(status, "EagleProfiler enroll failed")
+            let messageStack = try getMessageStack()
+            throw pvStatusToEagleError(status, "EagleProfiler enroll failed", messageStack)
         }
 
         let enrollFeedback = pvProfilerEnrollmentErrorToEnrollFeedback(cEnrollError)
@@ -137,7 +143,8 @@ public class EagleProfiler: EagleBase {
             &cProfile)
 
         if status != PV_STATUS_SUCCESS {
-            throw pvStatusToEagleError(status, "EagleProfiler export failed")
+            let messageStack = try getMessageStack()
+            throw pvStatusToEagleError(status, "EagleProfiler export failed", messageStack)
         }
 
         return EagleProfile(profileBytes: cProfile)
@@ -153,7 +160,8 @@ public class EagleProfiler: EagleBase {
         let status = pv_eagle_profiler_reset(handle)
 
         if status != PV_STATUS_SUCCESS {
-            throw pvStatusToEagleError(status, "EagleProfiler reset failed")
+            let messageStack = try getMessageStack()
+            throw pvStatusToEagleError(status, "EagleProfiler reset failed", messageStack)
         }
     }
 

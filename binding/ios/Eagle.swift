@@ -57,6 +57,8 @@ public class Eagle: EagleBase {
 
         speakerCount = speakerProfiles.count
 
+        pv_set_sdk(self.sdk)
+
         let status = pv_eagle_init(
             accessKey,
             modelPathArg,
@@ -64,7 +66,8 @@ public class Eagle: EagleBase {
             speakerHandles,
             &handle)
         if status != PV_STATUS_SUCCESS {
-            throw pvStatusToEagleError(status, "Eagle init failed")
+            let messageStack = try getMessageStack()
+            throw pvStatusToEagleError(status, "Eagle init failed", messageStack)
         }
     }
 
@@ -116,7 +119,8 @@ public class Eagle: EagleBase {
             scores.baseAddress)
 
         if status != PV_STATUS_SUCCESS {
-            throw pvStatusToEagleError(status, "Eagle process failed")
+            let messageStack = try getMessageStack()
+            throw pvStatusToEagleError(status, "Eagle process failed", messageStack)
         }
 
         return Array(scores)
@@ -137,7 +141,8 @@ public class Eagle: EagleBase {
         let status = pv_eagle_reset(handle)
 
         if status != PV_STATUS_SUCCESS {
-            throw pvStatusToEagleError(status, "Eagle reset failed")
+            let messageStack = try getMessageStack()
+            throw pvStatusToEagleError(status, "Eagle reset failed", messageStack)
         }
     }
 }
