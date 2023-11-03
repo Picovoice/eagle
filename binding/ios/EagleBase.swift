@@ -100,7 +100,7 @@ public class EagleBase {
         var messageStackDepth: Int32 = 0
         let status = pv_get_error_stack(&messageStackRef, &messageStackDepth)
         if status != PV_STATUS_SUCCESS {
-            throw pvStatusToKoalaError(status, "Unable to get Eagle error state")
+            throw pvStatusToEagleError(status, "Unable to get Eagle error state")
         }
 
         var messageStack: [String] = []

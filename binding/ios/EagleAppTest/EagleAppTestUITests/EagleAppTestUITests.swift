@@ -126,7 +126,7 @@ class EagleAppTestUITests: BaseTest {
 
     func testMessageStack() throws {
         let enrollUrls = enrollUrls()
-        
+
         let eagleProfiler = try EagleProfiler(accessKey: accessKey)
         for url in enrollUrls {
             let pcm = try readPcmFromFile(testAudioURL: url)
@@ -179,7 +179,7 @@ class EagleAppTestUITests: BaseTest {
 
     func testProcessMessageStack() throws {
         let enrollUrls = enrollUrls()
-        
+
         let eagleProfiler = try EagleProfiler(accessKey: accessKey)
         for url in enrollUrls {
             let pcm = try readPcmFromFile(testAudioURL: url)
