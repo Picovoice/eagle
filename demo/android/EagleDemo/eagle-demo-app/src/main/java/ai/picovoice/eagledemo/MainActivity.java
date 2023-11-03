@@ -114,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void handleEagleException(EagleException e) {
         if (e instanceof EagleInvalidArgumentException) {
-            displayError(String.format(e.getMessage());
+            displayError(e.getMessage());
         } else if (e instanceof EagleActivationException) {
             displayError("AccessKey activation error");
         } else if (e instanceof EagleActivationLimitException) {
