@@ -300,6 +300,14 @@ class EagleBase {
     };
   }
 
+  /**
+   * Releases resources acquired by Eagle
+   */
+  public async release(): Promise<void> {
+    await this._pvFree(this._messageStackAddressAddressAddress);
+    await this._pvFree(this._messageStackDepthAddress);
+  }
+
   protected static async getMessageStack(
     pv_get_error_stack: pv_get_error_stack_type,
     pv_free_error_stack: pv_free_error_stack_type,
@@ -659,6 +667,7 @@ export class EagleProfiler extends EagleBase {
    * Releases resources acquired by Eagle Profiler
    */
   public async release(): Promise<void> {
+    await super.release();
     await this._pvEagleProfilerDelete(this._objectAddress);
     delete this._wasmMemory;
     this._wasmMemory = undefined;
@@ -1045,6 +1054,7 @@ export class Eagle extends EagleBase {
    * Releases resources acquired by Eagle
    */
   public async release(): Promise<void> {
+    await super.release();
     await this._pvFree(this._scoresAddress);
     await this._pvEagleDelete(this._objectAddress);
     delete this._wasmMemory;
