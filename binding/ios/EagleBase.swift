@@ -9,7 +9,7 @@ public class EagleBase {
     /// Eagle/EagleProfiler version
     public static let version = String(cString: pv_eagle_version())
 
-    private static var sdk = "ios"
+    internal static var sdk = "ios"
 
     public static func setSdk(sdk: String) {
         self.sdk = sdk
