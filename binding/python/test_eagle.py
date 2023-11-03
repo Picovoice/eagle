@@ -200,7 +200,6 @@ class EagleTestCase(unittest.TestCase):
             self.assertLess(len(e.message_stack), 8)
 
         eagle._eagle = address
-            
 
 
 if __name__ == '__main__':
