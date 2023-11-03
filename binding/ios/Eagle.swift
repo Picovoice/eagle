@@ -57,7 +57,7 @@ public class Eagle: EagleBase {
 
         speakerCount = speakerProfiles.count
 
-        pv_set_sdk(self.sdk)
+        pv_set_sdk(Eagle.sdk)
 
         let status = pv_eagle_init(
             accessKey,

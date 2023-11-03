@@ -95,7 +95,7 @@ public class EagleBase {
         }
     }
 
-    private func getMessageStack() throws -> [String] {
+    internal func getMessageStack() throws -> [String] {
         var messageStackRef: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>?
         var messageStackDepth: Int32 = 0
         let status = pv_get_error_stack(&messageStackRef, &messageStackDepth)

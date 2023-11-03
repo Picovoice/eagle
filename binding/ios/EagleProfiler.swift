@@ -51,7 +51,7 @@ public class EagleProfiler: EagleBase {
             modelPathArg = try getResourcePath(modelPathArg!)
         }
 
-        pv_set_sdk(self.sdk)
+        pv_set_sdk(EagleProfiler.sdk)
 
         var status = pv_eagle_profiler_init(
             accessKey,
