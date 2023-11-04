@@ -13,7 +13,7 @@ import Eagle
 
 class BaseTest: XCTestCase {
 
-    let accessKey: String = "Tw4jothrMMLyRYQ793yD/XF3DeithcbeNVsYlNN0Dc1vY26suWNOkg=="
+    let accessKey: String = "{TESTING_ACCESS_KEY_HERE}"
 
     internal func readPcmFromFile(testAudioURL: URL) throws -> [Int16] {
         var data = try Data(contentsOf: testAudioURL)
