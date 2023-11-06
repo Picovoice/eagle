@@ -9,6 +9,12 @@ public class EagleBase {
     /// Eagle/EagleProfiler version
     public static let version = String(cString: pv_eagle_version())
 
+    internal static var sdk = "ios"
+
+    public static func setSdk(sdk: String) {
+        self.sdk = sdk
+    }
+
     /// Given a path, return the full path to the resource.
     ///
     /// - Parameters:
@@ -31,34 +37,38 @@ public class EagleBase {
     /// - Parameters:
     ///   - status: C enum value.
     ///   - message: message to include with the EagleError.
+    ///   - messageStack: Error stack returned from Eagle.
     /// - Returns: An EagleError.
-    internal func pvStatusToEagleError(_ status: pv_status_t, _ message: String) -> EagleError {
+    internal func pvStatusToEagleError(
+        _ status: pv_status_t,
+        _ message: String,
+        _ messageStack: [String] = []) -> EagleError {
         switch status {
         case PV_STATUS_OUT_OF_MEMORY:
-            return EagleMemoryError(message)
+            return EagleMemoryError(message, messageStack)
         case PV_STATUS_IO_ERROR:
-            return EagleIOError(message)
+            return EagleIOError(message, messageStack)
         case PV_STATUS_INVALID_ARGUMENT:
-            return EagleInvalidArgumentError(message)
+            return EagleInvalidArgumentError(message, messageStack)
         case PV_STATUS_STOP_ITERATION:
-            return EagleStopIterationError(message)
+            return EagleStopIterationError(message, messageStack)
         case PV_STATUS_KEY_ERROR:
-            return EagleKeyError(message)
+            return EagleKeyError(message, messageStack)
         case PV_STATUS_INVALID_STATE:
-            return EagleInvalidStateError(message)
+            return EagleInvalidStateError(message, messageStack)
         case PV_STATUS_RUNTIME_ERROR:
-            return EagleRuntimeError(message)
+            return EagleRuntimeError(message, messageStack)
         case PV_STATUS_ACTIVATION_ERROR:
-            return EagleActivationError(message)
+            return EagleActivationError(message, messageStack)
         case PV_STATUS_ACTIVATION_LIMIT_REACHED:
-            return EagleActivationLimitError(message)
+            return EagleActivationLimitError(message, messageStack)
         case PV_STATUS_ACTIVATION_THROTTLED:
-            return EagleActivationThrottledError(message)
+            return EagleActivationThrottledError(message, messageStack)
         case PV_STATUS_ACTIVATION_REFUSED:
-            return EagleActivationRefusedError(message)
+            return EagleActivationRefusedError(message, messageStack)
         default:
             let pvStatusString = String(cString: pv_status_to_string(status))
-            return EagleError("\(pvStatusString): \(message)")
+            return EagleError("\(pvStatusString): \(message)", messageStack)
         }
     }
 
@@ -83,5 +93,23 @@ public class EagleBase {
         default:
             return EagleProfilerEnrollFeedback.AUDIO_OK
         }
+    }
+
+    internal func getMessageStack() throws -> [String] {
+        var messageStackRef: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>?
+        var messageStackDepth: Int32 = 0
+        let status = pv_get_error_stack(&messageStackRef, &messageStackDepth)
+        if status != PV_STATUS_SUCCESS {
+            throw pvStatusToEagleError(status, "Unable to get Eagle error state")
+        }
+
+        var messageStack: [String] = []
+        for i in 0..<messageStackDepth {
+            messageStack.append(String(cString: messageStackRef!.advanced(by: Int(i)).pointee!))
+        }
+
+        pv_free_error_stack(messageStackRef)
+
+        return messageStack
     }
 }

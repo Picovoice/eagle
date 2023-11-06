@@ -9,19 +9,22 @@
 
 public class EagleError: LocalizedError {
     private let message: String
+    private let messageStack: [String]
 
-    public init (_ message: String) {
+    public init (_ message: String, _ messageStack: [String] = []) {
         self.message = message
+        self.messageStack = messageStack
     }
 
     public var errorDescription: String? {
-        return message
-    }
-
-    public var name: String {
-        get {
-            return String(describing: type(of: self))
+        var messageString = message
+        if messageStack.count > 0 {
+            messageString += ":"
+            for i in 0..<messageStack.count {
+                messageString += "\n  [\(i)] \(messageStack[i])"
+            }
         }
+        return messageString
     }
 }
 
