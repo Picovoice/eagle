@@ -3,7 +3,7 @@ PODS:
   - ios-voice-processor (1.0.3)
 
 DEPENDENCIES:
-  - Eagle-iOS (from `https://raw.githubusercontent.com/Picovoice/eagle/v0.2-ios/binding/ios/Eagle-iOS.podspec`)
+  - Eagle-iOS (from `https://raw.githubusercontent.com/Picovoice/eagle/v0.2/binding/ios/Eagle-iOS.podspec`)
   - ios-voice-processor (~> 1.0.3)
 
 SPEC REPOS:
@@ -12,12 +12,12 @@ SPEC REPOS:
 
 EXTERNAL SOURCES:
   Eagle-iOS:
-    :podspec: https://raw.githubusercontent.com/Picovoice/eagle/v0.2-ios/binding/ios/Eagle-iOS.podspec
+    :podspec: https://raw.githubusercontent.com/Picovoice/eagle/v0.2/binding/ios/Eagle-iOS.podspec
 
 SPEC CHECKSUMS:
   Eagle-iOS: 155eb54e73e37533a0accf3ea5fa1a37d8c999ad
   ios-voice-processor: 65b25a8db69ea25ffba0eeef37bae71a982f34cc
 
-PODFILE CHECKSUM: 04795797e862a461d1bfc97cddf986962ba2c8c2
+PODFILE CHECKSUM: a96f563d18b84e565fbb761b30163b9a39a189d5
 
 COCOAPODS: 1.11.3

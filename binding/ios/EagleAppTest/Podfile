@@ -2,13 +2,13 @@ source 'https://cdn.cocoapods.org/'
 platform :ios, '13.0'
 
 target 'EagleAppTest' do
-    pod 'Eagle-iOS', :podspec => 'https://raw.githubusercontent.com/Picovoice/eagle/v0.2-ios/binding/ios/Eagle-iOS.podspec'
+    pod 'Eagle-iOS', :podspec => 'https://raw.githubusercontent.com/Picovoice/eagle/v0.2/binding/ios/Eagle-iOS.podspec'
 end
 
 target 'EagleAppTestUITests' do
-    pod 'Eagle-iOS', :podspec => 'https://raw.githubusercontent.com/Picovoice/eagle/v0.2-ios/binding/ios/Eagle-iOS.podspec'
+    pod 'Eagle-iOS', :podspec => 'https://raw.githubusercontent.com/Picovoice/eagle/v0.2/binding/ios/Eagle-iOS.podspec'
 end
 
 target 'PerformanceTest' do
-    pod 'Eagle-iOS', :podspec => 'https://raw.githubusercontent.com/Picovoice/eagle/v0.2-ios/binding/ios/Eagle-iOS.podspec'
+    pod 'Eagle-iOS', :podspec => 'https://raw.githubusercontent.com/Picovoice/eagle/v0.2/binding/ios/Eagle-iOS.podspec'
 end
