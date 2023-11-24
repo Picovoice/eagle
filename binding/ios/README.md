@@ -1,4 +1,6 @@
-# Eagle Speaker Recognition Engine
+# Eagle Binding for iOS
+
+## Eagle Speaker Recognition Engine
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 
@@ -13,7 +15,7 @@ Eagle is an on-device speaker recognition engine. Eagle is:
 
 ## Compatibility
 
-- iOS 11.0+
+- iOS 13.0+
 
 ## Installation
 

@@ -1,4 +1,7 @@
-# Eagle Speaker Recognition Engine
+# Eagle Binding for Python
+
+## Eagle Speaker Recognition Engine
+
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 
