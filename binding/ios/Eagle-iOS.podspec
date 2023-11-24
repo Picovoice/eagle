@@ -6,7 +6,8 @@ Pod::Spec.new do |s|
     s.summary = 'iOS binding for Picovoice\'s Eagle speaker recognition engine'
     s.description =
     <<-DESC
-    Eagle is Picovoice's on-device speaker recognition engine.
+    Eagle Speaker Recognition is speaker verification and identification software 
+    that distinguishes individuals using their unique voice characteristics.
     DESC
     s.homepage = 'https://github.com/Picovoice/eagle/tree/master/binding/ios'
     s.author = { 'Picovoice' => 'hello@picovoice.ai' }
