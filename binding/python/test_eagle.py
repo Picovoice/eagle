@@ -19,6 +19,7 @@ from typing import Sequence
 
 from _eagle import (
     Eagle,
+    EagleError,
     EagleProfiler,
     EagleProfilerEnrollFeedback
 )
@@ -119,6 +120,86 @@ class EagleTestCase(unittest.TestCase):
 
     def test_frame_length(self) -> None:
         self.assertGreater(self.eagle.frame_length, 0)
+
+    def test_message_stack(self):
+        relative_path = '../..'
+        profile = self.eagle_profiler.export()
+
+        error = None
+        try:
+            eagle = Eagle(
+                access_key='invalid',
+                model_path=default_model_path(relative_path),
+                library_path=default_library_path(relative_path),
+                speaker_profiles=[profile])
+            self.assertIsNone(eagle)
+        except EagleError as e:
+            error = e.message_stack
+
+        self.assertIsNotNone(error)
+        self.assertGreater(len(error), 0)
+
+        try:
+            eagle = Eagle(
+                access_key='invalid',
+                model_path=default_model_path(relative_path),
+                library_path=default_library_path(relative_path),
+                speaker_profiles=[profile])
+            self.assertIsNone(eagle)
+        except EagleError as e:
+            self.assertEqual(len(error), len(e.message_stack))
+            self.assertListEqual(list(error), list(e.message_stack))
+
+    def test_enroll_export_message_stack(self):
+        relative_path = '../..'
+
+        profiler = EagleProfiler(
+            access_key=self.access_key,
+            model_path=default_model_path(relative_path),
+            library_path=default_library_path(relative_path))
+        test_pcm = [0] * 512
+
+        address = profiler._eagle_profiler
+        profiler._eagle_profiler = None
+
+        try:
+            res, _ = profiler.enroll(test_pcm)
+            self.assertEqual(res, -1)
+        except EagleError as e:
+            self.assertGreater(len(e.message_stack), 0)
+            self.assertLess(len(e.message_stack), 8)
+
+        try:
+            res = profiler.export()
+            self.assertISNone(res)
+        except EagleError as e:
+            self.assertGreater(len(e.message_stack), 0)
+            self.assertLess(len(e.message_stack), 8)
+
+        profiler._eagle_profiler = address
+
+    def test_process_message_stack(self):
+        relative_path = '../..'
+        profile = self.eagle_profiler.export()
+
+        eagle = Eagle(
+            access_key=self.access_key,
+            model_path=default_model_path(relative_path),
+            library_path=default_library_path(relative_path),
+            speaker_profiles=[profile])
+        test_pcm = [0] * eagle.frame_length
+
+        address = eagle._eagle
+        eagle._eagle = None
+
+        try:
+            res = eagle.process(test_pcm)
+            self.assertEqual(len(res), -1)
+        except EagleError as e:
+            self.assertGreater(len(e.message_stack), 0)
+            self.assertLess(len(e.message_stack), 8)
+
+        eagle._eagle = address
 
 
 if __name__ == '__main__':

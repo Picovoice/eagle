@@ -20,4 +20,8 @@ public class EagleActivationLimitException extends EagleException {
     public EagleActivationLimitException(String message) {
         super(message);
     }
+
+    public EagleActivationLimitException(String message, String[] messageStack) {
+        super(message, messageStack);
+    }
 }

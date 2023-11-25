@@ -137,10 +137,6 @@ def main():
                 access_key=args.access_key,
                 model_path=args.model_path,
                 library_path=args.library_path)
-        except pveagle.EagleInvalidArgumentError:
-            print("One or more arguments provided to Eagle is invalid: ", args)
-            print("If all other arguments seem valid, ensure that '%s' is a valid AccessKey" % args.access_key)
-            raise
         except pveagle.EagleError as e:
             print("Failed to initialize Eagle: %s" % e)
             raise

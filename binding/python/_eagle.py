@@ -16,7 +16,27 @@ from typing import Sequence, Tuple
 
 
 class EagleError(Exception):
-    pass
+    def __init__(self, message: str = '', message_stack: Sequence[str] = None):
+        super().__init__(message)
+
+        self._message = message
+        self._message_stack = list() if message_stack is None else message_stack
+
+    def __str__(self):
+        message = self._message
+        if len(self._message_stack) > 0:
+            message += ':'
+            for i in range(len(self._message_stack)):
+                message += '\n  [%d] %s' % (i, self._message_stack[i])
+        return message
+
+    @property
+    def message(self) -> str:
+        return self._message
+
+    @property
+    def message_stack(self) -> Sequence[str]:
+        return self._message_stack
 
 
 class EagleMemoryError(EagleError):
@@ -183,6 +203,20 @@ class EagleProfiler(object):
 
         library = cdll.LoadLibrary(library_path)
 
+        set_sdk_func = library.pv_set_sdk
+        set_sdk_func.argtypes = [c_char_p]
+        set_sdk_func.restype = None
+
+        set_sdk_func('python'.encode('utf-8'))
+
+        self._get_error_stack_func = library.pv_get_error_stack
+        self._get_error_stack_func.argtypes = [POINTER(POINTER(c_char_p)), POINTER(c_int)]
+        self._get_error_stack_func.restype = PicovoiceStatuses
+
+        self._free_error_stack_func = library.pv_free_error_stack
+        self._free_error_stack_func.argtypes = [POINTER(c_char_p)]
+        self._free_error_stack_func.restype = None
+
         # noinspection PyArgumentList
         self._eagle_profiler = POINTER(self.CEagleProfiler)()
 
@@ -198,7 +232,9 @@ class EagleProfiler(object):
             model_path.encode('utf-8'),
             byref(self._eagle_profiler))
         if status is not PicovoiceStatuses.SUCCESS:
-            raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message='Profile initialization failed',
+                message_stack=self._get_error_stack())
 
         speaker_profile_size_func = library.pv_eagle_profiler_export_size
         speaker_profile_size_func.argtypes = [
@@ -209,7 +245,9 @@ class EagleProfiler(object):
         profile_size = c_int32()
         status = speaker_profile_size_func(self._eagle_profiler, byref(profile_size))
         if status is not PicovoiceStatuses.SUCCESS:
-            raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message='Failed to get profile size',
+                message_stack=self._get_error_stack())
         self._profile_size = profile_size.value
 
         enroll_min_audio_length_sample_func = \
@@ -224,7 +262,9 @@ class EagleProfiler(object):
             self._eagle_profiler,
             byref(min_enroll_samples))
         if status is not PicovoiceStatuses.SUCCESS:
-            raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message='Failed to get min audio length sample',
+                message_stack=self._get_error_stack())
         self._min_enroll_samples = min_enroll_samples.value
 
         self._delete_func = library.pv_eagle_profiler_delete
@@ -298,7 +338,9 @@ class EagleProfiler(object):
             byref(percentage))
         feedback = EagleProfilerEnrollFeedback(feedback_code.value)
         if status is not PicovoiceStatuses.SUCCESS:
-            raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message='Enrollment failed',
+                message_stack=self._get_error_stack())
 
         return percentage.value, feedback
 
@@ -316,7 +358,9 @@ class EagleProfiler(object):
             byref(profile)
         )
         if status is not PicovoiceStatuses.SUCCESS:
-            raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message='Export failed',
+                message_stack=self._get_error_stack())
 
         return EagleProfile(cast(profile, c_void_p), self._profile_size)
 
@@ -328,7 +372,9 @@ class EagleProfiler(object):
 
         status = self._reset_func(self._eagle_profiler)
         if status is not PicovoiceStatuses.SUCCESS:
-            raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message='Profile reset failed',
+                message_stack=self._get_error_stack())
 
     def delete(self) -> None:
         """
@@ -360,6 +406,21 @@ class EagleProfiler(object):
         """
 
         return self._version
+
+    def _get_error_stack(self) -> Sequence[str]:
+        message_stack_ref = POINTER(c_char_p)()
+        message_stack_depth = c_int()
+        status = self._get_error_stack_func(byref(message_stack_ref), byref(message_stack_depth))
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](message='Unable to get Eagle error state')
+
+        message_stack = list()
+        for i in range(message_stack_depth.value):
+            message_stack.append(message_stack_ref[i].decode('utf-8'))
+
+        self._free_error_stack_func(message_stack_ref)
+
+        return message_stack
 
 
 class Eagle(object):
@@ -400,6 +461,20 @@ class Eagle(object):
 
         library = cdll.LoadLibrary(library_path)
 
+        set_sdk_func = library.pv_set_sdk
+        set_sdk_func.argtypes = [c_char_p]
+        set_sdk_func.restype = None
+
+        set_sdk_func('python'.encode('utf-8'))
+
+        self._get_error_stack_func = library.pv_get_error_stack
+        self._get_error_stack_func.argtypes = [POINTER(POINTER(c_char_p)), POINTER(c_int)]
+        self._get_error_stack_func.restype = PicovoiceStatuses
+
+        self._free_error_stack_func = library.pv_free_error_stack
+        self._free_error_stack_func.argtypes = [POINTER(c_char_p)]
+        self._free_error_stack_func.restype = None
+
         # noinspection PyArgumentList
         self._eagle = POINTER(self.CEagle)()
 
@@ -423,7 +498,9 @@ class Eagle(object):
             profile_bytes,
             byref(self._eagle))
         if status is not PicovoiceStatuses.SUCCESS:
-            raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message='Initialization failed',
+                message_stack=self._get_error_stack())
 
         self._delete_func = library.pv_eagle_delete
         self._delete_func.argtypes = [POINTER(self.CEagle)]
@@ -471,7 +548,9 @@ class Eagle(object):
 
         status = self._process_func(self._eagle, pcm, self._scores)
         if status is not PicovoiceStatuses.SUCCESS:
-            raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message='Process failed',
+                message_stack=self._get_error_stack())
 
         # noinspection PyTypeChecker
         return [float(score) for score in self._scores]
@@ -485,7 +564,9 @@ class Eagle(object):
 
         status = self._reset_func(self._eagle)
         if status is not PicovoiceStatuses.SUCCESS:
-            raise _PICOVOICE_STATUS_TO_EXCEPTION[status]()
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message='Reset failed',
+                message_stack=self._get_error_stack())
 
     def delete(self) -> None:
         """
@@ -517,6 +598,21 @@ class Eagle(object):
         """
 
         return self._version
+
+    def _get_error_stack(self) -> Sequence[str]:
+        message_stack_ref = POINTER(c_char_p)()
+        message_stack_depth = c_int()
+        status = self._get_error_stack_func(byref(message_stack_ref), byref(message_stack_depth))
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](message='Unable to get Eagle error state')
+
+        message_stack = list()
+        for i in range(message_stack_depth.value):
+            message_stack.append(message_stack_ref[i].decode('utf-8'))
+
+        self._free_error_stack_func(message_stack_ref)
+
+        return message_stack
 
 
 __all__ = [

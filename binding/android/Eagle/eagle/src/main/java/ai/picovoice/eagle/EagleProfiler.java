@@ -29,6 +29,7 @@ import java.io.OutputStream;
 public class EagleProfiler {
 
     private static String defaultModelPath;
+    private static String _sdk = "android";
 
     private final int minEnrollSamples;
 
@@ -38,6 +39,10 @@ public class EagleProfiler {
 
     private long handle;
 
+    public static void setSdk(String sdk) {
+        EagleProfiler._sdk = sdk;
+    }
+
     /**
      * Constructor.
      *
@@ -46,6 +51,7 @@ public class EagleProfiler {
      * @throws EagleException if there is an error while initializing EagleProfiler.
      */
     private EagleProfiler(String accessKey, String modelPath) throws EagleException {
+        EagleNative.setSdk(EagleProfiler._sdk);
         handle = EagleProfilerNative.init(accessKey, modelPath);
         minEnrollSamples = EagleProfilerNative.minEnrollSamples(handle);
     }

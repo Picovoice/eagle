@@ -20,4 +20,8 @@ public class EagleIOException extends EagleException {
     public EagleIOException(String message) {
         super(message);
     }
+
+    public EagleIOException(String message, String[] messageStack) {
+        super(message, messageStack);
+    }
 }

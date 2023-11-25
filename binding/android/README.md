@@ -1,4 +1,6 @@
-# Eagle Speaker Recognition Engine
+# Eagle Binding for Android
+
+## Eagle Speaker Recognition Engine
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 
@@ -132,7 +134,7 @@ Like the profiler, Eagle is designed to work with single-channel audio that is e
 
 ```java
 public short[] getNextAudioFrame() {
-    // get audio frame    
+    // get audio frame
 }
 
 try {

@@ -20,4 +20,8 @@ public class EagleInvalidStateException extends EagleException {
     public EagleInvalidStateException(String message) {
         super(message);
     }
+
+    public EagleInvalidStateException(String message, String[] messageStack) {
+        super(message, messageStack);
+    }
 }

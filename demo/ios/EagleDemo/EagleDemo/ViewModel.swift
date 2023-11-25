@@ -74,7 +74,7 @@ class ViewModel: ObservableObject {
 
             try createDumpFile(filename: "enroll_dump.pcm")
         } catch let error as EagleInvalidArgumentError {
-            errorMessage = "\(error.localizedDescription)\nEnsure your accessKey '\(accessKey)' is valid"
+            errorMessage = "\(error.localizedDescription)"
         } catch is EagleActivationError {
             errorMessage = "AccessKey activation error"
         } catch is EagleActivationRefusedError {
@@ -162,7 +162,7 @@ class ViewModel: ObservableObject {
 
             try createDumpFile(filename: "test_dump.pcm")
         } catch let error as EagleInvalidArgumentError {
-            errorMessage = "\(error.localizedDescription)\nEnsure your accessKey '\(accessKey)' is valid"
+            errorMessage = "\(error.localizedDescription)"
         } catch is EagleActivationError {
             errorMessage = "AccessKey activation error"
         } catch is EagleActivationRefusedError {

@@ -251,5 +251,32 @@ public class EagleTest {
             assertTrue(Collections.max(scores) < 0.5);
             eagle.delete();
         }
+
+        @Test
+        public void testErrorStack() {
+            String[] error = {};
+            try {
+                new Eagle.Builder()
+                        .setAccessKey("invalid")
+                        .setSpeakerProfile(profile)
+                        .build(appContext);
+            } catch (EagleException e) {
+                error = e.getMessageStack();
+            }
+
+            assertTrue(0 < error.length);
+            assertTrue(error.length <= 8);
+
+            try {
+                new Eagle.Builder()
+                        .setAccessKey("invalid")
+                        .setSpeakerProfile(profile)
+                        .build(appContext);
+            } catch (EagleException e) {
+                for (int i = 0; i < error.length; i++) {
+                    assertEquals(e.getMessageStack()[i], error[i]);
+                }
+            }
+        }
     }
 }

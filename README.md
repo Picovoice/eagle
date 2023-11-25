@@ -611,9 +611,17 @@ while (true) {
 
 ## Releases
 
+### v0.2.0 - November 24th, 2023
+
+- Improvements to error reporting
+- Upgrades to authorization and authentication system
+- Various bug fixes and improvements
+- Web min support bumped to Node 16
+- iOS support bumped to iOS 13
+
 ### v0.1.0 - May 29, 2023
 
-- Beta release.
+- Beta release
 
 ## FAQ
 

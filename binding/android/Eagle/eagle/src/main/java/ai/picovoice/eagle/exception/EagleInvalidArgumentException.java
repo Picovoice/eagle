@@ -20,4 +20,8 @@ public class EagleInvalidArgumentException extends EagleException {
     public EagleInvalidArgumentException(String message) {
         super(message);
     }
+
+    public EagleInvalidArgumentException(String message, String[] messageStack) {
+        super(message, messageStack);
+    }
 }
