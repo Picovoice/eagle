@@ -6,8 +6,9 @@
 [![PyPI](https://img.shields.io/pypi/v/pveagle)](https://pypi.org/project/pveagle/)
 [![npm](https://img.shields.io/npm/v/@picovoice/eagle-web)](https://www.npmjs.com/package/@picovoice/eagle-web)
 [![Maven Central](https://img.shields.io/maven-central/v/ai.picovoice/eagle-android?label=maven-central%20%5Bandroid%5D)](https://repo1.maven.org/maven2/ai/picovoice/eagle-android/)
+<!-- markdown-link-check-disable -->
 [![CocoaPods](https://img.shields.io/cocoapods/v/Eagle-iOS)](https://cocoapods.org/pods/Eagle-iOS)
-
+<!-- markdown-link-check-enable -->
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 
@@ -361,7 +362,9 @@ eagle.delete()
 
 ### iOS
 
+<!-- markdown-link-check-disable -->
 The Eagle iOS binding is available via [CocoaPods](https://cocoapods.org/pods/Eagle-iOS). To import it into your iOS project, add the following line to your Podfile and run `pod install`:
+<!-- markdown-link-check-enable -->
 
 ```ruby
 pod 'Eagle-iOS'
