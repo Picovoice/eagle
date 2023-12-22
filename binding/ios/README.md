@@ -18,8 +18,9 @@ Eagle is an on-device speaker recognition engine. Eagle is:
 - iOS 13.0+
 
 ## Installation
-
+<!-- markdown-link-check-disable -->
 The Eagle iOS binding is available via [Cocoapods](https://cocoapods.org/pods/Eagle-iOS). To import it into your iOS project, add the following line to your Podfile:
+<!-- markdown-link-check-enable -->
 
 ```ruby
 pod 'Eagle-iOS'
