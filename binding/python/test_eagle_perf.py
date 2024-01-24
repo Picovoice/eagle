@@ -91,7 +91,7 @@ class EaglePerformanceTestCase(unittest.TestCase):
         for i in range(self.num_test_iterations + 1):
             for n in range(num_frames):
                 start = perf_counter()
-                _ = eagle.process(pcm=pcm[n * eagle.frame_length : (n + 1) * eagle.frame_length])
+                _ = eagle.process(pcm=pcm[n * eagle.frame_length: (n + 1) * eagle.frame_length])
                 perf_results.append(perf_counter() - start)
 
         eagle.delete()

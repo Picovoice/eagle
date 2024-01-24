@@ -80,7 +80,7 @@ class EagleTestCase(unittest.TestCase):
         num_frames = len(pcm) // self.eagle.frame_length
         scores = []
         for i in range(num_frames):
-            score = self.eagle.process(pcm=pcm[i * self.eagle.frame_length : (i + 1) * self.eagle.frame_length])
+            score = self.eagle.process(pcm=pcm[i * self.eagle.frame_length: (i + 1) * self.eagle.frame_length])
             scores.append(score[0])
 
         self.assertGreater(max(scores), 0.5)
@@ -91,7 +91,7 @@ class EagleTestCase(unittest.TestCase):
         num_frames = len(pcm) // self.eagle.frame_length
         scores = []
         for i in range(num_frames):
-            score = self.eagle.process(pcm=pcm[i * self.eagle.frame_length : (i + 1) * self.eagle.frame_length])
+            score = self.eagle.process(pcm=pcm[i * self.eagle.frame_length: (i + 1) * self.eagle.frame_length])
             scores.append(score[0])
 
         self.assertLess(max(scores), 0.5)
