@@ -42,7 +42,7 @@ with open(os.path.join(os.path.dirname(__file__), 'README.md'), 'r') as f:
 
 setuptools.setup(
     name="pveagle",
-    version="0.2.0",
+    version="1.0.0",
     author="Picovoice",
     author_email="hello@picovoice.ai",
     description="Eagle Speaker Recognition Engine",
@@ -52,13 +52,13 @@ setuptools.setup(
     packages=["pveagle"],
     include_package_data=True,
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
         "Topic :: Multimedia :: Sound/Audio :: Speech"
     ],
-    python_requires='>=3.5',
+    python_requires='>=3.7',
     keywords="Speaker Recognition, Speaker Identification, Voice Recognition, Voice Identification",
 )

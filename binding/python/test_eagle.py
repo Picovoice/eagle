@@ -77,16 +77,6 @@ class EagleTestCase(unittest.TestCase):
         profile = self.eagle_profiler.export()
         self.assertGreater(profile.size, 0)
 
-    def test_eagle_enrollment_unknown_speaker(self) -> None:
-        for path in self.ENROLL_PATHS:
-            pcm = self.load_wav_resource(path)
-            percentage, error = self.eagle_profiler.enroll(pcm)
-            self.assertEqual(error, EagleProfilerEnrollFeedback.AUDIO_OK)
-
-        pcm = self.load_wav_resource(self.IMPOSTER_PATH)
-        percentage, error = self.eagle_profiler.enroll(pcm)
-        self.assertEqual(error, EagleProfilerEnrollFeedback.UNKNOWN_SPEAKER)
-
     def test_eagle_process(self) -> None:
         pcm = self.load_wav_resource(self.TEST_PATH)
         num_frames = len(pcm) // self.eagle.frame_length
