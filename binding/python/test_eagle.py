@@ -17,37 +17,34 @@ import unittest
 import wave
 from typing import Sequence
 
-from _eagle import (
-    Eagle,
-    EagleError,
-    EagleProfiler,
-    EagleProfilerEnrollFeedback
-)
+from _eagle import Eagle, EagleError, EagleProfiler, EagleProfilerEnrollFeedback
 from _util import default_library_path, default_model_path
 
 
 class EagleTestCase(unittest.TestCase):
     ENROLL_PATHS = [
-        os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/speaker_1_utt_1.wav'),
-        os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/speaker_1_utt_2.wav')]
-    TEST_PATH = os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/speaker_1_test_utt.wav')
-    IMPOSTER_PATH = os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/speaker_2_test_utt.wav')
+        os.path.join(os.path.dirname(__file__), "../../resources/audio_samples/speaker_1_utt_1.wav"),
+        os.path.join(os.path.dirname(__file__), "../../resources/audio_samples/speaker_1_utt_2.wav"),
+    ]
+    TEST_PATH = os.path.join(os.path.dirname(__file__), "../../resources/audio_samples/speaker_1_test_utt.wav")
+    IMPOSTER_PATH = os.path.join(os.path.dirname(__file__), "../../resources/audio_samples/speaker_2_test_utt.wav")
     access_key: str
     eagle: Eagle
     eagle_profiler: EagleProfiler
 
     @staticmethod
     def load_wav_resource(path: str) -> Sequence[int]:
-        with wave.open(path, 'rb') as f:
+        with wave.open(path, "rb") as f:
             buffer = f.readframes(f.getnframes())
-            return struct.unpack('%dh' % f.getnframes(), buffer)
+            return struct.unpack("%dh" % f.getnframes(), buffer)
 
     @classmethod
     def setUpClass(cls) -> None:
         cls.eagle_profiler = EagleProfiler(
             access_key=cls.access_key,
-            model_path=default_model_path('../..'),
-            library_path=default_library_path('../..'))
+            model_path=default_model_path("../.."),
+            library_path=default_library_path("../.."),
+        )
 
         for path in cls.ENROLL_PATHS:
             pcm = cls.load_wav_resource(path)
@@ -57,9 +54,10 @@ class EagleTestCase(unittest.TestCase):
 
         cls.eagle = Eagle(
             access_key=cls.access_key,
-            model_path=default_model_path('../..'),
-            library_path=default_library_path('../..'),
-            speaker_profiles=[profile])
+            model_path=default_model_path("../.."),
+            library_path=default_library_path("../.."),
+            speaker_profiles=[profile],
+        )
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -82,7 +80,7 @@ class EagleTestCase(unittest.TestCase):
         num_frames = len(pcm) // self.eagle.frame_length
         scores = []
         for i in range(num_frames):
-            score = self.eagle.process(pcm=pcm[i * self.eagle.frame_length:(i + 1) * self.eagle.frame_length])
+            score = self.eagle.process(pcm=pcm[i * self.eagle.frame_length : (i + 1) * self.eagle.frame_length])
             scores.append(score[0])
 
         self.assertGreater(max(scores), 0.5)
@@ -93,7 +91,7 @@ class EagleTestCase(unittest.TestCase):
         num_frames = len(pcm) // self.eagle.frame_length
         scores = []
         for i in range(num_frames):
-            score = self.eagle.process(pcm=pcm[i * self.eagle.frame_length:(i + 1) * self.eagle.frame_length])
+            score = self.eagle.process(pcm=pcm[i * self.eagle.frame_length : (i + 1) * self.eagle.frame_length])
             scores.append(score[0])
 
         self.assertLess(max(scores), 0.5)
@@ -112,16 +110,17 @@ class EagleTestCase(unittest.TestCase):
         self.assertGreater(self.eagle.frame_length, 0)
 
     def test_message_stack(self):
-        relative_path = '../..'
+        relative_path = "../.."
         profile = self.eagle_profiler.export()
 
         error = None
         try:
             eagle = Eagle(
-                access_key='invalid',
+                access_key="invalid",
                 model_path=default_model_path(relative_path),
                 library_path=default_library_path(relative_path),
-                speaker_profiles=[profile])
+                speaker_profiles=[profile],
+            )
             self.assertIsNone(eagle)
         except EagleError as e:
             error = e.message_stack
@@ -131,22 +130,24 @@ class EagleTestCase(unittest.TestCase):
 
         try:
             eagle = Eagle(
-                access_key='invalid',
+                access_key="invalid",
                 model_path=default_model_path(relative_path),
                 library_path=default_library_path(relative_path),
-                speaker_profiles=[profile])
+                speaker_profiles=[profile],
+            )
             self.assertIsNone(eagle)
         except EagleError as e:
             self.assertEqual(len(error), len(e.message_stack))
             self.assertListEqual(list(error), list(e.message_stack))
 
     def test_enroll_export_message_stack(self):
-        relative_path = '../..'
+        relative_path = "../.."
 
         profiler = EagleProfiler(
             access_key=self.access_key,
             model_path=default_model_path(relative_path),
-            library_path=default_library_path(relative_path))
+            library_path=default_library_path(relative_path),
+        )
         test_pcm = [0] * 512
 
         address = profiler._eagle_profiler
@@ -169,14 +170,15 @@ class EagleTestCase(unittest.TestCase):
         profiler._eagle_profiler = address
 
     def test_process_message_stack(self):
-        relative_path = '../..'
+        relative_path = "../.."
         profile = self.eagle_profiler.export()
 
         eagle = Eagle(
             access_key=self.access_key,
             model_path=default_model_path(relative_path),
             library_path=default_library_path(relative_path),
-            speaker_profiles=[profile])
+            speaker_profiles=[profile],
+        )
         test_pcm = [0] * eagle.frame_length
 
         address = eagle._eagle
@@ -192,9 +194,9 @@ class EagleTestCase(unittest.TestCase):
         eagle._eagle = address
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--access-key', required=True)
+    parser.add_argument("--access-key", required=True)
     args = parser.parse_args()
 
     EagleTestCase.access_key = args.access_key
