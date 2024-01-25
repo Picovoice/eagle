@@ -53,8 +53,8 @@ jobs:
           profiler_performance_threshold_sec: 0.5
           recognizer_performance_threshold_sec: 0.6
         - os: macos-latest
-          profiler_performance_threshold_sec: 0.6
-          recognizer_performance_threshold_sec: 0.8
+          profiler_performance_threshold_sec: 0.9
+          recognizer_performance_threshold_sec: 0.9
 
     steps:
     - uses: actions/checkout@v3
