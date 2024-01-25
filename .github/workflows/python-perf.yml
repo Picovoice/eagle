@@ -98,6 +98,9 @@ jobs:
         - machine: rpi4-64
           profiler_performance_threshold_sec: 2.0
           recognizer_performance_threshold_sec: 2.5
+        - machine: rpi5-64
+          profiler_performance_threshold_sec: 1.5
+          recognizer_performance_threshold_sec: 1.5
         - machine: jetson
           profiler_performance_threshold_sec: 1.2
           recognizer_performance_threshold_sec: 1.5
