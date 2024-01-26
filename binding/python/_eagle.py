@@ -316,7 +316,12 @@ class EagleProfiler(object):
 
         feedback_code = c_int()
         percentage = c_float()
-        status = self._enroll_func(self._eagle_profiler, c_pcm, len(c_pcm), byref(feedback_code), byref(percentage))
+        status = self._enroll_func(
+            self._eagle_profiler,
+            c_pcm,
+            len(c_pcm),
+            byref(feedback_code),
+            byref(percentage))
         feedback = EagleProfilerEnrollFeedback(feedback_code.value)
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
@@ -455,7 +460,13 @@ class Eagle(object):
         self._eagle = POINTER(self.CEagle)()
 
         init_func = library.pv_eagle_init
-        init_func.argtypes = [c_char_p, c_char_p, c_int32, POINTER(c_void_p), POINTER(POINTER(self.CEagle))]
+        init_func.argtypes = [
+            c_char_p,
+            c_char_p,
+            c_int32,
+            POINTER(c_void_p),
+            POINTER(POINTER(self.CEagle))
+        ]
         init_func.restype = PicovoiceStatuses
 
         profile_bytes = (c_void_p * len(speaker_profiles))()
@@ -479,7 +490,10 @@ class Eagle(object):
         self._delete_func.restype = None
 
         self._process_func = library.pv_eagle_process
-        self._process_func.argtypes = [POINTER(self.CEagle), POINTER(c_int16), POINTER(c_float)]
+        self._process_func.argtypes = [
+            POINTER(self.CEagle),
+            POINTER(c_int16), POINTER(c_float)
+        ]
         self._process_func.restype = PicovoiceStatuses
 
         self._scores = (c_float * len(speaker_profiles))()
