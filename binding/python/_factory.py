@@ -70,7 +70,11 @@ def create_profiler(
     if library_path is None:
         library_path = default_library_path()
 
-    return EagleProfiler(access_key=access_key, model_path=model_path, library_path=library_path)
+    return EagleProfiler(
+        access_key=access_key,
+        model_path=model_path,
+        library_path=library_path,
+    )
 
 
 __all__ = [
