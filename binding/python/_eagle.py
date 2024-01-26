@@ -492,7 +492,8 @@ class Eagle(object):
         self._process_func = library.pv_eagle_process
         self._process_func.argtypes = [
             POINTER(self.CEagle),
-            POINTER(c_int16), POINTER(c_float)
+            POINTER(c_int16),
+            POINTER(c_float)
         ]
         self._process_func.restype = PicovoiceStatuses
 
