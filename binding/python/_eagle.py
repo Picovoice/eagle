@@ -516,7 +516,8 @@ class Eagle(object):
         )
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
-                message="Initialization failed", message_stack=self._get_error_stack()
+                message="Initialization failed",
+                message_stack=self._get_error_stack(),
             )
 
         self._delete_func = library.pv_eagle_delete
