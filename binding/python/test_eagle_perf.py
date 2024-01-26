@@ -18,17 +18,16 @@ import wave
 from time import perf_counter
 from typing import Sequence
 
-from _eagle import (
-    Eagle,
-    EagleProfiler)
+from _eagle import Eagle, EagleProfiler
 from _util import default_library_path, default_model_path
 
 
 class EaglePerformanceTestCase(unittest.TestCase):
     ENROLL_PATHS = [
-        os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/speaker_1_utt_1.wav'),
-        os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/speaker_1_utt_2.wav')]
-    TEST_PATH = os.path.join(os.path.dirname(__file__), '../../resources/audio_samples/speaker_1_test_utt.wav')
+        os.path.join(os.path.dirname(__file__), "../../resources/audio_samples/speaker_1_utt_1.wav"),
+        os.path.join(os.path.dirname(__file__), "../../resources/audio_samples/speaker_1_utt_2.wav"),
+    ]
+    TEST_PATH = os.path.join(os.path.dirname(__file__), "../../resources/audio_samples/speaker_1_test_utt.wav")
     access_key: str
 
     num_test_iterations: int
@@ -37,15 +36,16 @@ class EaglePerformanceTestCase(unittest.TestCase):
 
     @staticmethod
     def load_wav_resource(path: str) -> Sequence[int]:
-        with wave.open(path, 'rb') as f:
+        with wave.open(path, "rb") as f:
             buffer = f.readframes(f.getnframes())
-            return struct.unpack('%dh' % f.getnframes(), buffer)
+            return struct.unpack("%dh" % f.getnframes(), buffer)
 
     def test_performance_profiler(self) -> None:
         eagle_profiler = EagleProfiler(
             access_key=self.access_key,
-            model_path=default_model_path('../..'),
-            library_path=default_library_path('../..'))
+            model_path=default_model_path("../.."),
+            library_path=default_library_path("../.."),
+        )
 
         pcm = self.load_wav_resource(self.TEST_PATH)
 
@@ -66,8 +66,9 @@ class EaglePerformanceTestCase(unittest.TestCase):
         # create profile
         eagle_profiler = EagleProfiler(
             access_key=self.access_key,
-            model_path=default_model_path('../..'),
-            library_path=default_library_path('../..'))
+            model_path=default_model_path("../.."),
+            library_path=default_library_path("../.."),
+        )
 
         for path in self.ENROLL_PATHS:
             pcm = self.load_wav_resource(path)
@@ -77,9 +78,10 @@ class EaglePerformanceTestCase(unittest.TestCase):
 
         eagle = Eagle(
             access_key=self.access_key,
-            model_path=default_model_path('../..'),
-            library_path=default_library_path('../..'),
-            speaker_profiles=[profile])
+            model_path=default_model_path("../.."),
+            library_path=default_library_path("../.."),
+            speaker_profiles=[profile],
+        )
 
         pcm = self.load_wav_resource(self.TEST_PATH)
 
@@ -89,7 +91,7 @@ class EaglePerformanceTestCase(unittest.TestCase):
         for i in range(self.num_test_iterations + 1):
             for n in range(num_frames):
                 start = perf_counter()
-                _ = eagle.process(pcm=pcm[n * eagle.frame_length:(n + 1) * eagle.frame_length])
+                _ = eagle.process(pcm=pcm[n * eagle.frame_length: (n + 1) * eagle.frame_length])
                 perf_results.append(perf_counter() - start)
 
         eagle.delete()
@@ -99,12 +101,12 @@ class EaglePerformanceTestCase(unittest.TestCase):
         self.assertLess(avg_perf, self.recognizer_performance_threshold_sec)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--access-key', required=True)
-    parser.add_argument('--num-test-iterations', type=int, required=True)
-    parser.add_argument('--recognizer-performance-threshold-sec', type=float, required=True)
-    parser.add_argument('--profiler-performance-threshold-sec', type=float, required=True)
+    parser.add_argument("--access-key", required=True)
+    parser.add_argument("--num-test-iterations", type=int, required=True)
+    parser.add_argument("--recognizer-performance-threshold-sec", type=float, required=True)
+    parser.add_argument("--profiler-performance-threshold-sec", type=float, required=True)
     args = parser.parse_args()
 
     EaglePerformanceTestCase.access_key = args.access_key
