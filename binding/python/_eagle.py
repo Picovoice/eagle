@@ -231,10 +231,15 @@ class EagleProfiler(object):
         ]
         init_func.restype = PicovoiceStatuses
 
-        status = init_func(access_key.encode("utf-8"), model_path.encode("utf-8"), byref(self._eagle_profiler))
+        status = init_func(
+            access_key.encode("utf-8"),
+            model_path.encode("utf-8"),
+            byref(self._eagle_profiler),
+        )
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
-                message="Profile initialization failed", message_stack=self._get_error_stack()
+                message="Profile initialization failed",
+                message_stack=self._get_error_stack(),
             )
 
         speaker_profile_size_func = library.pv_eagle_profiler_export_size
@@ -248,7 +253,8 @@ class EagleProfiler(object):
         status = speaker_profile_size_func(self._eagle_profiler, byref(profile_size))
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
-                message="Failed to get profile size", message_stack=self._get_error_stack()
+                message="Failed to get profile size",
+                message_stack=self._get_error_stack(),
             )
         self._profile_size = profile_size.value
 
@@ -263,7 +269,8 @@ class EagleProfiler(object):
         status = enroll_min_audio_length_sample_func(self._eagle_profiler, byref(min_enroll_samples))
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
-                message="Failed to get min audio length sample", message_stack=self._get_error_stack()
+                message="Failed to get min audio length sample",
+                message_stack=self._get_error_stack(),
             )
         self._min_enroll_samples = min_enroll_samples.value
 
@@ -356,7 +363,10 @@ class EagleProfiler(object):
         """
 
         profile = (c_byte * self._profile_size)()
-        status = self._export_func(self._eagle_profiler, byref(profile))
+        status = self._export_func(
+            self._eagle_profiler,
+            byref(profile),
+        )
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
                 message="Export failed",
