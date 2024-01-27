@@ -1,5 +1,5 @@
 //
-//  Copyright 2023 Picovoice Inc.
+//  Copyright 2023-2024 Picovoice Inc.
 //  You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 //  file accompanying this source.
 //  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
@@ -60,26 +60,6 @@ class EagleAppTestUITests: BaseTest {
         XCTAssert(percentage > 0)
         let profile = try eagleProfiler.export()
         XCTAssertFalse(profile.getBytes().isEmpty)
-
-        eagleProfiler.delete()
-    }
-
-    func testEagleEnrollmentUnknownSpeaker() throws {
-        let enrollUrls = enrollUrls()
-        let imposterUrl = imposterUrl()
-
-        var feedback: EagleProfilerEnrollFeedback?
-
-        let eagleProfiler = try EagleProfiler(accessKey: accessKey)
-        for url in enrollUrls {
-            let pcm = try readPcmFromFile(testAudioURL: url)
-            (_, feedback) = try eagleProfiler.enroll(pcm: pcm)
-            XCTAssertEqual(feedback, EagleProfilerEnrollFeedback.AUDIO_OK)
-        }
-
-        let pcm = try readPcmFromFile(testAudioURL: imposterUrl)
-        (_, feedback) = try eagleProfiler.enroll(pcm: pcm)
-        XCTAssertEqual(feedback, EagleProfilerEnrollFeedback.UNKNOWN_SPEAKER)
 
         eagleProfiler.delete()
     }
