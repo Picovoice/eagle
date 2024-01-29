@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@picovoice/eagle-web@=0.2.0":
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/@picovoice/eagle-web/-/eagle-web-0.2.0.tgz#8e9734601ef7c491ecc86256b5d5cf371654c175"
-  integrity sha512-DUfWF8M6Z5UY5stbVuvrn7nCYAgwtu0g1DaxDJP03OM3bN9q40TywHLTXeqqvV+jrHRPPxVMciwcDA3BUDlzng==
+"@picovoice/eagle-web@=1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@picovoice/eagle-web/-/eagle-web-1.0.0.tgz#3a55eae9360842622157c1f4c8a58de12ebbefb3"
+  integrity sha512-2mylTzNiCsY+z+pBfWIf1nRn/TZKAjh+t4Zf93epI2o5TQ0lW1vjM90zZUcKJ23tD6dL1HAUTrlY5Gb1aRV6Yg==
   dependencies:
     "@picovoice/web-utils" "=1.3.2"
 
