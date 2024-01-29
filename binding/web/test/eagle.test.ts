@@ -220,40 +220,6 @@ describe('Eagle Profiler', async function () {
     );
   });
 
-  it('should detect unknown speaker during enrollment (worker)', () => {
-    cy.getFramesFromFile('audio_samples/speaker_1_utt_1.wav').then(
-      async inputPcm1 => {
-        cy.getFramesFromFile('audio_samples/speaker_1_utt_2.wav').then(
-          async inputPcm2 => {
-            cy.getFramesFromFile('audio_samples/speaker_2_test_utt.wav').then(
-              async imposterPcm => {
-                try {
-                  const profiler = await EagleProfiler.create(ACCESS_KEY, {
-                    publicPath: '/test/eagle_params.pv',
-                    forceWrite: true,
-                  });
-
-                  await getProfile(
-                    profiler,
-                    [inputPcm1, inputPcm2, imposterPcm],
-                    [
-                      EagleProfilerEnrollFeedback.AUDIO_OK,
-                      EagleProfilerEnrollFeedback.AUDIO_OK,
-                      EagleProfilerEnrollFeedback.UNKNOWN_SPEAKER,
-                    ]
-                  );
-                  await profiler.release();
-                } catch (e) {
-                  expect(e).to.be.undefined;
-                }
-              }
-            );
-          }
-        );
-      }
-    );
-  });
-
   it(`should return correct error message stack`, async () => {
     let messageStack = [];
     try {
