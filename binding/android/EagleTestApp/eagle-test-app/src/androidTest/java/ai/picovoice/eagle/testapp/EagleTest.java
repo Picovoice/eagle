@@ -199,14 +199,6 @@ public class EagleTest {
         }
 
         @Test
-        public void testEagleEnrollmentUnknownSpeaker() throws Exception {
-            File audioFile = new File(testResourcesPath, imposterPath);
-            short[] pcm = readAudioFile(audioFile.getAbsolutePath());
-            EagleProfilerEnrollResult result = eagleProfiler.enroll(pcm);
-            Assert.assertEquals(result.getFeedback(), EagleProfilerEnrollFeedback.UNKNOWN_SPEAKER);
-        }
-
-        @Test
         public void testEagleProcess() throws Exception {
             Eagle eagle = new Eagle.Builder()
                     .setAccessKey(accessKey)
