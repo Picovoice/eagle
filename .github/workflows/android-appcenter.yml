@@ -65,7 +65,7 @@ jobs:
       run: appcenter test run espresso
         --token ${{secrets.APPCENTERAPITOKEN}}
         --app "Picovoice/Eagle-Android"
-        --devices "Picovoice/pixel-6-pro"
+        --devices "Picovoice/android-min-max"
         --app-path eagle-test-app/build/outputs/apk/debug/eagle-test-app-debug.apk
         --test-series "eagle-android"
         --locale "en_US"
@@ -121,7 +121,7 @@ jobs:
       run: appcenter test run espresso
         --token ${{secrets.APPCENTERAPITOKEN}}
         --app "Picovoice/Eagle-Android"
-        --devices "Picovoice/pixel-6-pro"
+        --devices "Picovoice/android-min-max"
         --app-path eagle-test-app/build/outputs/apk/release/eagle-test-app-release.apk
         --test-series "eagle-android"
         --locale "en_US"
