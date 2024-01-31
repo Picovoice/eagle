@@ -1,5 +1,5 @@
 /*
-    Copyright 2021-2023 Picovoice Inc.
+    Copyright 2021-2024 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
     file accompanying this source.
@@ -118,6 +118,17 @@ PV_API pv_status_t pv_eagle_profiler_enroll_min_audio_length_samples(
         int32_t *num_samples);
 
 /**
+ * Determines size required for the speaker profile buffer when exporting the speaker profile.
+ *
+ * @param object EagleProfiler object.
+ * @param[out] speaker_profile_size_bytes Size of the serialized speaker profile in bytes.
+ * @return Status code. Returns `PV_STATUS_INVALID_ARGUMENT` on failure
+ */
+PV_API pv_status_t pv_eagle_profiler_export_size(
+        const pv_eagle_profiler_t *object,
+        int32_t *speaker_profile_size_bytes);
+
+/**
  * Exports the speaker profile to a buffer.
  * The exported profile can be used in `pv_eagle_init()` or stored for later use.
  *
@@ -130,17 +141,6 @@ PV_API pv_status_t pv_eagle_profiler_enroll_min_audio_length_samples(
 PV_API pv_status_t pv_eagle_profiler_export(
         const pv_eagle_profiler_t *object,
         void *speaker_profile);
-
-/**
- * Determines size required for the speaker profile buffer when exporting the speaker profile.
- *
- * @param object EagleProfiler object.
- * @param[out] speaker_profile_size_bytes Size of the serialized speaker profile in bytes.
- * @return Status code. Returns `PV_STATUS_INVALID_ARGUMENT` on failure
- */
-PV_API pv_status_t pv_eagle_profiler_export_size(
-        const pv_eagle_profiler_t *object,
-        int32_t *speaker_profile_size_bytes);
 
 /**
  * Resets the EagleProfiler object and removes all enrollment data. It must be called before enrolling a new speaker.

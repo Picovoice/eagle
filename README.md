@@ -24,10 +24,8 @@ Eagle is an on-device speaker recognition engine. Eagle is:
     - Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64)
     - Android and iOS
     - Chrome, Safari, Firefox, and Edge
-    - Raspberry Pi (4, 3) and NVIDIA Jetson Nano
+    - Raspberry Pi (5, 4, 3) and NVIDIA Jetson Nano
 
-
-**Please note that Eagle is currently in development. While we prioritize stability and compatibility, certain aspects of Eagle may undergo changes as we continually enhance and refine the engine to provide the best user experience possible.**
 
 ## Table of Contents
 
@@ -613,6 +611,13 @@ while (true) {
 ```
 
 ## Releases
+
+### v1.0.0 - January 24th, 2024
+
+ - Enhanced engine accuracy
+ - Improved the enrollment process
+ - Added Raspberry Pi 5 support
+ - Various bug fixes and improvements
 
 ### v0.2.0 - November 24th, 2023
 

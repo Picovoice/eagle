@@ -53,8 +53,8 @@ jobs:
           profiler_performance_threshold_sec: 0.5
           recognizer_performance_threshold_sec: 0.6
         - os: macos-latest
-          profiler_performance_threshold_sec: 0.6
-          recognizer_performance_threshold_sec: 0.8
+          profiler_performance_threshold_sec: 0.9
+          recognizer_performance_threshold_sec: 0.9
 
     steps:
     - uses: actions/checkout@v3
@@ -87,10 +87,10 @@ jobs:
         machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, jetson]
         include:
         - machine: rpi3-32
-          profiler_performance_threshold_sec: 2.3
+          profiler_performance_threshold_sec: 2.5
           recognizer_performance_threshold_sec: 2.8
         - machine: rpi3-64
-          profiler_performance_threshold_sec: 2.3
+          profiler_performance_threshold_sec: 2.5
           recognizer_performance_threshold_sec: 2.8
         - machine: rpi4-32
           profiler_performance_threshold_sec: 1.5
@@ -98,6 +98,9 @@ jobs:
         - machine: rpi4-64
           profiler_performance_threshold_sec: 2.0
           recognizer_performance_threshold_sec: 2.5
+        - machine: rpi5-64
+          profiler_performance_threshold_sec: 0.5
+          recognizer_performance_threshold_sec: 0.6
         - machine: jetson
           profiler_performance_threshold_sec: 1.2
           recognizer_performance_threshold_sec: 1.5

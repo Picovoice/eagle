@@ -11,11 +11,7 @@
 
 from typing import Optional, Sequence, Union
 
-from ._eagle import (
-    Eagle,
-    EagleProfile,
-    EagleProfiler
-)
+from ._eagle import Eagle, EagleProfile, EagleProfiler
 from ._util import default_library_path, default_model_path
 
 
@@ -77,10 +73,11 @@ def create_profiler(
     return EagleProfiler(
         access_key=access_key,
         model_path=model_path,
-        library_path=library_path)
+        library_path=library_path,
+    )
 
 
 __all__ = [
-    'create_recognizer',
-    'create_profiler'
+    "create_recognizer",
+    "create_profiler"
 ]
