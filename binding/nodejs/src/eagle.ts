@@ -41,8 +41,10 @@ type ExportStatus = {
 };
 
 type EagleHandleAndStatus = { handle: any; status: PvStatus };
-type ProcessStatus = {
-  scores: number;
+type ProcessResult = {
+  scores: number[];
+}
+type ProcessStatus = ProcessResult & {
   status: PvStatus;
 };
 /**
@@ -61,7 +63,7 @@ export class EagleProfiler {
   private readonly _minEnrollSamples: number;
 
   /**
-   * Creates an instance of Eagle.
+   * Creates an instance of the Eagle Profiler.
    * @param {string} accessKey AccessKey obtained from Picovoice Console (https://console.picovoice.ai/).
    * @param options Optional configuration arguments.
    * @param {string} options.modelPath the path to the Eagle model (.pv extension)
@@ -126,24 +128,24 @@ export class EagleProfiler {
   }
 
   /**
-   * @returns the audio sampling rate accepted by the enrollment and process functions
-   * @see {@link process}
+   * @returns the audio sampling rate accepted by the enroll function
+   * @see {@link enroll}
    */
   get sampleRate(): number {
     return this._sampleRate;
   }
 
   /**
-   * @returns number of audio samples per frame (i.e. the length of the array provided to the enrollment and process functions)
-   * @see {@link process}
+   * @returns number of audio samples per frame (i.e. the length of the array provided to the enroll function)
+   * @see {@link enroll}
    */
   get frameLength(): number {
     return this._frameLength;
   }
 
   /**
-   * @returns TODO
-   * @see {@link process}
+   * @returns the minimum length of the input pcm required by the enroll function.
+   * @see {@link enroll}
    */
   get minEnrollSamples(): number {
     return this._minEnrollSamples;
@@ -159,11 +161,9 @@ export class EagleProfiler {
    *    - the speaker should be speaking in a normal voice
    *    - the audio should contain no speech from other speakers and no other sounds (e.g. music)
    *    - it should be captured in a quiet environment with no background noise
-   * @param pcm Audio data for enrollment. The audio needs to have a sample rate equal to `.sampleRate` and be
+   * @param {Int16Array} pcm Audio data for enrollment. The audio needs to have a sample rate equal to `.sampleRate` and be
    * 16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
-   *
-   * @return TODO:
-   * The percentage of completeness of the speaker enrollment process along with the feedback code
+   * @return {number} The percentage of completeness of the speaker enrollment process along with the feedback code
    * corresponding to the last enrollment attempt:
    *    - `AUDIO_OK`: The audio is good for enrollment.
    *    - `AUDIO_TOO_SHORT`: Audio length is insufficient for enrollment,
@@ -215,8 +215,10 @@ export class EagleProfiler {
   }
 
   /**
-   * TODO: exports speaker profile
-   * @return TODO: Uint8Array Buffer containing the speaker profile.
+   * Exports the speaker profile of the current session.
+   * Will throw error if the profile is not ready.
+   *
+   * @return {EagleProfile} An EagleProfile object.
    */
   export(): EagleProfile {
     if (
@@ -393,32 +395,16 @@ export class Eagle {
   }
 
   /**
-   * Enrolls a speaker. This function should be called multiple times with different utterances of the same speaker
-   * until `percentage` reaches `100.0`, at which point a speaker voice profile can be exported using `.export()`.
-   * Any further enrollment can be used to improve the speaker profile. The minimum length of the input pcm to
-   * `.enroll()` can be obtained by calling `.minEnrollSamples`.
-   * The audio data used for enrollment should satisfy the following requirements:
-   *    - only one speaker should be present in the audio
-   *    - the speaker should be speaking in a normal voice
-   *    - the audio should contain no speech from other speakers and no other sounds (e.g. music)
-   *    - it should be captured in a quiet environment with no background noise
-   * @param pcm Audio data for enrollment. The audio needs to have a sample rate equal to `.sampleRate` and be
-   * 16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
+   * Processes a frame of audio and returns a list of similarity scores for each speaker profile.
    *
-   * @return TODO:
-   * The percentage of completeness of the speaker enrollment process along with the feedback code
-   * corresponding to the last enrollment attempt:
-   *    - `AUDIO_OK`: The audio is good for enrollment.
-   *    - `AUDIO_TOO_SHORT`: Audio length is insufficient for enrollment,
-   *       i.e. it is shorter than`.min_enroll_samples`.
-   *    - `UNKNOWN_SPEAKER`: There is another speaker in the audio that is different from the speaker
-   *       being enrolled. Too much background noise may cause this error as well.
-   *    - `NO_VOICE_FOUND`: The audio does not contain any voice, i.e. it is silent or
-   *       has a low signal-to-noise ratio.
-   *    - `QUALITY_ISSUE`: The audio quality is too low for enrollment due to a bad microphone
-   *       or recording environment.
+   * @param {Int16Array} pcm A frame of audio samples. The number of samples per frame can be attained by calling
+   * `.frameLength`. The incoming audio needs to have a sample rate equal to `.sampleRate` and be 16-bit
+   * linearly-encoded. Eagle operates on single-channel audio.
+   *
+   * @return A list of similarity scores for each speaker profile. A higher score indicates that the voice
+   * belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match.
    */
-  process(pcm: Int16Array): number {
+  process(pcm: Int16Array): ProcessResult {
     assert(pcm instanceof Int16Array);
 
     if (
@@ -451,7 +437,7 @@ export class Eagle {
       this.handlePvStatus(status, 'Eagle failed to process the audio frame');
     }
 
-    return processStatus!.scores;
+    return { scores: processStatus!.scores };
   }
 
   /**

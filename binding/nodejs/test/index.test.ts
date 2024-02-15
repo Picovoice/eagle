@@ -57,7 +57,7 @@ const eagleProcessWaveFile = (
     const score = engineInstance.process(
       pcm.slice(i, i + engineInstance.frameLength)
     );
-    scores.push(score);
+    scores.push(score[0]);
   }
   return scores;
 };
