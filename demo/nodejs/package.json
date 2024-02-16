@@ -1,0 +1,49 @@
+{
+  "name": "@picovoice/eagle-node-demo",
+  "version": "2.0.1",
+  "description": "Picovoice Eagle Node.js file-based and microphone demos",
+  "scripts": {
+    "file": "node file.js",
+    "mic": "node mic.js"
+  },
+  "bin": {
+    "eagle-file-demo": "./file.js",
+    "eagle-mic-demo": "./mic.js"
+  },
+  "keywords": [
+    "eagle",
+    "picovoice",
+    "offline",
+    "private",
+    "voice ai",
+    "speaker recognition",
+    "microphone",
+    "mic",
+    "realtime"
+  ],
+  "author": "Picovoice Inc.",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@picovoice/eagle-node": "file:../../binding/nodejs",
+    "@picovoice/pvrecorder-node": "^1.2.2",
+    "commander": "^6.1.0",
+    "readline": "^1.3.0",
+    "wavefile": "^11.0.0"
+  },
+  "devDependencies": {},
+  "homepage": "https://picovoice.ai/platform/eagle/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Picovoice/eagle.git",
+    "directory": "demo/nodejs"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "cpu": [
+    "!ia32",
+    "!mips",
+    "!ppc",
+    "!ppc64"
+  ]
+}

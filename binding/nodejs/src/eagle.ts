@@ -21,32 +21,22 @@ import {
   pvStatusToException,
 } from './errors';
 
-import { EagleOptions, EagleProfile } from './types';
+import {
+  EagleOptions,
+  EagleProfilerAndStatus,
+  EagleProfile,
+  EnrollStatus,
+  EnrollProgress,
+  ExportStatus,
+  EagleHandleAndStatus,
+  ProcessStatus,
+  ProcessResult,
+} from './types';
 
 import { getSystemLibraryPath } from './platforms';
 
 const DEFAULT_MODEL_PATH = '../lib/common/eagle_params.pv';
 
-type EagleProfilerAndStatus = { profiler: any; status: PvStatus };
-type EnrollProgress = {
-  percentage: number;
-  feedback: string;
-};
-type EnrollStatus = EnrollProgress & {
-  status: PvStatus;
-};
-type ExportStatus = {
-  speaker_profile: Uint8Array;
-  status: PvStatus;
-};
-
-type EagleHandleAndStatus = { handle: any; status: PvStatus };
-type ProcessResult = {
-  scores: number[];
-}
-type ProcessStatus = ProcessResult & {
-  status: PvStatus;
-};
 /**
  * Node.js binding for Eagle voice activity detection engine
  *
@@ -304,6 +294,8 @@ export class Eagle {
   private readonly _sampleRate: number;
   private readonly _frameLength: number;
 
+  private readonly _numSpeakers: number;
+
   /**
    * Creates an instance of Eagle.
    * @param {string} accessKey AccessKey obtained from Picovoice Console (https://console.picovoice.ai/).
@@ -347,13 +339,14 @@ export class Eagle {
     this._pvEagle = pvEagle;
 
     let eagleHandleAndStatus: EagleHandleAndStatus | null = null;
+    const numSpeakers = !Array.isArray(speakerProfiles) ? 1 : speakerProfiles.length;
     try {
       pvEagle.set_sdk('nodejs');
 
       eagleHandleAndStatus = pvEagle.init(
         accessKey,
         modelPath,
-        !Array.isArray(speakerProfiles) ? 1 : speakerProfiles.length,
+        numSpeakers,
         !Array.isArray(speakerProfiles) ? [speakerProfiles] : speakerProfiles
       );
     } catch (err: any) {
@@ -369,6 +362,7 @@ export class Eagle {
     this._version = pvEagle.version();
     this._sampleRate = pvEagle.sample_rate();
     this._frameLength = pvEagle.frame_length();
+    this._numSpeakers = numSpeakers;
   }
 
   /**
@@ -427,7 +421,7 @@ export class Eagle {
 
     let processStatus: ProcessStatus | null = null;
     try {
-      processStatus = this._pvEagle.process(this._handle, pcm, pcm.length);
+      processStatus = this._pvEagle.process(this._handle, pcm, this._numSpeakers);
     } catch (err: any) {
       pvStatusToException(PvStatus[err.code as keyof typeof PvStatus], err);
     }
@@ -437,7 +431,7 @@ export class Eagle {
       this.handlePvStatus(status, 'Eagle failed to process the audio frame');
     }
 
-    return { scores: processStatus!.scores };
+    return processStatus!.scores;
   }
 
   /**
