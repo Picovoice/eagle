@@ -23,22 +23,29 @@ import {
 
 import {
   EagleOptions,
-  EagleProfilerAndStatus,
-  EagleProfile,
-  EnrollStatus,
-  EnrollProgress,
-  ExportStatus,
-  EagleHandleAndStatus,
-  ProcessStatus,
-  ProcessResult,
+  EnrollProgress
 } from './types';
 
 import { getSystemLibraryPath } from './platforms';
 
 const DEFAULT_MODEL_PATH = '../lib/common/eagle_params.pv';
 
+type EagleProfilerAndStatus = { profiler: any; status: PvStatus };
+type EnrollStatus = EnrollProgress & {
+  status: PvStatus;
+};
+type ExportStatus = {
+  speaker_profile: Uint8Array;
+  status: PvStatus;
+};
+type EagleHandleAndStatus = { handle: any; status: PvStatus };
+type ProcessStatus = {
+  scores: number[];
+  status: PvStatus;
+};
+
 /**
- * Node.js binding for Eagle voice activity detection engine
+ * Node.js binding for Eagle speaker recognition engine
  *
  * Performs the calls to the Eagle node library. Does some basic parameter validation to prevent
  * errors occurring in the library layer. Provides clearer error messages in native JavaScript.
@@ -53,7 +60,7 @@ export class EagleProfiler {
   private readonly _minEnrollSamples: number;
 
   /**
-   * Creates an instance of the Eagle Profiler.
+   * Creates an instance of Eagle Profiler.
    * @param {string} accessKey AccessKey obtained from Picovoice Console (https://console.picovoice.ai/).
    * @param options Optional configuration arguments.
    * @param {string} options.modelPath the path to the Eagle model (.pv extension)
@@ -127,14 +134,14 @@ export class EagleProfiler {
 
   /**
    * @returns number of audio samples per frame (i.e. the length of the array provided to the enroll function)
-   * @see {@link enroll}
+   * @see {@link process}
    */
   get frameLength(): number {
     return this._frameLength;
   }
 
   /**
-   * @returns the minimum length of the input pcm required by the enroll function.
+   * @returns the minimum number of samples required by the enroll function
    * @see {@link enroll}
    */
   get minEnrollSamples(): number {
@@ -153,7 +160,7 @@ export class EagleProfiler {
    *    - it should be captured in a quiet environment with no background noise
    * @param {Int16Array} pcm Audio data for enrollment. The audio needs to have a sample rate equal to `.sampleRate` and be
    * 16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
-   * @return {number} The percentage of completeness of the speaker enrollment process along with the feedback code
+   * @return {EnrollProgress} The percentage of completeness of the speaker enrollment process along with the feedback code
    * corresponding to the last enrollment attempt:
    *    - `AUDIO_OK`: The audio is good for enrollment.
    *    - `AUDIO_TOO_SHORT`: Audio length is insufficient for enrollment,
@@ -182,7 +189,7 @@ export class EagleProfiler {
       );
     } else if (pcm.length < this._minEnrollSamples) {
       throw new EagleInvalidArgumentError(
-        `Size of frame array provided to 'Eagle.enroll()' (${pcm.length}) is not enough 'Eagle.minEnrollSamples' (${this.minEnrollSamples})`
+        `PCM size (${pcm.length}) must be greater than 'Eagle.minEnrollSamples' (${this.minEnrollSamples})`
       );
     }
 
@@ -208,9 +215,9 @@ export class EagleProfiler {
    * Exports the speaker profile of the current session.
    * Will throw error if the profile is not ready.
    *
-   * @return {EagleProfile} An EagleProfile object.
+   * @return {Uint8Array} An EagleProfile object.
    */
-  export(): EagleProfile {
+  export(): Uint8Array {
     if (
       this._profiler === 0 ||
       this._profiler === null ||
@@ -235,8 +242,8 @@ export class EagleProfiler {
   }
 
   /**
-   * Resets the internal state of Eagle Profiler. It should be called before the engine can be used to infer intent from a new
-   * stream of audio
+   * Resets the internal state of Eagle Profiler.
+   * It should be called before starting a new enrollment session.
    */
   reset(): void {
     if (
@@ -299,14 +306,14 @@ export class Eagle {
   /**
    * Creates an instance of Eagle.
    * @param {string} accessKey AccessKey obtained from Picovoice Console (https://console.picovoice.ai/).
-   * @param speakerProfiles speakerProfiles.
+   * @param speakerProfiles One or more Eagle speaker profiles. These can be constructed using `EagleProfiler`.
    * @param options Optional configuration arguments.
    * @param {string} options.modelPath the path to the Eagle model (.pv extension)
    * @param {string} options.libraryPath the path to the Eagle library (.node extension)
    */
   constructor(
     accessKey: string,
-    speakerProfiles: EagleProfile[] | EagleProfile,
+    speakerProfiles: Uint8Array[] | Uint8Array,
     options: EagleOptions = {})
   {
     assert(typeof accessKey === 'string');
@@ -373,7 +380,7 @@ export class Eagle {
   }
 
   /**
-   * @returns the audio sampling rate accepted by the enrollment and process functions
+   * @returns the audio sampling rate accepted by the process function
    * @see {@link process}
    */
   get sampleRate(): number {
@@ -381,7 +388,7 @@ export class Eagle {
   }
 
   /**
-   * @returns number of audio samples per frame (i.e. the length of the array provided to the enrollment and process functions)
+   * @returns number of audio samples per frame (i.e. the length of the array provided to the process function)
    * @see {@link process}
    */
   get frameLength(): number {
@@ -395,10 +402,10 @@ export class Eagle {
    * `.frameLength`. The incoming audio needs to have a sample rate equal to `.sampleRate` and be 16-bit
    * linearly-encoded. Eagle operates on single-channel audio.
    *
-   * @return A list of similarity scores for each speaker profile. A higher score indicates that the voice
+   * @return {number[]} A list of similarity scores for each speaker profile. A higher score indicates that the voice
    * belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match.
    */
-  process(pcm: Int16Array): ProcessResult {
+  process(pcm: Int16Array): number[] {
     assert(pcm instanceof Int16Array);
 
     if (
@@ -435,8 +442,9 @@ export class Eagle {
   }
 
   /**
-   * Resets the internal state of Eagle Profiler. It should be called before the engine can be used to infer intent from a new
-   * stream of audio
+   * Resets the internal state of the engine.
+   * It is best to call before processing a new sequence of audio (e.g. a new voice interaction).
+   * This ensures that the accuracy of the engine is not affected by a change in audio context.
    */
   reset(): void {
     if (
@@ -473,9 +481,6 @@ export class Eagle {
         pvStatusToException(<PvStatus>err.code, err);
       }
       this._handle = 0;
-    } else {
-      // eslint-disable-next-line no-console
-      console.warn('Eagle is not initialized');
     }
   }
 

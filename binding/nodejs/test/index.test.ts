@@ -10,7 +10,7 @@
 //
 'use strict';
 
-import { EagleProfiler, Eagle, EagleProfile, EagleErrors } from '../src';
+import { EagleProfiler, Eagle, EagleErrors } from '../src';
 
 import { getSystemLibraryPath } from '../src/platforms';
 
@@ -32,7 +32,7 @@ const getProfile = (
   profiler: EagleProfiler,
   audioChunks: Int16Array[],
   expectedFeedback: string[]
-): EagleProfile => {
+): Uint8Array => {
   let percentage = 0;
   for (let i = 0; i < audioChunks.length; i++) {
     const result = profiler.enroll(audioChunks[i]);
@@ -44,25 +44,25 @@ const getProfile = (
   return profiler.export();
 };
 
-const eagleProcessWaveFile = (
-  engineInstance: Eagle,
+const getScores = (
+  eagle: Eagle,
   pcm: Int16Array
-): any[] => {
-  const scores = [];
+): number[] => {
+  const allScores = [];
   for (
     let i = 0;
-    i < pcm.length - engineInstance.frameLength;
-    i += engineInstance.frameLength
+    i < pcm.length - eagle.frameLength;
+    i += eagle.frameLength
   ) {
-    const score = engineInstance.process(
-      pcm.slice(i, i + engineInstance.frameLength)
+    const score = eagle.process(
+      pcm.slice(i, i + eagle.frameLength)
     );
-    scores.push(score[0]);
+    allScores.push(score[0]);
   }
-  return scores;
+  return allScores;
 };
 
-let testProfile: EagleProfile;
+let testProfile: Uint8Array;
 
 beforeAll(() => {
   let profiler = new EagleProfiler(ACCESS_KEY);
@@ -78,6 +78,10 @@ beforeAll(() => {
 describe('successful processes', () => {
   it('enroll with reset', () => {
     let profiler = new EagleProfiler(ACCESS_KEY);
+    expect(profiler.sampleRate).toBeGreaterThan(0);
+    expect(profiler.frameLength).toBeGreaterThan(0);
+    expect(typeof profiler.version).toEqual('string');
+    expect(profiler.version.length).toBeGreaterThan(0);
     expect(profiler.minEnrollSamples).toBeGreaterThan(0);
 
     const inputPcm1 = loadPcm(WAV_PATH_SPEAKER_1_UTT_1);
@@ -99,23 +103,20 @@ describe('successful processes', () => {
 });
 
 describe('Eagle', () => {
-  test('eagle init', () => {
-    const eagle = new Eagle(ACCESS_KEY, testProfile);
-    expect(eagle.sampleRate).toBeGreaterThan(0);
-    expect(typeof eagle.version).toEqual('string');
-    expect(eagle.version.length).toBeGreaterThan(0);
-    eagle.release();
-  });
-
   test('eagle process with reset', () => {
     const eagle = new Eagle(ACCESS_KEY, testProfile);
+    expect(eagle.sampleRate).toBeGreaterThan(0);
+    expect(eagle.frameLength).toBeGreaterThan(0);
+    expect(typeof eagle.version).toEqual('string');
+    expect(eagle.version.length).toBeGreaterThan(0);
+
     const testPcm = loadPcm(WAV_PATH_SPEAKER_1_TEST_UTT);
 
-    const scores = eagleProcessWaveFile(eagle, testPcm);
+    const scores = getScores(eagle, testPcm);
     expect(Math.max(...scores)).toBeGreaterThan(0.5);
     eagle.reset();
 
-    const scores2 = eagleProcessWaveFile(eagle, testPcm);
+    const scores2 = getScores(eagle, testPcm);
     expect(scores).toEqual(scores2);
     eagle.release();
   });
@@ -123,7 +124,7 @@ describe('Eagle', () => {
   test('eagle process imposter', () => {
     const eagle = new Eagle(ACCESS_KEY, testProfile);
     const imposterPcm = loadPcm(WAV_PATH_SPEAKER_2_TEST_UTT);
-    const imposterScores = eagleProcessWaveFile(eagle, imposterPcm);
+    const imposterScores = getScores(eagle, imposterPcm);
     expect(Math.max(...imposterScores)).toBeLessThan(0.5);
     eagle.release();
   });
@@ -165,7 +166,7 @@ describe('manual paths', () => {
     );
 
     const testPcm = loadPcm(WAV_PATH_SPEAKER_1_TEST_UTT);
-    const scores = eagleProcessWaveFile(eagle, testPcm);
+    const scores = getScores(eagle, testPcm);
     expect(Math.max(...scores)).toBeGreaterThan(0.5);
     profiler.release();
     eagle.release();

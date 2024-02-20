@@ -16,7 +16,7 @@ Eagle is an on-device speaker recognition engine. Eagle is:
 ## Compatibility
 
 - Node.js 16+
-- Runs on Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64), Raspberry Pi (2, 3, 4, 5), NVIDIA Jetson Nano, and BeagleBone.
+- Runs on Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64), Raspberry Pi (2, 3, 4, 5), and NVIDIA Jetson Nano.
 
 ## Installation
 
@@ -47,24 +47,13 @@ audio to the voiceprints of all enrolled speakers in real-time to determine the 
 
 ### Speaker Enrollment
 
-Create an instance of the `EagleProfiler`:
+Create an instance of the profiler:
 
 ```typescript
-const eagleModel = {
-  publicPath: ${MODEL_RELATIVE_PATH},
-  // or
-  base64: ${MODEL_BASE64_STRING},
-}
+const { EagleProfiler } = require("@picovoice/eagle-node");
 
-// Main thread
-const eagleProfiler = await EagleProfiler.create(
-        ${ACCESS_KEY},
-        eagleModel);
-
-// or on worker thread
-const eagleProfiler = await EagleProfilerWorker.create(
-        ${ACCESS_KEY},
-        eagleModel);
+const accessKey = "${ACCESS_KEY}"; // Obtained from the Picovoice Console (https://console.picovoice.ai/)
+const eagleProfiler = new EagleProfiler(accessKey);
 ```
 
 `EagleProfiler` is responsible for processing and enrolling PCM audio data, with the valid audio sample rate determined
@@ -75,6 +64,8 @@ least `eagleProfiler.minEnrollSamples` to ensure sufficient data for enrollment.
 returned from this process indicates the progress of enrollment, while the feedback value can be utilized to determine the status of the enrollment process.
 
 ```typescript
+const { EnrollProgress } = require("@picovoice/eagle-node");
+
 function getAudioData(numSamples): Int16Array {
   // get audio frame of size `numSamples`
 }
@@ -83,7 +74,7 @@ let percentage = 0;
 while (percentage < 100) {
   const audioData = getAudioData(eagleProfiler.minEnrollSamples);
   
-  const result: EagleProfilerEnrollResult = await eagleProfiler.enroll(audioData);
+  const result: EnrollProgress = await eagleProfiler.enroll(audioData);
   if (result.feedback === EagleProfilerEnrollFeedback.AUDIO_OK) {
       // audio is good!
   } else {
@@ -99,7 +90,7 @@ Moreover, if the audio data submitted is unsuitable for enrollment, the feedback
 enrollment progress will remain unchanged.
 
 ```typescript
-const speakerProfile: EagleProfile = eagleProfiler.export();
+const speakerProfile: Uint8Array = eagleProfiler.export();
 ```
 
 The `eagleProfiler.export()` function produces a binary array, which can be saved to a file.
@@ -111,27 +102,17 @@ Finally, when done be sure to explicitly release the resources:
 
 ```typescript
 eagleProfiler.release();
-
-// if on worker thread
-eagleProfiler.terminate();
 ```
 
 ### Speaker Recognition
 
-Create an instance of the engine with one or more speaker profiles created by the `EagleProfiler`:
+Create an instance of the engine with one or more speaker profiles created by the profiler:
 
 ```typescript
-// Main thread
-const eagle = await Eagle.create(
-        ${ACCESS_KEY},
-        eagleModel,
-        speakerProfile);
+const { Eagle } = require("@picovoice/eagle-node");
 
-// or, on a worker thread
-const eagle = await EagleWorker.create(
-        ${ACCESS_KEY},
-        eagleModel,
-        speakerProfile);
+const accessKey = "${ACCESS_KEY}"; // Obtained from the Picovoice Console (https://console.picovoice.ai/)
+const eagle = new Eagle(accessKey, speakerProfile);
 ```
 
 When initialized, `eagle.sampleRate` specifies the valid sample rate for Eagle. The expected length of a frame, or the
@@ -146,7 +127,7 @@ function getAudioData(numSamples): Int16Array {
 
 while (true) {
   const audioData = getAudioData(eagle.frameLength);
-  const scores: number[] = await eagle.process(audioData);
+  const scores: number[] = eagle.process(audioData);
 }
 ```
 
@@ -157,11 +138,8 @@ Finally, when done be sure to explicitly release the resources:
 
 ```typescript
 eagle.release();
-
-// if on worker thread
-eagle.terminate();
 ```
 
 ## Demos
 
-The [Eagle Node.js demo package](https://www.npmjs.com/package/@picovoice/eagle-node-demo) provides command-line utilities for processing audio using Eagle.
+The [Eagle Node.js demo package](../../demo/nodejs) provides command-line utilities for processing audio using Eagle.

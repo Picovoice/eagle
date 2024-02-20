@@ -14,16 +14,21 @@ import { EagleProfiler, Eagle } from './eagle';
 
 import { getInt16Frames, checkWaveFile } from './wave_util';
 
-import { EagleProfile, EagleOptions } from './types';
+import {
+  EagleOptions,
+  EagleProfilerEnrollFeedback,
+  EnrollProgress
+} from './types';
 
 import * as EagleErrors from './errors';
 
 export {
   EagleProfiler,
   Eagle,
-  EagleProfile,
-  EagleErrors,
   EagleOptions,
+  EagleProfilerEnrollFeedback,
+  EnrollProgress,
+  EagleErrors,
   checkWaveFile,
   getInt16Frames,
 };

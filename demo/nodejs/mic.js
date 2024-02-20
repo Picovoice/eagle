@@ -17,9 +17,13 @@ const fs = require("fs");
 
 const { PvRecorder } = require("@picovoice/pvrecorder-node");
 
-const { Eagle, EagleProfiler, EagleProfilerEnrollFeedback, EagleActivationLimitReachedError } = require("../../binding/nodejs");
+const {
+  Eagle,
+  EagleProfiler,
+  EagleProfilerEnrollFeedback,
+  EagleActivationLimitReachedError
+} = require("../../binding/nodejs");
 
-const PV_RECORDER_FRAME_LENGTH = 512;
 const FEEDBACK_TO_DESCRIPTIVE_MSG = {
   [EagleProfilerEnrollFeedback.NONE]: 'Good audio',
   [EagleProfilerEnrollFeedback.AUDIO_TOO_SHORT]: 'Insufficient audio length',
@@ -29,34 +33,15 @@ const FEEDBACK_TO_DESCRIPTIVE_MSG = {
 };
 
 program
-  .requiredOption(
-    "--step <string>",
-    "The step: enroll or test"
-  )
-  .option(
-    "--output_profile_path <string>",
-    "The absolute output profile path"
-  )
-  .option(
-    "--input_profile_paths <strings...>",
-    "The speaker profile paths"
-  )
-  .option(
-    "-a, --access_key <string>",
-    "AccessKey obtain from the Picovoice Console (https://console.picovoice.ai/)"
-  )
-  .option(
-    "-l, --library_file_path <string>",
-    "absolute path to eagle dynamic library"
-  )
-  .option("-m, --model_file_path <string>", "absolute path to eagle model")
-  .option(
-    "-i, --audio_device_index <number>",
-    "index of audio device to use to record audio",
-    Number,
-    -1
-  )
-  .option("-s, --show_audio_devices", "show the list of available devices")
+  .option('-s, --show_audio_devices', 'List available audio input devices and exit')
+  .option('-i, --audio_device_index <number>', 'index of audio device to use to record audio', Number, -1)
+  .option('-a, --access_key <string>', 'AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)')
+  .option('-l, --library_path [value]', 'Absolute path to dynamic library. Default: using the library provided by `pveagle`')
+  .option('-m, --model_path [value]', 'Absolute path to Eagle model. Default: using the model provided by `pveagle`')
+  .option('--enroll', 'Enroll a new speaker profile')
+  .option('--test', "Evaluate Eagle's performance using the provided speaker profiles.")
+  .option('--output_profile_path <string>', 'Absolute path to output file for the created profile')
+  .option('--input_profile_paths <strings...>', 'Absolute path(s) to speaker profile(s)')
 
 if (process.argv.length < 1) {
   program.help();
@@ -79,20 +64,17 @@ function printResults(scores, labels) {
 let isInterrupted = false;
 
 async function micDemo() {
-  const isEnroll = program["step"] === "enroll"
-  const isTest = program["step"] === "test"
-  const outputProfilePath = program["output_profile_path"];
-  const inputProfilePaths = program["input_profile_paths"];
-
   const accessKey = program["access_key"];
   const libraryFilePath = program["library_file_path"];
   const modelFilePath = program["model_file_path"];
   const audioDeviceIndex = program["audio_device_index"];
   const showAudioDevices = program["show_audio_devices"];
+  const enroll = program["enroll"];
+  const test = program["test"];
+  const outputProfilePath = program["output_profile_path"];
+  const inputProfilePaths = program["input_profile_paths"];
 
-  const showAudioDevicesDefined = showAudioDevices !== undefined;
-
-  if (showAudioDevicesDefined) {
+  if (showAudioDevices) {
     const devices = PvRecorder.getAvailableDevices();
     for (let i = 0; i < devices.length; i++) {
       console.log(`index: ${i}, device name: ${devices[i]}`);
@@ -118,83 +100,94 @@ async function micDemo() {
     }
   });
 
-  if (isEnroll) {
+  if (enroll) {
+    if (!outputProfilePath) {
+      console.log("Please provide a speaker output profile path --output_profile_path")
+      process.exit();
+    }
+
+    let eagleProfiler;
+    let recorder;
     try {
-      if (!outputProfilePath) {
-        console.log("Please prove an output profile path")
-        process.exit();
-      }
-
-      const eagleProfiler = new EagleProfiler(accessKey);
-
+      eagleProfiler = new EagleProfiler(accessKey, {
+        modelPath: modelFilePath,
+        libraryPath: libraryFilePath
+      });
       console.log(`Eagle version: ${eagleProfiler.version}`);
-      const recorder = new PvRecorder(PV_RECORDER_FRAME_LENGTH, audioDeviceIndex);
+
+      recorder = new PvRecorder(eagleProfiler.frameLength, audioDeviceIndex);
       console.log(`Recording audio from '${recorder.getSelectedDevice()}'`);
-      // const sample_rate = eagleProfiler.sampleRate;
-      // const enrollmentAnimationObj = enrollmentAnimation();
+    } catch (e) {
+      console.error('Failed to initialize Eagle:', e);
+      process.exit();
+    }
+
+    try {
+      let enrollPercentage = 0;
+      let audioData = [];
+      let numIterations = 0
+      const loadingDotsArr = [" .  ", " .. ", " ...", "  ..", "   .", "    "];
       console.log('Please keep speaking until the enrollment percentage reaches 100%');
 
-      try {
-        let enrollPercentage = 0;
-        let loadingDots = [" .  ", " .. ", " ...", "  ..", "   .", "    "];
-        // enrollmentAnimationObj.run();
-        recorder.start();
-        let audioData = [];
-        let numIterations = 0
-        while (enrollPercentage < 100 && !isInterrupted) {
-          const inputFrame = await recorder.read();
-          audioData.push(inputFrame);
+      recorder.start();
+      while (enrollPercentage < 100 && !isInterrupted) {
+        const inputFrame = await recorder.read();
+        audioData.push(inputFrame);
 
-          if (audioData.length * PV_RECORDER_FRAME_LENGTH >= eagleProfiler.minEnrollSamples) {
-            try {
-              const frames = new Int16Array(audioData.length * PV_RECORDER_FRAME_LENGTH);
-              for (let i = 0; i < audioData.length; i++) {
-                frames.set(audioData[i], i * PV_RECORDER_FRAME_LENGTH);
-              }
-              audioData = [];
-              const { percentage, feedback } = eagleProfiler.enroll(frames);
-              enrollPercentage = Math.floor(percentage);
-              const dots = loadingDots[numIterations % loadingDots.length]
-              const fb = FEEDBACK_TO_DESCRIPTIVE_MSG[feedback];
-              const spacer = ` `.repeat(3 - percentage.toFixed(0).length);
-              readline.clearLine(process.stdout, 0)
-              readline.cursorTo(process.stdout, 0, null)
-              process.stdout.write(`\r[${spacer}${enrollPercentage}%] - ${fb}${dots}`);
-              numIterations++
-            } catch (e) {
-              process.exit();
-              console.log(`Failed to enroll. Error: ${e}`);
-            }
+        if (audioData.length * eagleProfiler.frameLength >= eagleProfiler.minEnrollSamples) {
+          const frames = new Int16Array(audioData.length * eagleProfiler.frameLength);
+          for (let i = 0; i < audioData.length; i++) {
+            frames.set(audioData[i], i * eagleProfiler.frameLength);
           }
-        }
-        process.stdout.write(`\n`);
-        recorder.stop();
+          audioData = [];
+          const { percentage, feedback } = eagleProfiler.enroll(frames);
+          const displayPercentage = percentage.toFixed(0);
+          const spacer = ` `.repeat(3 - displayPercentage.length);
+          const feedbackMessage = FEEDBACK_TO_DESCRIPTIVE_MSG[feedback];
+          const loadingDots = loadingDotsArr[numIterations % loadingDotsArr.length];
 
+          readline.clearLine(process.stdout, 0)
+          readline.cursorTo(process.stdout, 0, null)
+          process.stdout.write(`\r[${spacer}${displayPercentage}%] - ${feedbackMessage}${loadingDots}`);
+          enrollPercentage = percentage;
+          numIterations++
+        }
+      }
+      recorder.stop();
+      process.stdout.write(`\n`);
+
+      if (isInterrupted) {
+        recorder.stop();
+        console.log("Stopping enrollment. No speaker profile is saved.")
+        process.exit();
+      } else {
         const speakerProfile = eagleProfiler.export();
         fs.writeFileSync(outputProfilePath, Buffer.from(speakerProfile));
         console.log(`Speaker profile is saved to ${outputProfilePath}`);
-      } catch (e) {
-        isInterrupted = true;
-        console.error('Failed to enroll speaker:', e);
-      } finally {
-        recorder.stop();
-        eagleProfiler.release();
-        process.exit();
       }
     } catch (e) {
-      isInterrupted = true;
-      process.exit();
-      console.error('Failed to initialize Eagle:', e);
+      if (e instanceof EagleActivationLimitReachedError) {
+        console.error(`AccessKey '${accessKey}' has reached it's processing limit.`);
+      } else {
+        console.error('Failed to enroll speaker:', e);
+      }
     }
-  } else if (isTest) {
+
+    recorder?.stop();
+    recorder?.release();
+    eagleProfiler?.release();
+    process.exit();
+  }
+
+  if (test) {
     if (!inputProfilePaths) {
-      console.log("Please provide speaker profile")
-      return;
+      console.log("Please provide at least one speaker input profile path --input_profile_paths")
+      process.exit();
     }
+
     const profiles = [];
     const speakerLabels = [];
     for (let profilePath of inputProfilePaths) {
-      console.log(profilePath)
       speakerLabels.push(profilePath);
       const buffer = fs.readFileSync(profilePath);
       const arrayBuffer = buffer.buffer.slice(
@@ -206,10 +199,14 @@ async function micDemo() {
 
     let eagle;
     let recorder;
-    try {
-      eagle = new Eagle(accessKey, profiles);
 
-      recorder = new PvRecorder(PV_RECORDER_FRAME_LENGTH, audioDeviceIndex);
+    try {
+      eagle = new Eagle(accessKey, profiles, {
+        modelPath: modelFilePath,
+        libraryPath: libraryFilePath
+      });
+
+      recorder = new PvRecorder(eagle.frameLength, audioDeviceIndex);
       recorder.start();
 
       console.log('Listening for audio... (press Ctrl+C to stop)');
@@ -218,23 +215,24 @@ async function micDemo() {
         const scores = eagle.process(pcm);
         printResults(scores, speakerLabels);
       }
+
       process.stdout.write("\nStopping...");
     } catch (e) {
-      isInterrupted = true;
-      console.error('Error during testing:', e);
-    } finally {
-      if (eagle) {
-        eagle.release();
-      }
-      if (recorder) {
-        recorder.stop();
-        recorder.release();
+      if (e instanceof EagleActivationLimitReachedError) {
+        console.error(`AccessKey '${accessKey}' has reached it's processing limit.`);
+      } else {
+        console.error('Error during testing:', e);
       }
     }
-  } else {
-    console.error('Please specify a mode: enroll or test');
+
+    recorder?.stop();
+    recorder?.release();
+    eagle?.release();
+    process.exit();
   }
+
+  console.error('Please specify a mode: --enroll or --test');
   process.exit();
 }
 
-void micDemo();
+micDemo();
