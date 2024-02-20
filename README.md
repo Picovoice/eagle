@@ -39,12 +39,14 @@ Eagle is an on-device speaker recognition engine. Eagle is:
     - [iOS Demo](#ios-demo)
     - [C Demos](#c-demos)
     - [Web Demo](#web-demo)
+    - [NodeJS](#nodejs-demos)
   - [SDKs](#sdks)
     - [Python](#python)
     - [Android](#android)
     - [iOS](#ios)
     - [C](#c)
     - [Web](#web)
+    - [NodeJS](#nodejs)
   - [Releases](#releases)
   - [FAQ](#faq)
 
@@ -193,6 +195,55 @@ npm run start
 
 Open `http://localhost:5000` in your browser to try the demo.
 
+### NodeJS Demos
+
+Install the demo package:
+
+```console
+npm install -g @picovoice/eagle-node-demo
+```
+
+#### Speaker Enrollment
+
+Create a new speaker profile:
+
+```console
+eagle-mic-demo --enroll \
+    --access_key ${ACCESS_KEY} \
+    --output_profile_path ${OUTPUT_PROFILE_PATH}
+```
+
+or
+
+```console
+eagle-file-demo --enroll \
+    --access_key ${ACCESS_KEY} \
+    --enroll_audio_paths ${ENROLL_AUDIO_PATH_1 ...} \
+    --output_profile_path ${OUTPUT_PROFILE_PATH}
+```
+
+#### Speaker Recognition
+
+Test the speaker recognition engine:
+
+```console
+eagle-mic-demo --test \
+    --access_key ${ACCESS_KEY} \
+    --input_profile_paths ${INPUT_PROFILE_PATH_1 ...}
+```
+
+or
+
+```console
+eagle-file-demo --test \
+    --access_key ${ACCESS_KEY} \
+    --test_audio_path ${TEST_AUDIO_PATH} \
+    --input_profile_paths ${INPUT_PROFILE_PATH_1 ...}
+```
+
+Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console.
+
+For more information about Node.js demos go to [demo/nodejs](./demo/nodejs).
 
 ## SDKs
 
@@ -608,6 +659,90 @@ while (true) {
   const audioData = getAudioData(eagle.frameLength);
   const scores: number[] = await eagle.process(audioData);
 }
+```
+
+### NodeJS
+
+Install NodeJS SDK:
+
+```console
+yarn add @picovoice/eagle-node
+```
+
+#### Speaker Enrollment
+
+Create an instance of the profiler:
+
+```typescript
+const { EagleProfiler } = require("@picovoice/eagle-node");
+
+const accessKey = "${ACCESS_KEY}"; // Obtained from the Picovoice Console (https://console.picovoice.ai/)
+const eagleProfiler = new EagleProfiler(accessKey);
+```
+
+Create a new speaker profile:
+
+```typescript
+const { EnrollProgress } = require("@picovoice/eagle-node");
+
+function getAudioData(numSamples): Int16Array {
+  // get audio frame of size `numSamples`
+}
+
+let percentage = 0;
+while (percentage < 100) {
+  const audioData = getAudioData(eagleProfiler.minEnrollSamples);
+  
+  const result: EnrollProgress = await eagleProfiler.enroll(audioData);
+  if (result.feedback === EagleProfilerEnrollFeedback.NONE) {
+      // audio is good!
+  } else {
+      // feedback code will tell you why audio was not used in enrollment
+  }
+  percentage = result.percentage;
+}
+```
+
+Export the speaker profile once enrollment is complete:
+
+```typescript
+const speakerProfile: Uint8Array = eagleProfiler.export();
+```
+
+Release the resources acquired by the profiler:
+
+```typescript
+eagleProfiler.release();
+```
+
+#### Speaker Recognition
+
+Create an instance of the engine using the speaker profile exported before:
+
+```typescript
+const { Eagle } = require("@picovoice/eagle-node");
+
+const accessKey = "${ACCESS_KEY}"; // Obtained from the Picovoice Console (https://console.picovoice.ai/)
+const eagle = new Eagle(accessKey, speakerProfile);
+```
+
+Process incoming audio frames:
+
+```typescript
+function getAudioData(numSamples): Int16Array {
+  // get audio frame of size `numSamples`
+}
+
+while (true) {
+  const audioData = getAudioData(eagle.frameLength);
+  const scores: number[] = eagle.process(audioData);
+}
+```
+
+Finally, when done be sure to explicitly release the resources:
+
+```typescript
+eagle.release()
 ```
 
 ## Releases

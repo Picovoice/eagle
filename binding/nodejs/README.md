@@ -75,7 +75,7 @@ while (percentage < 100) {
   const audioData = getAudioData(eagleProfiler.minEnrollSamples);
   
   const result: EnrollProgress = await eagleProfiler.enroll(audioData);
-  if (result.feedback === EagleProfilerEnrollFeedback.AUDIO_OK) {
+  if (result.feedback === EagleProfilerEnrollFeedback.NONE) {
       // audio is good!
   } else {
       // feedback code will tell you why audio was not used in enrollment
