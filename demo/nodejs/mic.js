@@ -21,7 +21,7 @@ const {
   Eagle,
   EagleProfiler,
   EagleProfilerEnrollFeedback,
-  EagleActivationLimitReachedError
+  EagleErrors
 } = require("../../binding/nodejs");
 
 const FEEDBACK_TO_DESCRIPTIVE_MSG = {
@@ -166,7 +166,7 @@ async function micDemo() {
         console.log(`Speaker profile is saved to ${outputProfilePath}`);
       }
     } catch (e) {
-      if (e instanceof EagleActivationLimitReachedError) {
+      if (e instanceof EagleErrors.EagleActivationLimitReachedError) {
         console.error(`AccessKey '${accessKey}' has reached it's processing limit.`);
       } else {
         console.error('Failed to enroll speaker:', e);
@@ -218,7 +218,7 @@ async function micDemo() {
 
       process.stdout.write("\nStopping...");
     } catch (e) {
-      if (e instanceof EagleActivationLimitReachedError) {
+      if (e instanceof EagleErrors.EagleActivationLimitReachedError) {
         console.error(`AccessKey '${accessKey}' has reached it's processing limit.`);
       } else {
         console.error('Error during testing:', e);
