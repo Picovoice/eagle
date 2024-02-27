@@ -107,12 +107,12 @@ jobs:
         run: yarn install
 
       - name: Machine state before
-        working-directory: res/scripts
+        working-directory: resources/.scripts
         run: bash machine-state.sh
 
       - name: Test
         run: yarn test perf.test.ts --access_key=${{secrets.PV_VALID_ACCESS_KEY}} --num_test_iterations=${{matrix.num_test_iterations}} --enroll_performance_threshold_sec=${{matrix.enroll_performance_threshold_sec}} --proc_performance_threshold_sec=${{matrix.proc_performance_threshold_sec}}
 
       - name: Machine state after
-        working-directory: res/scripts
+        working-directory: resources/.scripts
         run: bash machine-state.sh
