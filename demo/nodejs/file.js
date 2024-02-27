@@ -130,6 +130,8 @@ async function fileDemo() {
           console.error(
             "Audio file did not meet requirements. Wave file must be 16KHz, 16-bit, linear PCM (mono)."
           );
+          eagleProfiler?.release();
+          process.exit();
         }
 
         let audioData = [];
@@ -157,7 +159,7 @@ async function fileDemo() {
 
       if (enrollPercentage < 100) {
         console.error(`Failed to create speaker profile. Insufficient enrollment percentage: ${enrollPercentage.toFixed(2)}%. Please add more audio files for enrollment.`);
-        eagle.release();
+        eagleProfiler?.release();
         process.exit();
       } else if (enrollPercentage === 100) {
         const speakerProfile = eagleProfiler.export();
@@ -213,13 +215,16 @@ async function fileDemo() {
       } catch (error) {
         console.error(`Exception trying to read file as wave format: ${testAudioPath}`);
         console.error(error);
-        return;
+        eagle?.release();
+        process.exit();
       }
 
       if (!checkWaveFile(inputWaveFile, eagle.sampleRate)) {
         console.error(
           "Audio file did not meet requirements. Wave file must be 16KHz, 16-bit, linear PCM (mono)."
         );
+        eagle?.release();
+        process.exit();
       }
 
       let frames = getInt16Frames(inputWaveFile, eagle.frameLength);

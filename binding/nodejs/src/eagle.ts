@@ -162,7 +162,7 @@ export class EagleProfiler {
    * 16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
    * @return {EnrollProgress} The percentage of completeness of the speaker enrollment process along with the feedback code
    * corresponding to the last enrollment attempt:
-   *    - `AUDIO_OK`: The audio is good for enrollment.
+   *    - `NONE`: The audio is good for enrollment.
    *    - `AUDIO_TOO_SHORT`: Audio length is insufficient for enrollment,
    *       i.e. it is shorter than`.min_enroll_samples`.
    *    - `UNKNOWN_SPEAKER`: There is another speaker in the audio that is different from the speaker

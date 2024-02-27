@@ -219,7 +219,7 @@ async function micDemo() {
         printResults(scores, speakerLabels);
       }
 
-      process.stdout.write("\nStopping...");
+      process.stdout.write("\nStopping...\n");
     } catch (e) {
       if (e instanceof EagleErrors.EagleActivationLimitReachedError) {
         console.error(`AccessKey '${accessKey}' has reached it's processing limit.`);
