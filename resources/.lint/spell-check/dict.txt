@@ -1,5 +1,7 @@
 aarch
 armv
+beaglebone
+BEAGLEBONE
 camelcase
 cocoapods
 copywasm
@@ -28,6 +30,7 @@ pveagledemo
 pvrecorder
 Signup
 wargv
+wavefile
 wchars
 wfopen
 xcframework

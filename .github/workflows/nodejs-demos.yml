@@ -70,5 +70,8 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      - name: Test
-        run: yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}} -i ../../res/audio/sample.wav
+      - name: Test enroll
+        run: yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}} --enroll --enroll_audio_paths ../../resources/audio_samples/speaker_1_utt_1.wav ../../resources/audio_samples/speaker_1_utt_2.wav --output_profile_path test.egl
+
+      - name: Test inference
+        run: yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}} --test --input_profile_paths test.egl --test_audio_path ../../resources/audio_samples/speaker_1_test_utt.wav
