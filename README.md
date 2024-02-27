@@ -39,14 +39,14 @@ Eagle is an on-device speaker recognition engine. Eagle is:
     - [iOS Demo](#ios-demo)
     - [C Demos](#c-demos)
     - [Web Demo](#web-demo)
-    - [NodeJS](#nodejs-demos)
+    - [Node.js](#nodejs-demos)
   - [SDKs](#sdks)
     - [Python](#python)
     - [Android](#android)
     - [iOS](#ios)
     - [C](#c)
     - [Web](#web)
-    - [NodeJS](#nodejs)
+    - [Node.js](#nodejs)
   - [Releases](#releases)
   - [FAQ](#faq)
 
@@ -195,7 +195,7 @@ npm run start
 
 Open `http://localhost:5000` in your browser to try the demo.
 
-### NodeJS Demos
+### Node.js Demos
 
 Install the demo package:
 
@@ -661,9 +661,9 @@ while (true) {
 }
 ```
 
-### NodeJS
+### Node.js
 
-Install NodeJS SDK:
+Install Node.js SDK:
 
 ```console
 yarn add @picovoice/eagle-node
