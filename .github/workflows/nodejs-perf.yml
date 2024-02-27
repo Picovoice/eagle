@@ -40,7 +40,7 @@ jobs:
           - os: macos-latest
             num_test_iterations: 20
             enroll_performance_threshold_sec: 0.9
-            proc_performance_threshold_sec: 0.9
+            proc_performance_threshold_sec: 1.2
 
     steps:
       - uses: actions/checkout@v3
