@@ -74,7 +74,9 @@ async function micDemo() {
   const outputProfilePath = program["output_profile_path"];
   const inputProfilePaths = program["input_profile_paths"];
 
-  if (showAudioDevices) {
+  let showAudioDevicesDefined = showAudioDevices !== undefined;
+
+  if (showAudioDevicesDefined) {
     const devices = PvRecorder.getAvailableDevices();
     for (let i = 0; i < devices.length; i++) {
       console.log(`index: ${i}, device name: ${devices[i]}`);
@@ -88,7 +90,9 @@ async function micDemo() {
   }
 
   readline.emitKeypressEvents(process.stdin);
-  process.stdin.setRawMode(true);
+  if (process.stdin.isTTY) {
+    process.stdin.setRawMode(true);
+  }
 
   process.stdin.on("keypress", (key, str) => {
     if (
@@ -116,7 +120,7 @@ async function micDemo() {
       console.log(`Eagle version: ${eagleProfiler.version}`);
 
       recorder = new PvRecorder(eagleProfiler.frameLength, audioDeviceIndex);
-      console.log(`Recording audio from '${recorder.getSelectedDevice()}'`);
+      console.log(`Using device: ${recorder.getSelectedDevice()}`);
     } catch (e) {
       console.error('Failed to initialize Eagle:', e);
       process.exit();
@@ -127,8 +131,7 @@ async function micDemo() {
       let audioData = [];
       let numIterations = 0
       const loadingDotsArr = [" .  ", " .. ", " ...", "  ..", "   .", "    "];
-      console.log('Please keep speaking until the enrollment percentage reaches 100%');
-
+      console.log('Please keep speaking until the enrollment percentage reaches 100%... Press `CTRL C` to stop');
       recorder.start();
       while (enrollPercentage < 100 && !isInterrupted) {
         const inputFrame = await recorder.read();
