@@ -23,7 +23,7 @@ const {
   EagleErrors,
   getInt16Frames,
   checkWaveFile
-} = require("../../binding/nodejs");
+} = require("@picovoice/eagle-node");
 
 const FEEDBACK_TO_DESCRIPTIVE_MSG = {
   [EagleProfilerEnrollFeedback.NONE]: 'Good audio',

@@ -1,6 +1,6 @@
 {
   "name": "@picovoice/eagle-node-demo",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Picovoice Eagle Node.js file-based and microphone demos",
   "scripts": {
     "file": "node file.js",
