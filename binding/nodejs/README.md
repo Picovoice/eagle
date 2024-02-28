@@ -142,4 +142,4 @@ eagle.release();
 
 ## Demos
 
-The [Eagle Node.js demo package](../../demo/nodejs) provides command-line utilities for processing audio using Eagle.
+The [Eagle Node.js demo package](https://www.npmjs.com/package/@picovoice/eagle-node-demo) provides command-line utilities for processing audio using Eagle.
