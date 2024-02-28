@@ -22,7 +22,7 @@ const {
   EagleProfiler,
   EagleProfilerEnrollFeedback,
   EagleErrors
-} = require("../../binding/nodejs");
+} = require("@picovoice/eagle-node");
 
 const FEEDBACK_TO_DESCRIPTIVE_MSG = {
   [EagleProfilerEnrollFeedback.NONE]: 'Good audio',
