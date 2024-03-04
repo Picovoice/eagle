@@ -20,6 +20,9 @@ Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 Eagle is an on-device speaker recognition engine. Eagle is:
 
 - Private; All voice processing runs locally.
+- [Accurate](https://picovoice.ai/docs/benchmark/speaker-recognition/#accuracy)
+- Language-agnostic and text-independent
+- Optimized for real-time processing
 - Cross-Platform:
     - Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64)
     - Android and iOS
