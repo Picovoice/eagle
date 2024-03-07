@@ -1,9 +1,9 @@
 PODS:
-  - Eagle-iOS (1.0.0)
+  - Eagle-iOS (1.0.1)
   - ios-voice-processor (1.0.3)
 
 DEPENDENCIES:
-  - Eagle-iOS (~> 1.0.0)
+  - Eagle-iOS (~> 1.0.1)
   - ios-voice-processor (~> 1.0.3)
 
 SPEC REPOS:
@@ -12,9 +12,9 @@ SPEC REPOS:
     - ios-voice-processor
 
 SPEC CHECKSUMS:
-  Eagle-iOS: 02067133a7460faf56e0ef7b995c93543a8e0450
+  Eagle-iOS: 998181609f97849b323023c3ed3d3fbb369ece2a
   ios-voice-processor: 65b25a8db69ea25ffba0eeef37bae71a982f34cc
 
-PODFILE CHECKSUM: c59a587171121f40999eaa8fa09eec66ca21dcd9
+PODFILE CHECKSUM: 6fdf5a2d8316e8b741e0a468bda00174e72c4499
 
 COCOAPODS: 1.11.3
