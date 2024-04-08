@@ -6,7 +6,7 @@
 [![Maven Central](https://img.shields.io/maven-central/v/ai.picovoice/eagle-android?label=maven-central%20%5Bandroid%5D)](https://repo1.maven.org/maven2/ai/picovoice/eagle-android/)
 [![npm](https://img.shields.io/npm/v/@picovoice/eagle-node?label=npm%20%5Bnode%5D)](https://www.npmjs.com/package/@picovoice/eagle-node)
 [![npm](https://img.shields.io/npm/v/@picovoice/eagle-web?label=npm%20%5Bweb%5D)](https://www.npmjs.com/package/@picovoice/eagle-web)
-[![CocoaPods](https://img.shields.io/cocoapods/v/Eagle-iOS)](https://cocoapods.org/pods/Eagle-iOS)
+[![CocoaPods](https://img.shields.io/cocoapods/v/Eagle-iOS)](https://cocoapods.org/pods/Eagle-iOS)<!-- markdown-link-check-disable-line -->
 [![PyPI](https://img.shields.io/pypi/v/pveagle)](https://pypi.org/project/pveagle/)
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
