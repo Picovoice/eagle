@@ -1,21 +1,17 @@
 # Eagle
 
-[![GitHub release](https://img.shields.io/github/v/tag/Picovoice/eagle.svg)](https://github.com/Picovoice/eagle/releases)
+[![GitHub release](https://img.shields.io/github/release/Picovoice/Eagle.svg)](https://github.com/Picovoice/Eagle/releases)
 [![GitHub](https://img.shields.io/github/license/Picovoice/eagle)](https://github.com/Picovoice/eagle/)
 
-[![PyPI](https://img.shields.io/pypi/v/pveagle)](https://pypi.org/project/pveagle/)
-[![npm](https://img.shields.io/npm/v/@picovoice/eagle-web)](https://www.npmjs.com/package/@picovoice/eagle-web)
-[![npm](https://img.shields.io/npm/v/@picovoice/eagle-node?label=npm%20%5Bnode%5D)](https://www.npmjs.com/package/@picovoice/eagle-node)
 [![Maven Central](https://img.shields.io/maven-central/v/ai.picovoice/eagle-android?label=maven-central%20%5Bandroid%5D)](https://repo1.maven.org/maven2/ai/picovoice/eagle-android/)
-<!-- markdown-link-check-disable -->
-[![CocoaPods](https://img.shields.io/cocoapods/v/Eagle-iOS)](https://cocoapods.org/pods/Eagle-iOS)
-<!-- markdown-link-check-enable -->
+[![npm](https://img.shields.io/npm/v/@picovoice/eagle-node?label=npm%20%5Bnode%5D)](https://www.npmjs.com/package/@picovoice/eagle-node)
+[![npm](https://img.shields.io/npm/v/@picovoice/eagle-web?label=npm%20%5Bweb%5D)](https://www.npmjs.com/package/@picovoice/eagle-web)
+[![npm](https://img.shields.io/cocoapods/v/Eagle-iOS)](https://cocoapods.org/pods/Eagle-iOS)
+[![PyPI](https://img.shields.io/pypi/v/pveagle)](https://pypi.org/project/pveagle/)
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 
-<!-- markdown-link-check-disable -->
-[![Twitter URL](https://img.shields.io/twitter/url?label=%40AiPicovoice&style=social&url=https%3A%2F%2Ftwitter.com%2FAiPicovoice)](https://twitter.com/AiPicovoice)
-<!-- markdown-link-check-enable -->
+[![Twitter URL](https://img.shields.io/twitter/url?label=%40AiPicovoice&style=social&url=https%3A%2F%2Ftwitter.com%2FAiPicovoice)](https://twitter.com/AiPicovoice)<!-- markdown-link-check-disable-line -->
 [![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCAdi9sTCXLosG1XeqDwLx7w?label=YouTube&style=social)](https://www.youtube.com/channel/UCAdi9sTCXLosG1XeqDwLx7w)
 
 Eagle is an on-device speaker recognition engine. Eagle is:
