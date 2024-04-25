@@ -2,7 +2,6 @@ binding/android/EagleTestApp/** linguist-detectable=false
 binding/nodejs/** linguist-detectable=false
 binding/nodejs/src/eagle.ts linguist-detectable=true
 binding/web/** linguist-detectable=false
-binding/web/src/eagle.ts linguist-detectable=true
 demo/** linguist-detectable=false
 lib/** linguist-detectable=false
 resources/** linguist-detectable=false
