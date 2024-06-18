@@ -16,7 +16,7 @@ Eagle is an on-device speaker recognition engine. Eagle is:
 
 ## Compatibility
 
-- Python 3.7 or higher
+- Python 3.8 or higher
 - Runs on Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64), Raspberry Pi (3, 4, 5), and NVIDIA Jetson Nano.
 
 ## Installation
