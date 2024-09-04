@@ -11,7 +11,6 @@ on:
       - 'binding/python/_util.py'
       - 'binding/python/test_eagle_perf.py'
       - 'lib/common/**'
-      - 'lib/jetson/**'
       - 'lib/linux/**'
       - 'lib/mac/**'
       - 'lib/raspberry-pi/**'
@@ -26,7 +25,6 @@ on:
       - 'binding/python/_util.py'
       - 'binding/python/test_eagle_perf.py'
       - 'lib/common/**'
-      - 'lib/jetson/**'
       - 'lib/linux/**'
       - 'lib/mac/**'
       - 'lib/raspberry-pi/**'
@@ -84,7 +82,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, jetson]
+        machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64]
         include:
         - machine: rpi3-32
           profiler_performance_threshold_sec: 2.5
@@ -101,9 +99,6 @@ jobs:
         - machine: rpi5-64
           profiler_performance_threshold_sec: 0.5
           recognizer_performance_threshold_sec: 0.6
-        - machine: jetson
-          profiler_performance_threshold_sec: 1.2
-          recognizer_performance_threshold_sec: 1.5
 
     steps:
     - uses: actions/checkout@v3

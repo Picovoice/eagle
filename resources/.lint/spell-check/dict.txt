@@ -1,7 +1,5 @@
 aarch
 armv
-beaglebone
-BEAGLEBONE
 camelcase
 cocoapods
 copywasm
@@ -12,8 +10,6 @@ iife
 IIFE
 jetson
 Jetson
-JETSON
-JETSON
 libpv
 LPWSTR
 Makefiles

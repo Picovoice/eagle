@@ -9,7 +9,6 @@ on:
       - '.github/workflows/c-demos.yml'
       - 'demo/c/**'
       - 'lib/common/**'
-      - 'lib/jetson/**'
       - 'lib/linux/**'
       - 'lib/mac/**'
       - 'lib/raspberry-pi/**'
@@ -22,7 +21,6 @@ on:
       - '.github/workflows/c-demos.yml'
       - 'demo/c/**'
       - 'lib/common/**'
-      - 'lib/jetson/**'
       - 'lib/linux/**'
       - 'lib/mac/**'
       - 'lib/raspberry-pi/**'
@@ -57,7 +55,7 @@ jobs:
 
     strategy:
       matrix:
-        machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, jetson]
+        machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64]
 
     steps:
     - uses: actions/checkout@v3
@@ -85,7 +83,7 @@ jobs:
           arch: amd64
         - os: macos-latest
           platform: mac
-          arch: x86_64
+          arch: arm64
 
     steps:
     - uses: actions/checkout@v3
