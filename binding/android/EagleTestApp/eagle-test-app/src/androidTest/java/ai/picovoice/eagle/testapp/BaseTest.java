@@ -17,12 +17,7 @@ import android.content.res.AssetManager;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 
-import com.microsoft.appcenter.espresso.Factory;
-import com.microsoft.appcenter.espresso.ReportHelper;
-
-import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -45,10 +40,6 @@ public class BaseTest {
     protected final String testPath = "audio_samples/speaker_1_test_utt.wav";
     protected final String imposterPath = "audio_samples/speaker_2_test_utt.wav";
 
-
-    @Rule
-    public ReportHelper reportHelper = Factory.getReportHelper();
-
     Context testContext;
     Context appContext;
     AssetManager assetManager;
@@ -56,11 +47,6 @@ public class BaseTest {
     String defaultModelPath;
 
     String accessKey;
-
-    @After
-    public void TearDown() {
-        reportHelper.label("Stopping App");
-    }
 
     @Before
     public void Setup() throws IOException {
