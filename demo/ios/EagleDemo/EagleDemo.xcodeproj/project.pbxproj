@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 51;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -21,9 +21,9 @@
 		02447A9026D94F7C004A6CE9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		02447A9526D94F7C004A6CE9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		283588A68587C97CF5AD71FD /* libPods-EagleDemo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-EagleDemo.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		576DE6636DF8145ED55AF713 /* Pods-EagleDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EagleDemo.debug.xcconfig"; path = "Target Support Files/Pods-EagleDemo/Pods-EagleDemo.debug.xcconfig"; sourceTree = "<group>"; };
+		43F120214085720BE256298F /* Pods-EagleDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EagleDemo.release.xcconfig"; path = "Target Support Files/Pods-EagleDemo/Pods-EagleDemo.release.xcconfig"; sourceTree = "<group>"; };
 		C76A415F2703B17000DB57D6 /* ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
-		D74EB4151D2FC4787DBA39A4 /* Pods-EagleDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EagleDemo.release.xcconfig"; path = "Target Support Files/Pods-EagleDemo/Pods-EagleDemo.release.xcconfig"; sourceTree = "<group>"; };
+		E99243D0A19EBD6589E2BFD9 /* Pods-EagleDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EagleDemo.debug.xcconfig"; path = "Target Support Files/Pods-EagleDemo/Pods-EagleDemo.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -43,8 +43,8 @@
 			children = (
 				02447A8B26D94F75004A6CE9 /* EagleDemo */,
 				02447A8A26D94F75004A6CE9 /* Products */,
-				7983C9752CBB2C0CDEFFB371 /* Pods */,
 				E50F2B7FDAD796B5FEA16357 /* Frameworks */,
+				C5C197030F9F54593E7ED0A3 /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -68,11 +68,11 @@
 			path = EagleDemo;
 			sourceTree = "<group>";
 		};
-		7983C9752CBB2C0CDEFFB371 /* Pods */ = {
+		C5C197030F9F54593E7ED0A3 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				576DE6636DF8145ED55AF713 /* Pods-EagleDemo.debug.xcconfig */,
-				D74EB4151D2FC4787DBA39A4 /* Pods-EagleDemo.release.xcconfig */,
+				E99243D0A19EBD6589E2BFD9 /* Pods-EagleDemo.debug.xcconfig */,
+				43F120214085720BE256298F /* Pods-EagleDemo.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -342,13 +342,13 @@
 		};
 		02447AAF26D94F7D004A6CE9 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 576DE6636DF8145ED55AF713 /* Pods-EagleDemo.debug.xcconfig */;
+			baseConfigurationReference = E99243D0A19EBD6589E2BFD9 /* Pods-EagleDemo.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = EU9HUJJU2X;
+				DEVELOPMENT_TEAM = 65723695GD;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = EagleDemo/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
@@ -365,13 +365,13 @@
 		};
 		02447AB026D94F7D004A6CE9 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D74EB4151D2FC4787DBA39A4 /* Pods-EagleDemo.release.xcconfig */;
+			baseConfigurationReference = 43F120214085720BE256298F /* Pods-EagleDemo.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = EU9HUJJU2X;
+				DEVELOPMENT_TEAM = 65723695GD;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = EagleDemo/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
