@@ -30,6 +30,7 @@ wavefile
 wchars
 wfopen
 xcframework
+xcuitest
 xcworkspace
 malloc
 constraintlayout
