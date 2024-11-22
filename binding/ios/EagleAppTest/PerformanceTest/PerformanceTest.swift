@@ -1,5 +1,5 @@
 //
-//  Copyright 2023 Picovoice Inc.
+//  Copyright 2023-2024 Picovoice Inc.
 //  You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 //  file accompanying this source.
 //  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
@@ -15,8 +15,8 @@ import Eagle
 class PerformanceTest: XCTestCase {
     let accessKey: String = "{TESTING_ACCESS_KEY_HERE}"
     let iterationString: String = "{NUM_TEST_ITERATIONS}"
-    let indexThresholdString: String = "{INDEX_PERFORMANCE_THRESHOLD_SEC}"
-    let searchThresholdString: String = "{SEARCH_PERFORMANCE_THRESHOLD_SEC}"
+    let indexThresholdString: String = "{ENROLL_PERFORMANCE_THRESHOLD_SEC}"
+    let searchThresholdString: String = "{PROC_PERFORMANCE_THRESHOLD_SEC}"
 
     override func setUp() {
         super.setUp()
