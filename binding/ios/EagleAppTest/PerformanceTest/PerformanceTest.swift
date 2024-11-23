@@ -24,14 +24,17 @@ class PerformanceTest: XCTestCase {
     }
 
     func testProfilerPerformance() throws {
-        try XCTSkipIf(indexThresholdString == "{ENROLL_PERFORMANCE_THRESHOLD_SEC}")
+        try XCTSkipIf(enrollThresholdString == "{ENROLL_PERFORMANCE_THRESHOLD_SEC}")
 
         let numTestIterations = Int(iterationString) ?? 30
-        let indexPerformanceThresholdSec = Double(indexThresholdString)
-        try XCTSkipIf(indexPerformanceThresholdSec == nil)
+        let enrollPerformanceThresholdSec = Double(enrollThresholdString)
+        try XCTSkipIf(enrollPerformanceThresholdSec == nil)
 
         let bundle = Bundle(for: type(of: self))
-        let fileURL: URL = bundle.url(forResource: "test", withExtension: "wav")!
+        let fileURL: URL = bundle.url(
+            forResource: "speaker_1_test_utt",
+            withExtension: "wav",
+            subdirectory: "audio_samples")!
         let audioData = try Data(contentsOf: fileURL)
         var pcm = [Int16](repeating: 0, count: (audioData.count - 44) / 2)
         _ = pcm.withUnsafeMutableBytes {
@@ -54,21 +57,21 @@ class PerformanceTest: XCTestCase {
 
         let avgNSec = results.reduce(0.0, +) / Double(numTestIterations)
         let avgSec = Double(round(avgNSec * 1000) / 1000)
-        XCTAssertLessThanOrEqual(avgSec, indexPerformanceThresholdSec!)
+        XCTAssertLessThanOrEqual(avgSec, enrollPerformanceThresholdSec!)
     }
 
     func testProcPerformance() throws {
-        try XCTSkipIf(searchThresholdString == "{PROC_PERFORMANCE_THRESHOLD_SEC}")
+        try XCTSkipIf(procThresholdString == "{PROC_PERFORMANCE_THRESHOLD_SEC}")
 
         let numTestIterations = Int(iterationString) ?? 30
-        let searchPerformanceThresholdSec = Double(searchThresholdString)
-        try XCTSkipIf(searchPerformanceThresholdSec == nil)
+        let procPerformanceThresholdSec = Double(procThresholdString)
+        try XCTSkipIf(procPerformanceThresholdSec == nil)
 
         let bundle = Bundle(for: type(of: self))
 
         let enrollUrls: [URL] = [
-            bundle.url(forResource: "speaker_1_utt_1", withExtension: "wav")!,
-            bundle.url(forResource: "speaker_1_utt_2", withExtension: "wav")!
+            bundle.url(forResource: "speaker_1_utt_1", withExtension: "wav", subdirectory: "audio_samples")!,
+            bundle.url(forResource: "speaker_1_utt_2", withExtension: "wav", subdirectory: "audio_samples")!
         ]
         let eagleProfiler = try EagleProfiler(accessKey: accessKey)
         for enrollUrl in enrollUrls {
@@ -83,7 +86,10 @@ class PerformanceTest: XCTestCase {
         let profile = try eagleProfiler.export()
         eagleProfiler.delete()
 
-        let testAudioURL: URL = bundle.url(forResource: "test", withExtension: "wav")!
+        let testAudioURL: URL = bundle.url(
+            forResource: "speaker_2_test_utt",
+            withExtension: "wav",
+            subdirectory: "audio_samples")!
         let audioData = try Data(contentsOf: testAudioURL)
         var pcm = [Int16](repeating: 0, count: (audioData.count - 44) / 2)
         _ = pcm.withUnsafeMutableBytes {
@@ -106,6 +112,6 @@ class PerformanceTest: XCTestCase {
 
         let avgNSec = results.reduce(0.0, +) / Double(numTestIterations)
         let avgSec = Double(round(avgNSec * 1000) / 1000)
-        XCTAssertLessThanOrEqual(avgSec, searchPerformanceThresholdSec!)
+        XCTAssertLessThanOrEqual(avgSec, procPerformanceThresholdSec!)
     }
 }

@@ -18,3 +18,5 @@ build/*
 xcuserdata
 Pods
 ddp
+
+EagleAppTestUITests/test_resources/audio_samples/*
