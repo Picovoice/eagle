@@ -15,8 +15,8 @@ import Eagle
 class PerformanceTest: XCTestCase {
     let accessKey: String = "{TESTING_ACCESS_KEY_HERE}"
     let iterationString: String = "{NUM_TEST_ITERATIONS}"
-    let indexThresholdString: String = "{ENROLL_PERFORMANCE_THRESHOLD_SEC}"
-    let searchThresholdString: String = "{PROC_PERFORMANCE_THRESHOLD_SEC}"
+    let enrollThresholdString: String = "{ENROLL_PERFORMANCE_THRESHOLD_SEC}"
+    let procThresholdString: String = "{PROC_PERFORMANCE_THRESHOLD_SEC}"
 
     override func setUp() {
         super.setUp()
