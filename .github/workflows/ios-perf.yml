@@ -38,6 +38,7 @@ jobs:
 
       - name: Installing Python
         uses: actions/setup-python@v5
+        with:
           python-version: '3.10'
       - run:
           pip3 install requests
@@ -47,6 +48,9 @@ jobs:
 
       - name: Make build dir
         run: mkdir ddp
+
+      - name: Copy test_resources
+        run: ./copy_test_resources.sh
 
       - name: Run Cocoapods
         run: pod install

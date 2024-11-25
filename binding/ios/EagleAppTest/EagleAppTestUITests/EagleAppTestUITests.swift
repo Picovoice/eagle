@@ -22,12 +22,18 @@ class EagleAppTestUITests: BaseTest {
 
     private func imposterUrl() -> URL {
         let bundle = Bundle(for: type(of: self))
-        return bundle.url(forResource: "speaker_2_test_utt", withExtension: "wav", subdirectory: "audio_samples")!
+        return bundle.url(
+            forResource: "speaker_2_test_utt",
+            withExtension: "wav",
+            subdirectory: "audio_samples")!
     }
 
     private func testUrl() -> URL {
         let bundle = Bundle(for: type(of: self))
-        return bundle.url(forResource: "speaker_1_test_utt", withExtension: "wav", subdirectory: "audio_samples")!
+        return bundle.url(
+            forResource: "speaker_1_test_utt",
+            withExtension: "wav",
+            subdirectory: "audio_samples")!
     }
 
     private func initEagle() throws -> Eagle {
