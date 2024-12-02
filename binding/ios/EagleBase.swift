@@ -1,7 +1,33 @@
+import Foundation
 import PvEagle
 
 /// Base class providing shared utilities and functions for Eagle and EagleProfiler
 public class EagleBase {
+
+#if SWIFT_PACKAGE
+
+    static let resourceBundle = Bundle.module
+
+#else
+
+    static let resourceBundle: Bundle = {
+        let myBundle = Bundle(for: Eagle.self)
+
+        guard let resourceBundleURL = myBundle.url(
+                forResource: "EagleResources", withExtension: "bundle")
+                else {
+            fatalError("EagleResources.bundle not found")
+        }
+
+        guard let resourceBundle = Bundle(url: resourceBundleURL)
+                else {
+            fatalError("Could not open EagleResources.bundle")
+        }
+
+        return resourceBundle
+    }()
+
+#endif
 
     /// Required audio sample rate for PCM data
     public static let sampleRate = Int(pv_sample_rate())

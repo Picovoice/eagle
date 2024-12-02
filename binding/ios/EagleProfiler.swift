@@ -1,5 +1,5 @@
 //
-//  Copyright 2023 Picovoice Inc.
+//  Copyright 2023-2024 Picovoice Inc.
 //  You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 //  file accompanying this source.
 //  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
@@ -39,26 +39,10 @@ public class EagleProfiler: EagleBase {
         var modelPathArg = modelPath
 
         if modelPath == nil {
-
-#if SWIFT_PACKAGE
-
-            if let bundleURL = Bundle.module.url(forResource: "eagle_params", withExtension: "pv") {
-                modelPathArg = bundleURL.path
-            } else {
-                throw EagleIOError("Could not retrieve default model from the package bundle")
-            }
-
-#else
-
-            let bundle = Bundle(for: type(of: self))
-
-            modelPathArg = bundle.path(forResource: "eagle_params", ofType: "pv")
+            modelPathArg = EagleProfiler.resourceBundle.path(forResource: "eagle_params", ofType: "pv")
             if modelPathArg == nil {
-                throw EagleIOError("Could not retrieve default model from app bundle")
+                throw EagleIOError("Could not find default model file in app bundle.")
             }
-
-#endif
-
         }
 
         if !FileManager().fileExists(atPath: modelPathArg!) {
