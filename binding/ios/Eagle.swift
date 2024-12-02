@@ -37,12 +37,26 @@ public class Eagle: EagleBase {
         var modelPathArg = modelPath
 
         if modelPath == nil {
+
+#if SWIFT_PACKAGE
+
+            if let bundleURL = Bundle.module.url(forResource: "eagle_params", withExtension: "pv") {
+                modelPathArg = bundleURL.path
+            } else {
+                throw EagleIOError("Could not retrieve default model from the package bundle")
+            }
+
+#else
+
             let bundle = Bundle(for: type(of: self))
 
             modelPathArg = bundle.path(forResource: "eagle_params", ofType: "pv")
             if modelPathArg == nil {
                 throw EagleIOError("Could not retrieve default model from app bundle")
             }
+
+#endif
+
         }
 
         if !FileManager().fileExists(atPath: modelPathArg!) {
