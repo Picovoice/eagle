@@ -14,7 +14,7 @@
 		1E0064D427CEEA66006FF6E9 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1E0064D227CEEA66006FF6E9 /* LaunchScreen.storyboard */; };
 		1E00654627CFF260006FF6E9 /* EagleAppTestUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E0064E827CEEA66006FF6E9 /* EagleAppTestUITests.swift */; };
 		1E5B7B042800D9BE00F8BDDB /* PerformanceTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E5B7B032800D9BE00F8BDDB /* PerformanceTest.swift */; };
-		36696536961DE78B3E1C06FA /* (null) in Frameworks */ = {isa = PBXBuildFile; };
+		36696536961DE78B3E1C06FA /* BuildFile in Frameworks */ = {isa = PBXBuildFile; };
 		C757D8CD28A1C77100F391C8 /* BaseTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = C757D8CB28A1C77100F391C8 /* BaseTest.swift */; };
 		C790A6FB2A2012C40074FF7A /* audio_samples in Resources */ = {isa = PBXBuildFile; fileRef = C790A6FA2A2012C40074FF7A /* audio_samples */; };
 		C790A6FC2A2012C40074FF7A /* audio_samples in Resources */ = {isa = PBXBuildFile; fileRef = C790A6FA2A2012C40074FF7A /* audio_samples */; };
@@ -71,7 +71,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				36696536961DE78B3E1C06FA /* (null) in Frameworks */,
+				36696536961DE78B3E1C06FA /* BuildFile in Frameworks */,
 				E17FFF062CFE3B4300AA5CA9 /* Eagle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -93,7 +93,6 @@
 				1E5B7B022800D9A500F8BDDB /* PerformanceTest */,
 				1E0064C627CEEA65006FF6E9 /* EagleAppTest */,
 				1E0064E727CEEA66006FF6E9 /* EagleAppTestUITests */,
-				E17FFF022CFE3B3E00AA5CA9 /* Frameworks */,
 				1E0064C527CEEA65006FF6E9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -139,13 +138,6 @@
 				1E5B7B052800D9D700F8BDDB /* Info.plist */,
 			);
 			path = PerformanceTest;
-			sourceTree = "<group>";
-		};
-		E17FFF022CFE3B3E00AA5CA9 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -237,7 +229,7 @@
 			);
 			mainGroup = 1E0064BB27CEEA65006FF6E9;
 			packageReferences = (
-				E17FFF012CFE3B3200AA5CA9 /* XCLocalSwiftPackageReference "../../../../eagle" */,
+				E17FFF012CFE3B3200AA5CA9 /* XCLocalSwiftPackageReference "eagle" */,
 			);
 			productRefGroup = 1E0064C527CEEA65006FF6E9 /* Products */;
 			projectDirPath = "";
@@ -652,7 +644,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		E17FFF012CFE3B3200AA5CA9 /* XCLocalSwiftPackageReference "../../../../eagle" */ = {
+		E17FFF012CFE3B3200AA5CA9 /* XCLocalSwiftPackageReference "eagle" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../../../../eagle;
 		};
@@ -661,17 +653,17 @@
 /* Begin XCSwiftPackageProductDependency section */
 		E17FFF032CFE3B3E00AA5CA9 /* Eagle */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = E17FFF012CFE3B3200AA5CA9 /* XCLocalSwiftPackageReference "../../../../eagle" */;
+			package = E17FFF012CFE3B3200AA5CA9 /* XCLocalSwiftPackageReference "eagle" */;
 			productName = Eagle;
 		};
 		E17FFF052CFE3B4300AA5CA9 /* Eagle */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = E17FFF012CFE3B3200AA5CA9 /* XCLocalSwiftPackageReference "../../../../eagle" */;
+			package = E17FFF012CFE3B3200AA5CA9 /* XCLocalSwiftPackageReference "eagle" */;
 			productName = Eagle;
 		};
 		E17FFF072CFE3B4600AA5CA9 /* Eagle */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = E17FFF012CFE3B3200AA5CA9 /* XCLocalSwiftPackageReference "../../../../eagle" */;
+			package = E17FFF012CFE3B3200AA5CA9 /* XCLocalSwiftPackageReference "eagle" */;
 			productName = Eagle;
 		};
 /* End XCSwiftPackageProductDependency section */

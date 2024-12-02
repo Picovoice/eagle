@@ -29,7 +29,7 @@ let package = Package(
                 "binding/ios/EagleBase.swift",
                 "binding/ios/EagleErrors.swift",
                 "binding/ios/EagleProfile.swift",
-                "binding/ios/EagleProfiler.swift",
+                "binding/ios/EagleProfiler.swift"
             ],
             resources: [
                .copy("lib/common/eagle_params.pv")

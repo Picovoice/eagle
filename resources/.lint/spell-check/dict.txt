@@ -30,6 +30,7 @@ wavefile
 wchars
 wfopen
 xcframework
+xcodeproj
 xcuitest
 xcworkspace
 malloc

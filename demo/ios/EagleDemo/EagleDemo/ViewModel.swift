@@ -27,7 +27,7 @@ class ViewModel: ObservableObject {
     private var testListener: VoiceProcessorFrameListener?
     private var errorListener: VoiceProcessorErrorListener?
     private var testErrorListener: VoiceProcessorErrorListener?
-    
+
     private var eagleProfiler: EagleProfiler!
     private var eagle: Eagle!
 
@@ -76,7 +76,7 @@ class ViewModel: ObservableObject {
         do {
             try eagleProfiler = EagleProfiler(accessKey: accessKey)
             statusText = "Please keep speaking until the enrollment percentage reaches 100%"
-            
+
             try createDumpFile(filename: "enroll_dump.pcm")
         } catch let error as EagleInvalidArgumentError {
             errorMessage = "\(error.localizedDescription)"
@@ -96,7 +96,7 @@ class ViewModel: ObservableObject {
     public func enroll() throws {
         state = UIState.ENROLLING
         initProfiler()
-        
+
         self.errorListener = VoiceProcessorErrorListener({ error in
             self.errorMessage = "\(error)"
         })
@@ -128,7 +128,7 @@ class ViewModel: ObservableObject {
                 try? self.stopEnroll()
             }
         })
-        
+
         VoiceProcessor.instance.addErrorListener(self.errorListener!)
         VoiceProcessor.instance.addFrameListener(self.frameListener!)
 
@@ -147,7 +147,7 @@ class ViewModel: ObservableObject {
     private func stopEnroll(export: Bool = false) throws {
         VoiceProcessor.instance.removeErrorListener(errorListener!)
         VoiceProcessor.instance.removeFrameListener(frameListener!)
-        
+
         if VoiceProcessor.instance.numFrameListeners == 0 {
             do {
                 try VoiceProcessor.instance.stop()
@@ -155,7 +155,7 @@ class ViewModel: ObservableObject {
                 throw EagleError(error.localizedDescription)
             }
         }
-    
+
         if export == true {
             let newProfile = try eagleProfiler.export()
             DispatchQueue.main.async {
@@ -199,7 +199,7 @@ class ViewModel: ObservableObject {
                     try? self.stopTest()
                 }
             })
-            
+
             try createDumpFile(filename: "test_dump.pcm")
         } catch let error as EagleInvalidArgumentError {
             errorMessage = "\(error.localizedDescription)"
@@ -243,7 +243,7 @@ class ViewModel: ObservableObject {
                 throw EagleError(error.localizedDescription)
             }
         }
-        
+
         if eagle != nil {
             eagle.delete()
             eagle = nil
