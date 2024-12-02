@@ -3,15 +3,16 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		02447A8D26D94F75004A6CE9 /* EagleDemoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02447A8C26D94F75004A6CE9 /* EagleDemoApp.swift */; };
 		02447A8F26D94F75004A6CE9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02447A8E26D94F75004A6CE9 /* ContentView.swift */; };
 		02447A9126D94F7C004A6CE9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 02447A9026D94F7C004A6CE9 /* Assets.xcassets */; };
-		34A93097536D8E96854DFF7C /* libPods-EagleDemo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 283588A68587C97CF5AD71FD /* libPods-EagleDemo.a */; };
 		C76A41602703B17000DB57D6 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76A415F2703B17000DB57D6 /* ViewModel.swift */; };
+		E19F4D222CF51CB20097F2C5 /* Eagle in Frameworks */ = {isa = PBXBuildFile; productRef = E19F4D212CF51CB20097F2C5 /* Eagle */; };
+		E19F4D252CF51CC40097F2C5 /* ios_voice_processor in Frameworks */ = {isa = PBXBuildFile; productRef = E19F4D242CF51CC40097F2C5 /* ios_voice_processor */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -20,10 +21,7 @@
 		02447A8E26D94F75004A6CE9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		02447A9026D94F7C004A6CE9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		02447A9526D94F7C004A6CE9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		283588A68587C97CF5AD71FD /* libPods-EagleDemo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-EagleDemo.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		43F120214085720BE256298F /* Pods-EagleDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EagleDemo.release.xcconfig"; path = "Target Support Files/Pods-EagleDemo/Pods-EagleDemo.release.xcconfig"; sourceTree = "<group>"; };
 		C76A415F2703B17000DB57D6 /* ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
-		E99243D0A19EBD6589E2BFD9 /* Pods-EagleDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EagleDemo.debug.xcconfig"; path = "Target Support Files/Pods-EagleDemo/Pods-EagleDemo.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -31,7 +29,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				34A93097536D8E96854DFF7C /* libPods-EagleDemo.a in Frameworks */,
+				E19F4D252CF51CC40097F2C5 /* ios_voice_processor in Frameworks */,
+				E19F4D222CF51CB20097F2C5 /* Eagle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -43,8 +42,6 @@
 			children = (
 				02447A8B26D94F75004A6CE9 /* EagleDemo */,
 				02447A8A26D94F75004A6CE9 /* Products */,
-				E50F2B7FDAD796B5FEA16357 /* Frameworks */,
-				C5C197030F9F54593E7ED0A3 /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -68,23 +65,6 @@
 			path = EagleDemo;
 			sourceTree = "<group>";
 		};
-		C5C197030F9F54593E7ED0A3 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				E99243D0A19EBD6589E2BFD9 /* Pods-EagleDemo.debug.xcconfig */,
-				43F120214085720BE256298F /* Pods-EagleDemo.release.xcconfig */,
-			);
-			path = Pods;
-			sourceTree = "<group>";
-		};
-		E50F2B7FDAD796B5FEA16357 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				283588A68587C97CF5AD71FD /* libPods-EagleDemo.a */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -92,12 +72,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 02447AAE26D94F7D004A6CE9 /* Build configuration list for PBXNativeTarget "EagleDemo" */;
 			buildPhases = (
-				D357EEA0DF40D8BF4377767F /* [CP] Check Pods Manifest.lock */,
 				02447A8526D94F75004A6CE9 /* Sources */,
 				02447A8626D94F75004A6CE9 /* Frameworks */,
 				02447A8726D94F75004A6CE9 /* Resources */,
-				1088AA63DC0E9AE1413D3A47 /* [CP] Embed Pods Frameworks */,
-				01B200502015B72FD61A637A /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -131,6 +108,10 @@
 				Base,
 			);
 			mainGroup = 02447A8026D94F74004A6CE9;
+			packageReferences = (
+				E19F4D202CF51CB20097F2C5 /* XCLocalSwiftPackageReference "../../../../eagle" */,
+				E19F4D232CF51CC40097F2C5 /* XCRemoteSwiftPackageReference "ios-voice-processor" */,
+			);
 			productRefGroup = 02447A8A26D94F75004A6CE9 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -150,65 +131,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		01B200502015B72FD61A637A /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-EagleDemo/Pods-EagleDemo-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-EagleDemo/Pods-EagleDemo-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-EagleDemo/Pods-EagleDemo-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		1088AA63DC0E9AE1413D3A47 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-EagleDemo/Pods-EagleDemo-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-EagleDemo/Pods-EagleDemo-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-EagleDemo/Pods-EagleDemo-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		D357EEA0DF40D8BF4377767F /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-EagleDemo-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		02447A8526D94F75004A6CE9 /* Sources */ = {
@@ -342,7 +264,6 @@
 		};
 		02447AAF26D94F7D004A6CE9 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = E99243D0A19EBD6589E2BFD9 /* Pods-EagleDemo.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -365,7 +286,6 @@
 		};
 		02447AB026D94F7D004A6CE9 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 43F120214085720BE256298F /* Pods-EagleDemo.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -408,6 +328,36 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		E19F4D202CF51CB20097F2C5 /* XCLocalSwiftPackageReference "../../../../eagle" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../../../eagle;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E19F4D232CF51CC40097F2C5 /* XCRemoteSwiftPackageReference "ios-voice-processor" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Picovoice/ios-voice-processor";
+			requirement = {
+				kind = exactVersion;
+				version = 1.2.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E19F4D212CF51CB20097F2C5 /* Eagle */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Eagle;
+		};
+		E19F4D242CF51CC40097F2C5 /* ios_voice_processor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E19F4D232CF51CC40097F2C5 /* XCRemoteSwiftPackageReference "ios-voice-processor" */;
+			productName = ios_voice_processor;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 02447A8126D94F74004A6CE9 /* Project object */;
 }
