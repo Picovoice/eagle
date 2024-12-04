@@ -11,7 +11,7 @@ public class EagleBase {
 #else
 
     static let resourceBundle: Bundle = {
-        let myBundle = Bundle(for: Eagle.self)
+        let myBundle = Bundle(for: EagleBase.self)
 
         guard let resourceBundleURL = myBundle.url(
                 forResource: "EagleResources", withExtension: "bundle")

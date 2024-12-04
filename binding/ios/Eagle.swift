@@ -37,7 +37,7 @@ public class Eagle: EagleBase {
         var modelPathArg = modelPath
 
         if modelPath == nil {
-            modelPathArg = Eagle.resourceBundle.path(forResource: "eagle_params", ofType: "pv")
+            modelPathArg = EagleBase.resourceBundle.path(forResource: "eagle_params", ofType: "pv")
             if modelPathArg == nil {
                 throw EagleIOError("Could not find default model file in app bundle.")
             }
