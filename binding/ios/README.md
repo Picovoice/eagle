@@ -19,8 +19,14 @@ Eagle is an on-device speaker recognition engine. Eagle is:
 
 ## Installation
 <!-- markdown-link-check-disable -->
-The Eagle iOS binding is available via [Cocoapods](https://cocoapods.org/pods/Eagle-iOS). To import it into your iOS project, add the following line to your Podfile:
+The Eagle iOS binding is available via [Swift Package Manager](https://www.swift.org/documentation/package-manager/) or [CocoaPods](https://cocoapods.org/pods/Eagle-iOS).
 <!-- markdown-link-check-enable -->
+
+To import the package using SPM, open up your project's Package Dependencies in XCode and add:
+```
+https://github.com/Picovoice/eagle.git
+```
+To import it into your iOS project using CocoaPods, add the following line to your Podfile:
 
 ```ruby
 pod 'Eagle-iOS'
@@ -122,4 +128,4 @@ eagle.delete()
 
 ## Running Unit Tests
 
-Copy your `AccessKey` into the `accessKey` variable in [`EagleAppTestUITests.swift`](EagleAppTest/EagleAppTestUITests/EagleAppTestUITests.swift). Open `EagleAppTest.xcworkspace` with XCode and run the tests with `Product > Test`.
+Copy your `AccessKey` into the `accessKey` variable in [`EagleAppTestUITests.swift`](EagleAppTest/EagleAppTestUITests/EagleAppTestUITests.swift). Open [`EagleAppTest.xcodeproj`](EagleAppTest/EagleAppTest.xcodeproj) with XCode and run the tests with `Product > Test`.

@@ -105,7 +105,7 @@ struct ContentView: View {
                 Button(
                     action: {
                         if viewModel.state == UIState.TESTING {
-                            viewModel.stopTest()
+                            try? viewModel.stopTest()
                         } else {
                             try? viewModel.test()
                         }
