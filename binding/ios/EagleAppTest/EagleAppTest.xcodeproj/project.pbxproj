@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 60;
+	objectVersion = 55;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -237,7 +237,7 @@
 			);
 			mainGroup = 1E0064BB27CEEA65006FF6E9;
 			packageReferences = (
-				E173C8FB2CFE40F000A0903C /* XCLocalSwiftPackageReference "../../../../eagle" */,
+				E1F352FC2D00E9790069B0E6 /* XCRemoteSwiftPackageReference "eagle" */,
 			);
 			productRefGroup = 1E0064C527CEEA65006FF6E9 /* Products */;
 			projectDirPath = "";
@@ -657,6 +657,17 @@
 			relativePath = ../../../../eagle;
 		};
 /* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E1F352FC2D00E9790069B0E6 /* XCRemoteSwiftPackageReference "eagle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Picovoice/eagle";
+			requirement = {
+				kind = exactVersion;
+				version = 1.0.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		E173C8FD2CFE43C900A0903C /* Eagle */ = {
