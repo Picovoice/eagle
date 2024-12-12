@@ -66,7 +66,7 @@ using the audio captured from the microphone. It will display the progress perce
 
 ```console
 eagle_demo_mic enroll --access_key ${ACCESS_KEY} --output_profile_path ${OUTPUT_PROFILE_PATH}
-``````
+```
 
 Replace `${OUTPUT_PROFILE_PATH}` with the absolute path where the generated profile should be written.
 
@@ -88,7 +88,7 @@ with the `--audio_device_index` option:
 
 ```console
 eagle_demo_mic enroll --access_key ${ACCESS_KEY} --output_profile_path ${OUTPUT_PROFILE_PATH} --audio_device_index 2
-``````
+```
 
 ## File Demo
 
