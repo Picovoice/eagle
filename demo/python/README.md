@@ -82,6 +82,14 @@ eagle_demo_mic test --access_key ${ACCESS_KEY} --input_profile_paths ${INPUT_PRO
 In this mode, you can include multiple speaker profiles by specifying them with the `--input_profile_paths` option.
 Eagle will assess and provide a distinct score for each profile, which will be displayed in the terminal.
 
+Note: the demo uses the default input audio device on your machine. To choose a different device, use the
+`--show_audio_devices` option to see a list of available devices and their indexes, then run the above commands
+with the `--audio_device_index` option:
+
+```console
+eagle_demo_mic enroll --access_key ${ACCESS_KEY} --output_profile_path ${OUTPUT_PROFILE_PATH} --audio_device_index 2
+``````
+
 ## File Demo
 
 Similar to the mic demo, the file demo can be run in two modes: `enroll` and `test`
