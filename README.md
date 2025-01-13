@@ -21,7 +21,7 @@ Eagle is an on-device speaker recognition engine. Eagle is:
 - Language-agnostic and text-independent
 - Optimized for real-time processing
 - Cross-Platform:
-    - Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64)
+    - Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64, arm64)
     - Android and iOS
     - Chrome, Safari, Firefox, and Edge
     - Raspberry Pi (3, 4, 5)

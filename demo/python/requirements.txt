@@ -1,2 +1,2 @@
-pveagle==1.0.2
+../../binding/python/dist/pveagle-1.0.3-py3-none-any.whl
 pvrecorder==1.2.2
