@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@picovoice/eagle-node@=1.0.2":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@picovoice/eagle-node/-/eagle-node-1.0.2.tgz#cef55d40a9db2ce2a49c4e624b1413cb8460687f"
-  integrity sha512-nMG8NkRg7gjMVSWF82O1kv9DLd5N3NYIk6c6N6I0A1+7x0wT1cNaOPBWRKxDUDvm1lIVUy2DmEk4AOgEieUtnQ==
+"@picovoice/eagle-node@=1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@picovoice/eagle-node/-/eagle-node-1.0.3.tgz#9d1ef04191a845fe7e414bff47816492c5bd1d61"
+  integrity sha512-zMzDd8aqJaCIV45dY2bzbwTueN0nJUabkjfODeYc5vrRrY+gEvDf9lTUZ2z1LPaTGACMAVoCWUE7VbAduUhY5w==
 
 "@picovoice/pvrecorder-node@^1.2.2":
   version "1.2.2"
