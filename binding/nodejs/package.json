@@ -1,7 +1,7 @@
 
 {
   "name": "@picovoice/eagle-node",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Picovoice Eagle Node.js binding",
   "main": "dist/index.js",
   "types": "dist/types/index.d.ts",

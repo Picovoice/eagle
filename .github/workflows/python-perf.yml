@@ -124,3 +124,32 @@ jobs:
     - name: Machine state after
       working-directory: resources/.scripts
       run: bash machine-state.sh
+
+  perf-windows-arm64:
+    runs-on: ${{ matrix.machine }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        machine: [pv-windows-arm64]
+        include:
+        - machine: pv-windows-arm64
+          profiler_performance_threshold_sec: 0.5
+          recognizer_performance_threshold_sec: 0.6
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Pre-build dependencies
+      run: python3 -m pip install --upgrade pip
+
+    - name: Install dependencies
+      run: pip3 install -r requirements.txt
+
+    - name: Test
+      run: >
+        python3 test_eagle_perf.py 
+        --access-key ${{secrets.PV_VALID_ACCESS_KEY}} 
+        --num-test-iterations 20
+        --profiler-performance-threshold-sec ${{matrix.profiler_performance_threshold_sec}}
+        --recognizer-performance-threshold-sec ${{matrix.recognizer_performance_threshold_sec}}
