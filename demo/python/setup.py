@@ -48,6 +48,6 @@ setuptools.setup(
             "eagle_demo_mic=pveagledemo.eagle_demo_mic:main",
         ],
     ),
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     keywords="Speaker Recognition, Speaker Identification, Voice Recognition, Voice Identification",
 )
