@@ -2,15 +2,15 @@
 # yarn lockfile v1
 
 
-"@picovoice/eagle-node@=1.0.3":
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/@picovoice/eagle-node/-/eagle-node-1.0.3.tgz#9d1ef04191a845fe7e414bff47816492c5bd1d61"
-  integrity sha512-zMzDd8aqJaCIV45dY2bzbwTueN0nJUabkjfODeYc5vrRrY+gEvDf9lTUZ2z1LPaTGACMAVoCWUE7VbAduUhY5w==
+"@picovoice/eagle-node@=1.0.4":
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/@picovoice/eagle-node/-/eagle-node-1.0.4.tgz#8027e8c84615de9c76be039acae70f132ed3e4d9"
+  integrity sha512-Dct239o9E6vsUZkxa8yO4eCnGp8U270nTyIHmen266f9SzputVd2nmMeBM7oyvW0xt9vTL/Qi85NhdqARq/+KA==
 
-"@picovoice/pvrecorder-node@^1.2.5":
-  version "1.2.5"
-  resolved "https://registry.yarnpkg.com/@picovoice/pvrecorder-node/-/pvrecorder-node-1.2.5.tgz#a47e11d347979ef0f1b083657ff69dd9bd2efe5c"
-  integrity sha512-bnid5oInf22JRdrZ75z8ooewOza0whYI9w/oSQSZbkDvddylPPrY6x+1L1qIyf5Tb8ZtzKQL+aQ9m8SazgRHFg==
+"@picovoice/pvrecorder-node@^1.2.6":
+  version "1.2.6"
+  resolved "https://registry.yarnpkg.com/@picovoice/pvrecorder-node/-/pvrecorder-node-1.2.6.tgz#6b6ea8b38892b916c9e3682342fa144c710e1aa0"
+  integrity sha512-AC8vqo+GWSGquMyyv0rhP68fjCxVe0kCo9QEq5mgBv7qHV2qVH5rm6ONPQQ6rmYD0SfppFaRP0yZKhPs1FhADQ==
 
 commander@^6.1.0:
   version "6.2.1"
