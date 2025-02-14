@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <script src="node_modules/@picovoice/web-voice-processor/dist/iife/index.js"></script>
@@ -10,21 +10,15 @@
     <h1>Eagle Web Demo</h1>
     <p>This demo uses Eagle for Web and the WebVoiceProcessor to:</p>
     <ol>
+      <li>Create an instance of Eagle with the model file provided.</li>
       <li>
-        Create an instance of Eagle with the model file provided.
-      </li>
-      <li>
-        Select an audio file or acquire microphone data stream and convert to voice
-        processing format (16kHz 16-bit linear PCM). The downsampled audio is
-        forwarded to the Eagle engine. The audio <i>does not</i> leave the
+        Select an audio file or acquire microphone data stream and convert to
+        voice processing format (16kHz 16-bit linear PCM). The downsampled audio
+        is forwarded to the Eagle engine. The audio <i>does not</i> leave the
         browser: all processing is occurring via the Eagle WebAssembly code.
       </li>
-      <li>
-        Enroll multiple speakers with audio files or a microphone.
-      </li>
-      <li>
-        Recognize which speaker is talking in real-time.
-      </li>
+      <li>Enroll multiple speakers with audio files or a microphone.</li>
+      <li>Recognize which speaker is talking in real-time.</li>
     </ol>
     After entering the AccessKey, click the "Start Eagle" button.
     <hr />
@@ -39,46 +33,50 @@
       value="Start Eagle"
       onclick="startEagleProfiler(document.getElementById('accessKey').value)"
     />
-    <hr/>
+    <hr />
     <div id="enrollContainer" style="display: none">
-      <label for="audioFile">Enroll speaker with one or more audio files:</label>
+      <label for="audioFile"
+        >Enroll speaker with one or more audio files:</label
+      >
       <input
         type="file"
         id="audioFile"
         name="audioFile"
         accept="audio/*,.wav"
-        multiple />
+        multiple
+      />
       <p><b>OR</b></p>
       <label for="micEnrollStartBtn">Enroll speaker with microphone:</label>
-      <button id="micEnrollStartBtn" onclick="micEnrollStart()">Record Audio</button>
-      <button id="micEnrollStopBtn" onclick="micEnrollStop()" style="display: none">Stop Enrollment</button>
-      <span id="displayTimer" style="display: none;"></span>
+      <button id="micEnrollStartBtn" onclick="micEnrollStart()">
+        Record Audio
+      </button>
+      <button
+        id="micEnrollStopBtn"
+        onclick="micEnrollStop()"
+        style="display: none"
+      >
+        Stop Enrollment
+      </button>
+      <span id="displayTimer" style="display: none"></span>
       <br />
-      <hr/>
+      <hr />
     </div>
     <div id="testContainer" style="display: none">
       <div>
         <button
           id="testStartBtn"
-          onclick="startEagle(document.getElementById('accessKey').value)">
+          onclick="startEagle(document.getElementById('accessKey').value)"
+        >
           Start Test
         </button>
-        <button
-          id="testStopBtn"
-          onclick="stopEagle()"
-          style="display: none">
+        <button id="testStopBtn" onclick="stopEagle()" style="display: none">
           Stop Test
         </button>
-        <button
-            id="resetBtn"
-            onclick="resetSpeakers()">
-          Reset
-        </button>
+        <button id="resetBtn" onclick="resetSpeakers()">Reset</button>
         <span id="feedbackText"></span>
       </div>
       <br />
-      <div id="speakersTable">
-      </div>
+      <div id="speakersTable"></div>
       <hr />
     </div>
     <div id="status"></div>
