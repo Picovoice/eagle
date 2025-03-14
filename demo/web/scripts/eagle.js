@@ -320,12 +320,12 @@ async function startEagleProfiler(accessKey) {
 
 const micTestEngine = {
   onmessage: async (event) => {
+    let scores;
     switch (event.data.command) {
       case "process":
         if (ENABLE_AUDIO_DUMP) {
           dumpAudio = dumpAudio.concat(event.data.inputFrame);
         }
-        let scores;
         try {
           scores = await eagle.process(event.data.inputFrame);
         } catch (e) {
