@@ -32,5 +32,5 @@ Available on:
 Hit CTRL-C to stop the server
 ```
 
-Enter your AccessKey and wait until Eagle and the WebVoiceProcessor have initialized. Record audio or upload an audio 
+Enter your AccessKey and wait until Eagle and the WebVoiceProcessor have initialized. Record audio or upload an audio
 file to enroll speakers. Test speaker recognition in real-time with a microphone.
