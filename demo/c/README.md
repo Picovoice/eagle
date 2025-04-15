@@ -13,7 +13,7 @@ Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get you
 
 ## Requirements
 
-- The demo requires [CMake](https://cmake.org/) version 3.4 or higher.
+- The demo requires [CMake](https://cmake.org/) version 3.13 or higher.
 - **For Windows Only**: [MinGW](https://www.mingw-w64.org/) is required to build the demo.
 
 ## Overview
@@ -35,8 +35,11 @@ which can be selected based on the input arguments.
 Use CMake to build the Eagle microphone demo target:
 
 ```console
-cmake -S demo/c/ -B demo/c/build && cmake --build demo/c/build --target eagle_demo_mic
+cmake -S demo/c/ -B demo/c/build -DPV_RECORDER_PLATFORM={PV_RECORDER_PLATFORM}
+cmake --build demo/c/build --target eagle_demo_mic
 ```
+
+The {PV_RECORDER_PLATFORM} variable will set the compilation flags for the given platform. Exclude this variable to get a list of possible values.
 
 ## Usage
 
@@ -94,8 +97,11 @@ This demo expects a single-channel WAV file with a sampling rate of 16000 and 16
 Use CMake to build the Eagle file demo target:
 
 ```console
-cmake -S demo/c/ -B demo/c/build && cmake --build demo/c/build --target eagle_demo_file
+cmake -S demo/c/ -B demo/c/build -DPV_RECORDER_PLATFORM={PV_RECORDER_PLATFORM}
+cmake --build demo/c/build --target eagle_demo_file
 ```
+
+The {PV_RECORDER_PLATFORM} variable will set the compilation flags for the given platform. Exclude this variable to get a list of possible values.
 
 ## Usage
 
