@@ -1,2 +1,5 @@
 rootProject.name = "EagleDemo"
 include ':eagle-demo-app'
+
+include(":eagle-android")
+project(":eagle-android").projectDir = file("../../../binding/android/Eagle/eagle")
