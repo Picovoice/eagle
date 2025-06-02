@@ -7,7 +7,6 @@ ext {
 }
 
 android {
-    namespace 'ai.picovoice.eagle'
     compileSdkVersion defaultTargetSdkVersion
 
     defaultConfig {
