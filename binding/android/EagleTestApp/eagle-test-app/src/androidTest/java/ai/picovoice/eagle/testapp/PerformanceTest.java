@@ -56,7 +56,7 @@ public class PerformanceTest extends BaseTest {
                 .setAccessKey(accessKey)
                 .build(appContext);
 
-        File audioFile = new File(testResourcesPath, testPath);
+        File audioFile = new File(getAudioFilepath(testPath));
         short[] pcm = readAudioFile(audioFile.getAbsolutePath());
 
         long totalNSec = 0;
@@ -97,7 +97,7 @@ public class PerformanceTest extends BaseTest {
                 .build(appContext);
 
         for (String path : enrollPaths) {
-            File audioFile = new File(testResourcesPath, path);
+            File audioFile = new File(getAudioFilepath(path));
             short[] pcm = readAudioFile(audioFile.getAbsolutePath());
             eagleProfiler.enroll(pcm);
         }
@@ -109,7 +109,7 @@ public class PerformanceTest extends BaseTest {
                 .setSpeakerProfile(profile)
                 .build(appContext);
 
-        File audioFile = new File(testResourcesPath, testPath);
+        File audioFile = new File(getAudioFilepath(testPath));
         short[] pcm = readAudioFile(audioFile.getAbsolutePath());
         int numFrames = pcm.length / eagle.getFrameLength();
 

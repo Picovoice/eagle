@@ -52,7 +52,7 @@ public class EagleTest {
                     .build(appContext);
 
             for (String path : enrollPaths) {
-                File audioFile = new File(testResourcesPath, path);
+                File audioFile = new File(getAudioFilepath(path));
                 short[] pcm = readAudioFile(audioFile.getAbsolutePath());
                 eagleProfiler.enroll(pcm);
             }
@@ -205,7 +205,7 @@ public class EagleTest {
                     .setSpeakerProfile(profile)
                     .build(appContext);
 
-            File audioFile = new File(testResourcesPath, testPath);
+            File audioFile = new File(getAudioFilepath(testPath));
             short[] pcm = readAudioFile(audioFile.getAbsolutePath());
             int numFrames = pcm.length / eagle.getFrameLength();
             List<Float> scores = new ArrayList<>();
@@ -228,7 +228,7 @@ public class EagleTest {
                     .setSpeakerProfile(profile)
                     .build(appContext);
 
-            File audioFile = new File(testResourcesPath, imposterPath);
+            File audioFile = new File(getAudioFilepath(imposterPath));
             short[] pcm = readAudioFile(audioFile.getAbsolutePath());
             int numFrames = pcm.length / eagle.getFrameLength();
             List<Float> scores = new ArrayList<>();
