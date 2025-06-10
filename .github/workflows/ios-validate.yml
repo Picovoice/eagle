@@ -5,12 +5,12 @@ on:
     branches: [ main ]
     paths:
       - '.github/workflows/ios-validate.yml'
-      - 'demo/ios/CobraDemo/**'
+      - 'demo/ios/EagleDemo/**'
   pull_request:
     branches: [ main, 'v[0-9]+.[0-9]+' ]
     paths:
       - '.github/workflows/ios-validate.yml'
-      - 'demo/ios/CobraDemo/**'
+      - 'demo/ios/EagleDemo/**'
 
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: demo/ios/CobraDemo
+        working-directory: demo/ios/EagleDemo
 
     steps:
       - name: Checkout repository
@@ -50,16 +50,16 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
       - name: Sed app id
-        run: sed -E -i '' 's#(PRODUCT_BUNDLE_IDENTIFIER = )[^;]+;#\1ai.picovoice.validation;#' CobraDemo.xcodeproj/project.pbxproj
+        run: sed -E -i '' 's#(PRODUCT_BUNDLE_IDENTIFIER = )[^;]+;#\1ai.picovoice.validation;#' EagleDemo.xcodeproj/project.pbxproj
 
       - name: Create ExportOptions.plist
         run: echo ${{ secrets.EXPORT_PLIST_BASE64 }} | base64 --decode -o ./ExportOptions.plist
 
       - name: Archive app
-        run: xcodebuild -project CobraDemo.xcodeproj -sdk iphoneos -scheme CobraDemo -destination "generic/platform=ios" archive -archivePath "./archive" CODE_SIGNING_ALLOWED=No CODE_SIGNING_REQUIRED=Yes
+        run: xcodebuild -project EagleDemo.xcodeproj -sdk iphoneos -scheme EagleDemo -destination "generic/platform=ios" archive -archivePath "./archive" CODE_SIGNING_ALLOWED=No CODE_SIGNING_REQUIRED=Yes
 
       - name: Export App
         run: xcodebuild -exportArchive -archivePath ./archive.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath ./output/
 
       - name: Validate app
-        run: xcrun altool --validate-app -f ./output/CobraDemo.ipa -t ios -u ${{ secrets.APPLE_ID }} -p ${{ secrets.APPLE_PASSWORD }}
+        run: xcrun altool --validate-app -f ./output/EagleDemo.ipa -t ios -u ${{ secrets.APPLE_ID }} -p ${{ secrets.APPLE_PASSWORD }}
