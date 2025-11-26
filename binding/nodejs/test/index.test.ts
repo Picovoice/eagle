@@ -1,5 +1,5 @@
 //
-// Copyright 2024 Picovoice Inc.
+// Copyright 2024-2025 Picovoice Inc.
 //
 // You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 // file accompanying this source.
@@ -27,6 +27,10 @@ const WAV_PATH_SPEAKER_2_TEST_UTT = 'speaker_2_test_utt.wav';
 const ACCESS_KEY = process.argv
   .filter(x => x.startsWith('--access_key='))[0]
   .split('--access_key=')[1];
+
+const DEVICE = process.argv
+  .filter(x => x.startsWith('--device='))[0]
+  .split('--device=')[1] ?? 'best';
 
 const getProfile = (
   profiler: EagleProfiler,
@@ -65,7 +69,9 @@ const getScores = (
 let testProfile: Uint8Array;
 
 beforeAll(() => {
-  let profiler = new EagleProfiler(ACCESS_KEY);
+  let profiler = new EagleProfiler(ACCESS_KEY, {
+    device: DEVICE
+  });
   const inputPcm1 = loadPcm(WAV_PATH_SPEAKER_1_UTT_1);
   const inputPcm2 = loadPcm(WAV_PATH_SPEAKER_1_UTT_2);
   testProfile = getProfile(
@@ -77,7 +83,9 @@ beforeAll(() => {
 
 describe('successful processes', () => {
   it('enroll with reset', () => {
-    let profiler = new EagleProfiler(ACCESS_KEY);
+    let profiler = new EagleProfiler(ACCESS_KEY, {
+      device: DEVICE
+    });
     expect(profiler.sampleRate).toBeGreaterThan(0);
     expect(profiler.frameLength).toBeGreaterThan(0);
     expect(typeof profiler.version).toEqual('string');
@@ -104,7 +112,9 @@ describe('successful processes', () => {
 
 describe('Eagle', () => {
   test('eagle process with reset', () => {
-    const eagle = new Eagle(ACCESS_KEY, testProfile);
+    const eagle = new Eagle(ACCESS_KEY, testProfile, {
+      device: DEVICE
+    });
     expect(eagle.sampleRate).toBeGreaterThan(0);
     expect(eagle.frameLength).toBeGreaterThan(0);
     expect(typeof eagle.version).toEqual('string');
@@ -122,7 +132,9 @@ describe('Eagle', () => {
   });
 
   test('eagle process imposter', () => {
-    const eagle = new Eagle(ACCESS_KEY, testProfile);
+    const eagle = new Eagle(ACCESS_KEY, testProfile, {
+      device: DEVICE
+    });
     const imposterPcm = loadPcm(WAV_PATH_SPEAKER_2_TEST_UTT);
     const imposterScores = getScores(eagle, imposterPcm);
     expect(Math.max(...imposterScores)).toBeLessThan(0.5);
@@ -135,6 +147,17 @@ describe('Defaults', () => {
     expect(() => {
       new EagleProfiler('');
     }).toThrow(EagleErrors.EagleInvalidArgumentError);
+    expect(() => {
+      new Eagle('', testProfile);
+    }).toThrow(EagleErrors.EagleInvalidArgumentError);
+  });
+  test('Invalid device', () => {
+    expect(() => {
+      new EagleProfiler(ACCESS_KEY, { device: "cloud:9" });
+    }).toThrow(EagleErrors.EagleInvalidArgumentError);
+    expect(() => {
+      new Eagle(ACCESS_KEY, testProfile, { device: "cloud:9" });
+    }).toThrow(EagleErrors.EagleInvalidArgumentError);
   });
 });
 
@@ -144,6 +167,7 @@ describe('manual paths', () => {
       ACCESS_KEY,
       {
         modelPath: MODEL_PATH,
+        device: DEVICE,
         libraryPath: libraryPath,
       }
     );
@@ -161,6 +185,7 @@ describe('manual paths', () => {
       profile,
       {
         modelPath: MODEL_PATH,
+        device: DEVICE,
         libraryPath: libraryPath,
       }
     );
@@ -217,7 +242,9 @@ describe('error message stack', () => {
   test('enroll/export error message', () => {
     let error: string[] = [];
 
-    let profiler = new EagleProfiler(ACCESS_KEY);
+    let profiler = new EagleProfiler(ACCESS_KEY, {
+      device: DEVICE
+    });;
     const testPcm = new Int16Array(profiler.minEnrollSamples);
     const profilerBytes = profiler;
     // @ts-ignore
@@ -246,7 +273,9 @@ describe('error message stack', () => {
   test('process error message', () => {
     let error: string[] = [];
 
-    let eagle = new Eagle(ACCESS_KEY, testProfile);
+    let eagle = new Eagle(ACCESS_KEY, testProfile, {
+      device: DEVICE
+    });
     const testPcm = new Int16Array(eagle.frameLength);
     const eagleBytes = eagle;
     // @ts-ignore

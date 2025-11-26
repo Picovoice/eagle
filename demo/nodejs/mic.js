@@ -38,6 +38,7 @@ program
   .option('-a, --access_key <string>', 'AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)')
   .option('-l, --library_path [value]', 'Absolute path to dynamic library. Default: using the library provided by `pveagle`')
   .option('-m, --model_path [value]', 'Absolute path to Eagle model. Default: using the model provided by `pveagle`')
+  .option('-d, --device [value]', 'Device to run inference on (`best`, `cpu:{num_threads}`, `gpu:{gpu_index}`). Default: selects best device for `pveagle`')
   .option('--enroll', 'Enroll a new speaker profile')
   .option('--test', "Evaluate Eagle's performance using the provided speaker profiles.")
   .option('--output_profile_path <string>', 'Absolute path to output file for the created profile')
@@ -67,6 +68,7 @@ async function micDemo() {
   const accessKey = program["access_key"];
   const libraryFilePath = program["library_file_path"];
   const modelFilePath = program["model_file_path"];
+  const device = program["device"];
   const audioDeviceIndex = program["audio_device_index"];
   const showAudioDevices = program["show_audio_devices"];
   const enroll = program["enroll"];
@@ -115,6 +117,7 @@ async function micDemo() {
     try {
       eagleProfiler = new EagleProfiler(accessKey, {
         modelPath: modelFilePath,
+        device: device,
         libraryPath: libraryFilePath
       });
       console.log(`Eagle version: ${eagleProfiler.version}`);
@@ -206,6 +209,7 @@ async function micDemo() {
     try {
       eagle = new Eagle(accessKey, profiles, {
         modelPath: modelFilePath,
+        device: device,
         libraryPath: libraryFilePath
       });
 

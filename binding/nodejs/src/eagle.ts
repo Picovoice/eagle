@@ -1,5 +1,5 @@
 //
-// Copyright 2024 Picovoice Inc.
+// Copyright 2024-2025 Picovoice Inc.
 //
 // You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 // file accompanying this source.
@@ -63,8 +63,14 @@ export class EagleProfiler {
    * Creates an instance of Eagle Profiler.
    * @param {string} accessKey AccessKey obtained from Picovoice Console (https://console.picovoice.ai/).
    * @param options Optional configuration arguments.
-   * @param {string} options.modelPath the path to the Eagle model (.pv extension)
-   * @param {string} options.libraryPath the path to the Eagle library (.node extension)
+   * @param {string} options.modelPath Path to the Eagle model (.pv extension)
+   * @param {string} options.device String representation of the device (e.g., CPU or GPU) to use for inference.
+   * If set to `best`, the most suitable device is selected automatically. If set to `gpu`, the engine uses the
+   * first available GPU device. To select a specific GPU device, set this argument to `gpu:${GPU_INDEX}`, where
+   * `${GPU_INDEX}` is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the
+   * default number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
+   * where `${NUM_THREADS}` is the desired number of threads.
+   * @param {string} options.libraryPath Path to the Eagle library (.node extension)
    */
   constructor(accessKey: string, options: EagleOptions = {}) {
     assert(typeof accessKey === 'string');
@@ -78,6 +84,7 @@ export class EagleProfiler {
 
     const {
       modelPath = path.resolve(__dirname, DEFAULT_MODEL_PATH),
+      device = 'best',
       libraryPath = getSystemLibraryPath(),
     } = options;
 
@@ -100,7 +107,10 @@ export class EagleProfiler {
     try {
       pvEagle.set_sdk('nodejs');
 
-      eagleProfilerAndStatus = pvEagle.profiler_init(accessKey, modelPath);
+      eagleProfilerAndStatus = pvEagle.profiler_init(
+        accessKey,
+        modelPath,
+        device);
     } catch (err: any) {
       pvStatusToException(PvStatus[err.code as keyof typeof PvStatus], err);
     }
@@ -308,8 +318,14 @@ export class Eagle {
    * @param {string} accessKey AccessKey obtained from Picovoice Console (https://console.picovoice.ai/).
    * @param speakerProfiles One or more Eagle speaker profiles. These can be constructed using `EagleProfiler`.
    * @param options Optional configuration arguments.
-   * @param {string} options.modelPath the path to the Eagle model (.pv extension)
-   * @param {string} options.libraryPath the path to the Eagle library (.node extension)
+   * @param {string} options.modelPath The path to the Eagle model (.pv extension)
+   * @param {string} options.device String representation of the device (e.g., CPU or GPU) to use for inference.
+   * If set to `best`, the most suitable device is selected automatically. If set to `gpu`, the engine uses the
+   * first available GPU device. To select a specific GPU device, set this argument to `gpu:${GPU_INDEX}`, where
+   * `${GPU_INDEX}` is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the
+   * default number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
+   * where `${NUM_THREADS}` is the desired number of threads.
+   * @param {string} options.libraryPath The path to the Eagle library (.node extension)
    */
   constructor(
     accessKey: string,
@@ -327,6 +343,7 @@ export class Eagle {
 
     const {
       modelPath = path.resolve(__dirname, DEFAULT_MODEL_PATH),
+      device = 'best',
       libraryPath = getSystemLibraryPath(),
     } = options;
 
@@ -353,6 +370,7 @@ export class Eagle {
       eagleHandleAndStatus = pvEagle.init(
         accessKey,
         modelPath,
+        device,
         numSpeakers,
         !Array.isArray(speakerProfiles) ? [speakerProfiles] : speakerProfiles
       );
