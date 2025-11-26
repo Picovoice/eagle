@@ -1,5 +1,5 @@
 /*
-  Copyright 2023 Picovoice Inc.
+  Copyright 2023-2025 Picovoice Inc.
 
   You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
   file accompanying this source.
@@ -30,8 +30,11 @@ export class EagleProfilerWorker {
   private readonly _sampleRate: number;
   private readonly _version: string;
 
-  private static _wasm: string;
   private static _wasmSimd: string;
+  private static _wasmSimdLib: string;
+  private static _wasmPThread: string;
+  private static _wasmPThreadLib: string;
+
   private static _sdk: string = "web";
 
   private constructor(
@@ -68,22 +71,42 @@ export class EagleProfilerWorker {
   }
 
   /**
-   * Set base64 wasm file.
-   * @param wasm Base64'd wasm file to use to initialize wasm.
-   */
-  public static setWasm(wasm: string): void {
-    if (this._wasm === undefined) {
-      this._wasm = wasm;
-    }
-  }
-
-  /**
    * Set base64 wasm file with SIMD feature.
-   * @param wasmSimd Base64'd wasm file to use to initialize wasm.
+   * @param wasmSimd Base64'd wasm SIMD file to use to initialize wasm.
    */
   public static setWasmSimd(wasmSimd: string): void {
     if (this._wasmSimd === undefined) {
       this._wasmSimd = wasmSimd;
+    }
+  }
+
+  /**
+   * Set base64 wasm file with SIMD feature in text format.
+   * @param wasmSimdLib Base64'd wasm SIMD file in text format.
+   */
+  public static setWasmSimdLib(wasmSimdLib: string): void {
+    if (this._wasmSimdLib === undefined) {
+      this._wasmSimdLib = wasmSimdLib;
+    }
+  }
+
+  /**
+   * Set base64 wasm file with SIMD and pthread feature.
+   * @param wasmPThread Base64'd wasm file to use to initialize wasm.
+   */
+  public static setWasmPThread(wasmPThread: string): void {
+    if (this._wasmPThread === undefined) {
+      this._wasmPThread = wasmPThread;
+    }
+  }
+
+  /**
+   * Set base64 SIMD and thread wasm file in text format.
+   * @param wasmPThreadLib Base64'd wasm file in text format.
+   */
+  public static setWasmPThreadLib(wasmPThreadLib: string): void {
+    if (this._wasmPThreadLib === undefined) {
+      this._wasmPThreadLib = wasmPThreadLib;
     }
   }
 
@@ -102,12 +125,18 @@ export class EagleProfilerWorker {
    * Set to a different name to use multiple models across `eagle` instances.
    * @param model.forceWrite Flag to overwrite the model in storage even if it exists.
    * @param model.version Version of the model file. Increment to update the model file in storage.
+   * @param device (Optional) String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
+   * suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU device. To select a specific
+   * GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the target GPU. If set to
+   * `cpu`, the engine will run on the CPU with the default number of threads. To specify the number of threads, set this
+   * argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the desired number of threads.
    *
    * @return An instance of the Eagle Profiler.
    */
   public static async create(
     accessKey: string,
-    model: EagleModel
+    model: EagleModel,
+    device?: string,
   ): Promise<EagleProfilerWorker> {
     const customWritePath = model.customWritePath
       ? model.customWritePath
@@ -149,8 +178,11 @@ export class EagleProfilerWorker {
       command: 'init',
       accessKey: accessKey,
       modelPath: modelPath,
-      wasm: this._wasm,
+      device: device,
       wasmSimd: this._wasmSimd,
+      wasmSimdLib: this._wasmSimdLib,
+      wasmPThread: this._wasmPThread,
+      wasmPThreadLib: this._wasmPThreadLib,
       sdk: this._sdk,
     });
 

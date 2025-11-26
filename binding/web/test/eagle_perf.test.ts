@@ -1,6 +1,7 @@
 import { Eagle, EagleProfiler, EagleProfilerWorker, EagleWorker } from '../';
 
 const ACCESS_KEY = Cypress.env('ACCESS_KEY');
+const DEVICE = Cypress.env('DEVICE');
 const NUM_TEST_ITERATIONS = Number(Cypress.env('NUM_TEST_ITERATIONS'));
 const ENROLL_PERFORMANCE_THRESHOLD_SEC = Number(
   Cypress.env('ENROLL_PERFORMANCE_THRESHOLD_SEC')
@@ -14,10 +15,14 @@ async function testEnrollPerformance(
   inputPcm: Int16Array
 ) {
   const enrollPerfResults: number[] = [];
-  const profiler = await instance.create(ACCESS_KEY, {
-    publicPath: '/test/eagle_params.pv',
-    forceWrite: true,
-  });
+  const profiler = await instance.create(
+    ACCESS_KEY,
+    {
+      publicPath: '/test/eagle_params.pv',
+      forceWrite: true,
+    },
+    DEVICE
+  );
 
   for (let i = 0; i < NUM_TEST_ITERATIONS + 1; i++) {
     let start = Date.now();
@@ -47,10 +52,14 @@ async function testProcessPerformance(
   enrollPcm: Int16Array[],
   testPcm: Int16Array
 ) {
-  const profiler = await EagleProfiler.create(ACCESS_KEY, {
-    publicPath: '/test/eagle_params.pv',
-    forceWrite: true,
-  });
+  const profiler = await EagleProfiler.create(
+    ACCESS_KEY,
+    {
+      publicPath: '/test/eagle_params.pv',
+      forceWrite: true,
+    },
+    DEVICE
+  );
   for (const pcm of enrollPcm) {
     await profiler.enroll(pcm);
   }

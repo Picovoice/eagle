@@ -1,5 +1,5 @@
 /*
-  Copyright 2023 Picovoice Inc.
+  Copyright 2023-2025 Picovoice Inc.
   You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
   file accompanying this source.
   Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
@@ -30,13 +30,16 @@ const initRequest = async (request: EagleWorkerInitRequest): Promise<any> => {
     };
   }
   try {
-    Eagle.setWasm(request.wasm);
     Eagle.setWasmSimd(request.wasmSimd);
+    Eagle.setWasmSimdLib(request.wasmSimdLib);
+    Eagle.setWasmPThread(request.wasmPThread);
+    Eagle.setWasmPThreadLib(request.wasmPThreadLib);
     Eagle.setSdk(request.sdk);
     eagle = await Eagle._init(
       request.accessKey,
       request.modelPath,
-      request.speakerProfiles
+      request.speakerProfiles,
+      request.device
     );
     return {
       command: 'ok',

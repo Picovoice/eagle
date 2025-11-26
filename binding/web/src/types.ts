@@ -1,5 +1,5 @@
 /*
-  Copyright 2023 Picovoice Inc.
+  Copyright 2023-2025 Picovoice Inc.
 
   You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
   file accompanying this source.
@@ -53,8 +53,11 @@ export type EagleProfilerWorkerInitRequest = {
   command: 'init';
   accessKey: string;
   modelPath: string;
-  wasm: string;
+  device?: string;
   wasmSimd: string;
+  wasmSimdLib: string;
+  wasmPThread: string;
+  wasmPThreadLib: string;
   sdk: string;
 };
 
@@ -136,8 +139,11 @@ export type EagleWorkerInitRequest = {
   accessKey: string;
   modelPath: string;
   speakerProfiles: EagleProfile[];
-  wasm: string;
+  device?: string;
   wasmSimd: string;
+  wasmSimdLib: string;
+  wasmPThread: string;
+  wasmPThreadLib: string;
   sdk: string;
 };
 

@@ -34,17 +34,28 @@ import {
   EagleWorkerResponse,
 } from './types';
 
-import eagleWasm from '../lib/pv_eagle.wasm';
-import eagleWasmSimd from '../lib/pv_eagle_simd.wasm';
+import eagleWasmSimd from './lib/pv_eagle_simd.wasm';
+import eagleWasmSimdLib from './lib/pv_eagle_simd.txt';
+import eagleWasmPThread from './lib/pv_eagle_pthread.wasm';
+import eagleWasmPThreadLib from './lib/pv_eagle_pthread.txt';
 
-Eagle.setWasm(eagleWasm);
 Eagle.setWasmSimd(eagleWasmSimd);
-EagleWorker.setWasm(eagleWasm);
+Eagle.setWasmSimdLib(eagleWasmSimdLib);
+Eagle.setWasmPThread(eagleWasmPThread);
+Eagle.setWasmPThreadLib(eagleWasmPThreadLib);
 EagleWorker.setWasmSimd(eagleWasmSimd);
-EagleProfiler.setWasm(eagleWasm);
+EagleWorker.setWasmSimdLib(eagleWasmSimdLib);
+EagleWorker.setWasmPThread(eagleWasmPThread);
+EagleWorker.setWasmPThreadLib(eagleWasmPThreadLib);
+
 EagleProfiler.setWasmSimd(eagleWasmSimd);
-EagleProfilerWorker.setWasm(eagleWasm);
+EagleProfiler.setWasmSimdLib(eagleWasmSimdLib);
+EagleProfiler.setWasmPThread(eagleWasmPThread);
+EagleProfiler.setWasmPThreadLib(eagleWasmPThreadLib);
 EagleProfilerWorker.setWasmSimd(eagleWasmSimd);
+EagleProfilerWorker.setWasmSimdLib(eagleWasmSimdLib);
+EagleProfilerWorker.setWasmPThread(eagleWasmPThread);
+EagleProfilerWorker.setWasmPThreadLib(eagleWasmPThreadLib);
 
 export {
   Eagle,
