@@ -20,7 +20,8 @@ class EagleProfilerNative {
 
     static native long init(
             String accessKey,
-            String modelPath) throws EagleException;
+            String modelPath,
+            String device) throws EagleException;
 
     static native void delete(long object);
 
