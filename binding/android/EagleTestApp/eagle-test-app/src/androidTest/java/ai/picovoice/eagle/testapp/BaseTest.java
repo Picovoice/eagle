@@ -50,6 +50,7 @@ public class BaseTest {
     String defaultModelPath;
 
     String accessKey;
+    String device;
 
     @Before
     public void Setup() throws IOException {

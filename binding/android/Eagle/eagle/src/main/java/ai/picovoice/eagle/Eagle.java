@@ -57,11 +57,13 @@ public class Eagle {
      *
      * @param accessKey AccessKey obtained from Picovoice Console
      * @param modelPath Absolute path to the file containing Eagle model parameters.
-     * @param device String representation of the device (e.g., CPU or GPU) to use for inference. If set to `best`, the most
-     * suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU device.
-     * To select a specific GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the
-     * target GPU. If set to `cpu`, the engine will run on the CPU with the default number of threads. To specify the
-     * number of threads, set this argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the desired number of threads.
+     * @param device String representation of the device (e.g., CPU or GPU) to use for inference.
+     *               If set to `best`, the most suitable device is selected automatically. If set to `gpu`,
+     *               the engine uses the first available GPU device. To select a specific GPU device, set this
+     *               argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the target GPU. If
+     *               set to `cpu`, the engine will run on the CPU with the default number of threads. To specify
+     *               the number of threads, set this argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}`
+     *               is the desired number of threads.
      * @param speakerProfiles A list of EagleProfile objects. This can be constructed using `EagleProfiler`.
      * @throws EagleException if there is an error while initializing Eagle.
      */
@@ -102,7 +104,7 @@ public class Eagle {
      *
      * @param pcm A frame of audio samples. The number of samples per frame can be attained by calling
      *            `.getFrameLength()`. The incoming audio needs to have a sample rate equal
-*                 to `.getSampleRate()` and be 16-bit linearly-encoded. Eagle operates on single-channel audio.
+     *            to `.getSampleRate()` and be 16-bit linearly-encoded. Eagle operates on single-channel audio.
      * @return A list of similarity scores for each speaker profile. A higher score indicates that the voice
      *         belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match.
      * @throws EagleException if there is an error while processing audio frames.

@@ -59,11 +59,13 @@ public class EagleProfiler {
      *
      * @param accessKey AccessKey obtained from Picovoice Console
      * @param modelPath Absolute path to the file containing Eagle model parameters.
-     * @param device String representation of the device (e.g., CPU or GPU) to use for inference. If set to `best`, the most
-     * suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU device.
-     * To select a specific GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the
-     * target GPU. If set to `cpu`, the engine will run on the CPU with the default number of threads. To specify the
-     * number of threads, set this argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the desired number of threads.
+     * @param device String representation of the device (e.g., CPU or GPU) to use for inference.
+     *               If set to `best`, the most suitable device is selected automatically. If set to `gpu`,
+     *               the engine uses the first available GPU device. To select a specific GPU device, set this
+     *               argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the target GPU. If
+     *               set to `cpu`, the engine will run on the CPU with the default number of threads. To specify
+     *               the number of threads, set this argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}`
+     *               is the desired number of threads.
      * @throws EagleException if there is an error while initializing EagleProfiler.
      */
     private EagleProfiler(
