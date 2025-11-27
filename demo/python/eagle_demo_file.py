@@ -1,5 +1,5 @@
 #
-#    Copyright 2023 Picovoice Inc.
+#    Copyright 2023-2025 Picovoice Inc.
 #
 #    You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 #    file accompanying this source.
@@ -56,6 +56,13 @@ def print_result(time, scores, labels):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--show_inference_devices',
+        action='store_true',
+        help='Show the list of available devices for Eagle inference and exit')
+    parser.add_argument(
+        '--library_path',
+        help='Absolute path to dynamic library. Default: using the library provided by `pveagle`')
 
     common_parser = argparse.ArgumentParser(add_help=False)
     common_parser.add_argument(
@@ -63,13 +70,14 @@ def main():
         required=True,
         help='AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)')
     common_parser.add_argument(
-        '--library_path',
-        help='Absolute path to dynamic library. Default: using the library provided by `pveagle`')
+        '--device',
+        help='Device to run inference on (`best`, `cpu:{num_threads}`, `gpu:{gpu_index}`). '
+             'Default: automatically selects best device for `pveagle`')
     common_parser.add_argument(
         '--model_path',
         help='Absolute path to Eagle model. Default: using the model provided by `pveagle`')
 
-    subparsers = parser.add_subparsers(dest='command', required=True)
+    subparsers = parser.add_subparsers(dest='command')
 
     enroll = subparsers.add_parser('enroll', parents=[common_parser])
     enroll.add_argument(
@@ -99,6 +107,10 @@ def main():
 
     args = parser.parse_args()
 
+    if args.show_inference_devices:
+        print('\n'.join(pveagle.available_devices(library_path=args.library_path)))
+        return
+
     if args.command == 'enroll':
         for audio_path in args.enroll_audio_paths:
             if not audio_path.lower().endswith('.wav'):
@@ -108,6 +120,7 @@ def main():
             eagle_profiler = pveagle.create_profiler(
                 access_key=args.access_key,
                 model_path=args.model_path,
+                device=args.device,
                 library_path=args.library_path)
         except pveagle.EagleError as e:
             print("Failed to initialize EagleProfiler: ", e)
@@ -152,6 +165,7 @@ def main():
             eagle = pveagle.create_recognizer(
                 access_key=args.access_key,
                 model_path=args.model_path,
+                device=args.device,
                 library_path=args.library_path,
                 speaker_profiles=speaker_profiles)
         except pveagle.EagleActivationLimitError:

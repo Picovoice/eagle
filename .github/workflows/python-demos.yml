@@ -27,8 +27,9 @@ jobs:
 
     strategy:
       matrix:
+        device: [ cpu:1, cpu ]
         os: [ ubuntu-latest, windows-latest, macos-latest ]
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
 
     steps:
     - uses: actions/checkout@v3
@@ -48,6 +49,7 @@ jobs:
       run: >
         python eagle_demo_file.py enroll
         --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
+        --device ${{ matrix.device }}
         --enroll_audio_paths ../../resources/audio_samples/speaker_1_utt_1.wav ../../resources/audio_samples/speaker_1_utt_2.wav
         --output_profile_path test.egl
 
@@ -55,6 +57,7 @@ jobs:
       run: >
         python eagle_demo_file.py test
         --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
+        --device ${{ matrix.device }}
         --input_profile_paths test.egl
         --test_audio_path ../../resources/audio_samples/speaker_1_test_utt.wav
 
@@ -63,6 +66,7 @@ jobs:
 
     strategy:
       matrix:
+        device: [ best ]
         machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, pv-windows-arm64]
 
     steps:
@@ -78,6 +82,7 @@ jobs:
         run: >
           python3 eagle_demo_file.py enroll
           --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
+          --device ${{ matrix.device }}
           --enroll_audio_paths ../../resources/audio_samples/speaker_1_utt_1.wav ../../resources/audio_samples/speaker_1_utt_2.wav
           --output_profile_path test.egl
 
@@ -85,5 +90,6 @@ jobs:
         run: >
           python3 eagle_demo_file.py test
           --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
+          --device ${{ matrix.device }}
           --input_profile_paths test.egl
           --test_audio_path ../../resources/audio_samples/speaker_1_test_utt.wav

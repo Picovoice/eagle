@@ -1,5 +1,5 @@
 #
-# Copyright 2023 Picovoice Inc.
+# Copyright 2023-2025 Picovoice Inc.
 #
 # You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 # file accompanying this source.
@@ -183,12 +183,23 @@ class EagleProfiler(object):
     class CEagleProfiler(Structure):
         pass
 
-    def __init__(self, access_key: str, model_path: str, library_path: str) -> None:
+    def __init__(
+            self,
+            access_key: str,
+            model_path: str,
+            device: str,
+            library_path: str) -> None:
         """
         Constructor.
 
         :param access_key: AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)
         :param model_path: Absolute path to file containing model parameters (.pv file).
+        :param device: String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
+        suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU device.
+        To select a specific GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index
+        of the target GPU. If set to`cpu`, the engine will run on the CPU with the default number of threads. To
+        specify the number of threads, set this argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the
+        desired number of threads.
         :param library_path: Absolute path to Eagle's dynamic library.
         """
 
@@ -197,6 +208,9 @@ class EagleProfiler(object):
 
         if not os.path.exists(model_path):
             raise EagleIOError("Could not find model file at `%s`." % model_path)
+
+        if not isinstance(device, str) or len(device) == 0:
+            raise EagleInvalidArgumentError("`device` should be a non-empty string.")
 
         if not os.path.exists(library_path):
             raise EagleIOError("Could not find Eagle's dynamic library at `%s`." % library_path)
@@ -227,6 +241,7 @@ class EagleProfiler(object):
         init_func.argtypes = [
             c_char_p,
             c_char_p,
+            c_char_p,
             POINTER(POINTER(self.CEagleProfiler)),
         ]
         init_func.restype = PicovoiceStatuses
@@ -234,6 +249,7 @@ class EagleProfiler(object):
         status = init_func(
             access_key.encode("utf-8"),
             model_path.encode("utf-8"),
+            device.encode("utf-8"),
             byref(self._eagle_profiler),
         )
         if status is not PicovoiceStatuses.SUCCESS:
@@ -448,6 +464,7 @@ class Eagle(object):
             self,
             access_key: str,
             model_path: str,
+            device: str,
             library_path: str,
             speaker_profiles: Sequence[EagleProfile]) -> None:
         """
@@ -455,6 +472,12 @@ class Eagle(object):
 
         :param access_key: AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)
         :param model_path: Absolute path to file containing model parameters (.pv file).
+        :param device: String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
+        suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU device.
+        To select a specific GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index
+        of the target GPU. If set to`cpu`, the engine will run on the CPU with the default number of threads. To
+        specify the number of threads, set this argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the
+        desired number of threads.
         :param library_path: Absolute path to Eagle's dynamic library.
         :param speaker_profiles: A list of EagleProfile objects. This can be constructed using `EagleProfiler`.
         """
@@ -464,6 +487,9 @@ class Eagle(object):
 
         if not os.path.exists(model_path):
             raise EagleIOError("Could not find model file at `%s`." % model_path)
+
+        if not isinstance(device, str) or len(device) == 0:
+            raise EagleInvalidArgumentError("`device` should be a non-empty string.")
 
         if not os.path.exists(library_path):
             raise EagleIOError("Could not find Eagle's dynamic library at `%s`." % library_path)
@@ -497,6 +523,7 @@ class Eagle(object):
         init_func.argtypes = [
             c_char_p,
             c_char_p,
+            c_char_p,
             c_int32,
             POINTER(c_void_p),
             POINTER(POINTER(self.CEagle)),
@@ -510,6 +537,7 @@ class Eagle(object):
         status = init_func(
             access_key.encode("utf-8"),
             model_path.encode("utf-8"),
+            device.encode("utf-8"),
             len(speaker_profiles),
             profile_bytes,
             byref(self._eagle),
