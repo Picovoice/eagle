@@ -1,5 +1,5 @@
 /*
-    Copyright 2023 Picovoice Inc.
+    Copyright 2023-2025 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is
     located in the "LICENSE" file accompanying this source.
@@ -42,16 +42,33 @@ public class Eagle {
     }
 
     /**
+     * Lists all available devices that Eagle can use for inference.
+     * Each entry in the list can be used as the `device` argument when initializing Eagle.
+     *
+     * @return Array of all available devices that Eagle can be used for inference.
+     * @throws EagleException if getting available devices fails.
+     */
+    public static String[] getAvailableDevices() throws EagleException {
+        return EagleNative.listHardwareDevices();
+    }
+
+    /**
      * Constructor.
      *
      * @param accessKey AccessKey obtained from Picovoice Console
      * @param modelPath Absolute path to the file containing Eagle model parameters.
+     * @param device String representation of the device (e.g., CPU or GPU) to use for inference. If set to `best`, the most
+     * suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU device.
+     * To select a specific GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the
+     * target GPU. If set to `cpu`, the engine will run on the CPU with the default number of threads. To specify the
+     * number of threads, set this argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the desired number of threads.
      * @param speakerProfiles A list of EagleProfile objects. This can be constructed using `EagleProfiler`.
      * @throws EagleException if there is an error while initializing Eagle.
      */
     private Eagle(
             String accessKey,
             String modelPath,
+            String device,
             EagleProfile[] speakerProfiles) throws EagleException {
         long[] profileHandles = new long[speakerProfiles.length];
 
@@ -63,6 +80,7 @@ public class Eagle {
         handle = EagleNative.init(
                 accessKey,
                 modelPath,
+                device,
                 speakerProfiles.length,
                 profileHandles);
 
@@ -152,6 +170,7 @@ public class Eagle {
 
         private String accessKey = null;
         private String modelPath = null;
+        private String device = null;
 
         private EagleProfile[] speakerProfiles = null;
 
@@ -162,6 +181,11 @@ public class Eagle {
 
         public Builder setModelPath(String modelPath) {
             this.modelPath = modelPath;
+            return this;
+        }
+
+        public Builder setDevice(String device) {
+            this.device = device;
             return this;
         }
 
@@ -213,7 +237,7 @@ public class Eagle {
          * @throws EagleException if there is an error while initializing Eagle.
          */
         public Eagle build(Context context) throws EagleException {
-            if (accessKey == null || this.accessKey.equals("")) {
+            if (accessKey == null || accessKey.equals("")) {
                 throw new EagleInvalidArgumentException("No AccessKey was provided to Eagle");
             }
 
@@ -236,11 +260,15 @@ public class Eagle {
                 }
             }
 
-            if (speakerProfiles == null || this.speakerProfiles.length == 0) {
+            if (device == null) {
+                device = "best";
+            }
+
+            if (speakerProfiles == null || speakerProfiles.length == 0) {
                 throw new EagleInvalidArgumentException("No speaker profiles provided to Eagle");
             }
 
-            return new Eagle(accessKey, modelPath, speakerProfiles);
+            return new Eagle(accessKey, modelPath, device, speakerProfiles);
         }
     }
 
