@@ -82,6 +82,14 @@ type pv_eagle_process_type = (
 type pv_eagle_reset_type = (object: number) => Promise<number>;
 type pv_eagle_frame_length_type = () => number;
 type pv_eagle_version_type = () => number;
+type pv_eagle_list_hardware_devices_type = (
+  hardwareDevices: number,
+  numHardwareDevices: number
+) => number;
+type pv_eagle_free_hardware_devices_type = (
+  hardwareDevices: number,
+  numHardwareDevices: number
+) => number;
 type pv_sample_rate_type = () => number;
 type pv_set_sdk_type = (sdk: number) => void;
 type pv_get_error_stack_type = (
@@ -98,6 +106,8 @@ type EagleModule = EmscriptenModule & {
   _pv_eagle_profiler_export_size: pv_eagle_profiler_export_size_type
   _pv_eagle_frame_length: pv_eagle_frame_length_type
   _pv_eagle_version: pv_eagle_version_type
+  _pv_eagle_list_hardware_devices: pv_eagle_list_hardware_devices_type;
+  _pv_eagle_free_hardware_devices: pv_eagle_free_hardware_devices_type;
   _pv_sample_rate: pv_sample_rate_type
 
   _pv_set_sdk: pv_set_sdk_type;
@@ -1075,6 +1085,111 @@ export class Eagle extends EagleBase {
     await super.release();
     await this._pv_eagle_delete(this._objectAddress);
     this._module = undefined;
+  }
+
+  /**
+   * Lists all available devices that Eagle can use for inference.
+   * Each entry in the list can be the used as the `device` argument for the `.create` method.
+   *
+   * @returns List of all available devices that Eagle can use for inference.
+   */
+  public static async listAvailableDevices(): Promise<string[]> {
+    return new Promise<string[]>((resolve, reject) => {
+      Eagle._eagleMutex
+        .runExclusive(async () => {
+          const isSimd = await simd();
+          if (!isSimd) {
+            throw new EagleErrors.EagleRuntimeError('Unsupported Browser');
+          }
+
+          const blob = new Blob(
+            [base64ToUint8Array(this._wasmSimdLib)],
+            { type: 'application/javascript' }
+          );
+          const module: EagleModule = await createModuleSimd({
+            mainScriptUrlOrBlob: blob,
+            wasmBinary: base64ToUint8Array(this._wasmSimd),
+          });
+
+          const hardwareDevicesAddressAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
+          if (hardwareDevicesAddressAddress === 0) {
+            throw new EagleErrors.EagleOutOfMemoryError(
+              'malloc failed: Cannot allocate memory for hardwareDevices'
+            );
+          }
+
+          const numHardwareDevicesAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
+          if (numHardwareDevicesAddress === 0) {
+            throw new EagleErrors.EagleOutOfMemoryError(
+              'malloc failed: Cannot allocate memory for numHardwareDevices'
+            );
+          }
+
+          const status: PvStatus = module._pv_eagle_list_hardware_devices(
+            hardwareDevicesAddressAddress,
+            numHardwareDevicesAddress
+          );
+
+          const messageStackDepthAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
+          if (!messageStackDepthAddress) {
+            throw new EagleErrors.EagleOutOfMemoryError(
+              'malloc failed: Cannot allocate memory for messageStackDepth'
+            );
+          }
+
+          const messageStackAddressAddressAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
+          if (!messageStackAddressAddressAddress) {
+            throw new EagleErrors.EagleOutOfMemoryError(
+              'malloc failed: Cannot allocate memory messageStack'
+            );
+          }
+
+          if (status !== PvStatus.SUCCESS) {
+            const messageStack = await Eagle.getMessageStack(
+              module._pv_get_error_stack,
+              module._pv_free_error_stack,
+              messageStackAddressAddressAddress,
+              messageStackDepthAddress,
+              module.HEAP32,
+              module.HEAPU8,
+            );
+            module._pv_free(messageStackAddressAddressAddress);
+            module._pv_free(messageStackDepthAddress);
+
+            throw pvStatusToException(
+              status,
+              'List devices failed',
+              messageStack
+            );
+          }
+          module._pv_free(messageStackAddressAddressAddress);
+          module._pv_free(messageStackDepthAddress);
+
+          const numHardwareDevices: number = module.HEAP32[numHardwareDevicesAddress / Int32Array.BYTES_PER_ELEMENT];
+          module._pv_free(numHardwareDevicesAddress);
+
+          const hardwareDevicesAddress = module.HEAP32[hardwareDevicesAddressAddress / Int32Array.BYTES_PER_ELEMENT];
+
+          const hardwareDevices: string[] = [];
+          for (let i = 0; i < numHardwareDevices; i++) {
+            const deviceAddress = module.HEAP32[hardwareDevicesAddress / Int32Array.BYTES_PER_ELEMENT + i];
+            hardwareDevices.push(arrayBufferToStringAtIndex(module.HEAPU8, deviceAddress));
+          }
+          module._pv_eagle_free_hardware_devices(
+            hardwareDevicesAddress,
+            numHardwareDevices
+          );
+          module._pv_free(hardwareDevicesAddressAddress);
+
+          return hardwareDevices;
+        })
+        .then((result: string[]) => {
+          resolve(result);
+        })
+        .catch((error: any) => {
+          reject(error);
+        });
+    });
   }
 
   private static async _initWasm(

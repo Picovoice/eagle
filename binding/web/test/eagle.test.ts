@@ -258,8 +258,8 @@ describe('Eagle Profiler', async function () {
   });
 });
 
+/* eslint-disable no-loop-func */
 describe('Eagle', function () {
-  const profile = testProfile;
   for (const instance of [Eagle, EagleWorker]) {
     const instanceString = instance === EagleWorker ? 'worker' : 'main';
     it(`eagle init (${instanceString})`, async () => {
@@ -269,7 +269,7 @@ describe('Eagle', function () {
           publicPath: '/test/eagle_params.pv',
           forceWrite: true,
         },
-        profile,
+        testProfile,
         DEVICE
       );
       expect(eagle.sampleRate).to.be.gt(0);
@@ -286,7 +286,7 @@ describe('Eagle', function () {
           base64: eagleParams,
           forceWrite: true,
         },
-        profile,
+        testProfile,
         DEVICE
       );
       expect(eagle.sampleRate).to.be.gt(0);
@@ -302,7 +302,7 @@ describe('Eagle', function () {
         const eagle = await instance.create(
           "invalidAccessKey",
           { base64: eagleParams, forceWrite: true },
-          profile,
+          testProfile,
           DEVICE
         );
         await eagle.release();
@@ -318,7 +318,7 @@ describe('Eagle', function () {
         const eagle = await instance.create(
           "invalidAccessKey",
           { base64: eagleParams, forceWrite: true },
-          profile,
+          testProfile,
           DEVICE
         );
         await eagle.release();
@@ -334,7 +334,7 @@ describe('Eagle', function () {
         const eagle = await instance.create(
           ACCESS_KEY,
           { base64: eagleParams, forceWrite: true },
-          profile,
+          testProfile,
           "cloud:9"
         );
         expect(eagle).to.be.undefined;
@@ -356,7 +356,7 @@ describe('Eagle', function () {
                 publicPath: '/test/eagle_params.pv',
                 forceWrite: true,
               },
-              profile,
+              testProfile,
               DEVICE
             );
             const scores = await getScores(eagle, testPcm);
@@ -385,7 +385,7 @@ describe('Eagle', function () {
                 publicPath: '/test/eagle_params.pv',
                 forceWrite: true,
               },
-              profile,
+              testProfile,
               DEVICE
             );
             const scores = await getScores(eagle, testPcm);
@@ -399,6 +399,12 @@ describe('Eagle', function () {
       );
     });
   }
+
+  it('List hardware devices', async () => {
+    const hardwareDevices: string[] = await Eagle.listAvailableDevices();
+    expect(Array.isArray(hardwareDevices)).to.be.true;
+    expect(hardwareDevices).length.to.be.greaterThan(0);
+  });
 
   it(`should return process error message stack (main)`, async () => {
     let error: EagleError | null = null;
