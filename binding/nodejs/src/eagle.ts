@@ -22,6 +22,7 @@ import {
 } from './errors';
 
 import {
+  EagleInputOptions,
   EagleOptions,
   EnrollProgress
 } from './types';
@@ -41,6 +42,10 @@ type ExportStatus = {
 type EagleHandleAndStatus = { handle: any; status: PvStatus };
 type ProcessStatus = {
   scores: number[];
+  status: PvStatus;
+};
+type EagleHardwareDevicesResult = {
+  hardware_devices: string[];
   status: PvStatus;
 };
 
@@ -500,6 +505,39 @@ export class Eagle {
       }
       this._handle = 0;
     }
+  }
+
+    /**
+   * Lists all available devices that Eagle can use for inference. Each entry in the list can be the `device` argument
+   * of the constructor.
+   *
+   * @returns List of all available devices that Eagle can use for inference.
+   */
+  static listAvailableDevices(options: EagleInputOptions = {}): string[] {
+    const {
+      libraryPath = getSystemLibraryPath(),
+    } = options;
+
+    const pvEagle = require(libraryPath); // eslint-disable-line
+
+    let eagleHardwareDevicesResult: EagleHardwareDevicesResult | null = null;
+    try {
+      eagleHardwareDevicesResult = pvEagle.list_hardware_devices();
+    } catch (err: any) {
+      pvStatusToException(<PvStatus>err.code, err);
+    }
+
+    const status = eagleHardwareDevicesResult!.status;
+    if (status !== PvStatus.SUCCESS) {
+      const errorObject = pvEagle.get_error_stack();
+      if (errorObject.status === PvStatus.SUCCESS) {
+        pvStatusToException(status, 'Eagle failed to get available devices', errorObject.message_stack);
+      } else {
+        pvStatusToException(status, 'Unable to get Eagle error state');
+      }
+    }
+
+    return eagleHardwareDevicesResult!.hardware_devices;
   }
 
   private handlePvStatus(status: PvStatus, message: string): void {

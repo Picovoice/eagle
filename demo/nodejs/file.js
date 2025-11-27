@@ -44,6 +44,7 @@ program
   .option('--test_audio_path <string>', 'Absolute path to test audio file')
   .option('--output_profile_path <string>', 'Absolute path to output file for the created profile')
   .option('--input_profile_paths <strings...>', 'Absolute path(s) to speaker profile(s)')
+  .option("--show_inference_devices", "Show the list of available devices for Eagle inference.", false)
 
 if (process.argv.length < 1) {
   program.help();
@@ -76,6 +77,12 @@ async function fileDemo() {
   const testAudioPath = program["test_audio_path"];
   const outputProfilePath = program["output_profile_path"];
   const inputProfilePaths = program["input_profile_paths"];
+  const showInferenceDevices = program["show_inference_devices"];
+
+  if (showInferenceDevices) {
+    console.log(Eagle.listAvailableDevices().join('\n'));
+    process.exit();
+  }
 
   if (accessKey === undefined) {
     console.log("No AccessKey provided");

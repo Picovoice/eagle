@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 //
-// Copyright 2024 Picovoice Inc.
+// Copyright 2024-2025 Picovoice Inc.
 //
 // You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 // file accompanying this source.
@@ -33,7 +33,7 @@ const FEEDBACK_TO_DESCRIPTIVE_MSG = {
 };
 
 program
-  .option('-s, --show_audio_devices', 'List available audio input devices and exit')
+  .option('-s, --show_audio_devices', 'List available audio input devices and exit', false)
   .option('-i, --audio_device_index <number>', 'index of audio device to use to record audio', Number, -1)
   .option('-a, --access_key <string>', 'AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)')
   .option('-l, --library_path [value]', 'Absolute path to dynamic library. Default: using the library provided by `pveagle`')
@@ -43,7 +43,7 @@ program
   .option('--test', "Evaluate Eagle's performance using the provided speaker profiles.")
   .option('--output_profile_path <string>', 'Absolute path to output file for the created profile')
   .option('--input_profile_paths <strings...>', 'Absolute path(s) to speaker profile(s)')
-
+  .option("--show_inference_devices", "Show the list of available devices for Eagle inference.", false)
 if (process.argv.length < 1) {
   program.help();
 }
@@ -75,14 +75,18 @@ async function micDemo() {
   const test = program["test"];
   const outputProfilePath = program["output_profile_path"];
   const inputProfilePaths = program["input_profile_paths"];
+  const showInferenceDevices = program["show_inference_devices"];
 
-  let showAudioDevicesDefined = showAudioDevices !== undefined;
-
-  if (showAudioDevicesDefined) {
+  if (showAudioDevices) {
     const devices = PvRecorder.getAvailableDevices();
     for (let i = 0; i < devices.length; i++) {
       console.log(`index: ${i}, device name: ${devices[i]}`);
     }
+    process.exit();
+  }
+
+  if (showInferenceDevices) {
+    console.log(Eagle.listAvailableDevices().join('\n'));
     process.exit();
   }
 

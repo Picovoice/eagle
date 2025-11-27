@@ -140,6 +140,11 @@ describe('Eagle', () => {
     expect(Math.max(...imposterScores)).toBeLessThan(0.5);
     eagle.release();
   });
+  test('list hardware devices', () => {
+    const hardwareDevices: string[] = Eagle.listAvailableDevices();
+    expect(Array.isArray(hardwareDevices)).toBeTruthy();
+    expect(hardwareDevices.length).toBeGreaterThan(0);
+  });
 });
 
 describe('Defaults', () => {
