@@ -11,6 +11,7 @@
 
 #include <getopt.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -85,14 +86,15 @@ static void print_dl_error(const char *message) {
 static volatile bool is_interrupted = false;
 
 static struct option long_options[] = {
-        {"access_key",          required_argument, NULL, 'a'},
-        {"audio_device_index",  required_argument, NULL, 'd'},
-        {"library_path",        required_argument, NULL, 'l'},
-        {"model_path",          required_argument, NULL, 'm'},
-        {"enroll",              required_argument, NULL, 'e'},
-        {"test",                required_argument, NULL, 't'},
-        {"show_audio_devices",  no_argument,       NULL, 's'},
-
+        {"access_key",              required_argument, NULL, 'a'},
+        {"audio_device_index",      required_argument, NULL, 'd'},
+        {"library_path",            required_argument, NULL, 'l'},
+        {"model_path",              required_argument, NULL, 'm'},
+        {"device",                  required_argument, NULL, 'y'},
+        {"enroll",                  required_argument, NULL, 'e'},
+        {"test",                    required_argument, NULL, 't'},
+        {"show_audio_devices",      no_argument,       NULL, 's'},
+        {"show_inference_devices",  no_argument,       NULL, 'i'},
 };
 
 pv_status_t (*pv_get_error_stack_func)(char ***, int32_t *) = NULL;
@@ -100,7 +102,9 @@ void (*pv_free_error_stack_func)(char **) = NULL;
 
 static void print_usage(const char *program_name) {
     fprintf(stdout,
-            "Usage: %s [-s] [-e OUTPUT_PROFILE_PATH | -t INPUT_PROFILE_PATH] [-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY -d AUDIO_DEVICE_INDEX]\n",
+            "Usage: %s [-e OUTPUT_PROFILE_PATH | -t INPUT_PROFILE_PATH] [-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY -d AUDIO_DEVICE_INDEX]\n"
+            "-s: show audio devices\n"
+            "-i: show inference devices\n",
             program_name);
 }
 
@@ -113,6 +117,83 @@ static void print_error_message(char **message_stack, int32_t message_stack_dept
 void interrupt_handler(int _) {
     (void) _;
     is_interrupted = true;
+}
+
+void print_inference_devices(const char *library_path) {
+    void *dl_handle = open_dl(library_path);
+    if (!dl_handle) {
+        fprintf(stderr, "Failed to open library at '%s'.\n", library_path);
+        exit(EXIT_FAILURE);
+    }
+
+    const char *(*pv_status_to_string_func)(pv_status_t) = load_symbol(dl_handle, "pv_status_to_string");
+    if (!pv_status_to_string_func) {
+        print_dl_error("Failed to load 'pv_status_to_string'");
+        exit(EXIT_FAILURE);
+    }
+
+    pv_status_t (*pv_eagle_list_hardware_devices_func)(char ***, int32_t *) =
+    load_symbol(dl_handle, "pv_eagle_list_hardware_devices");
+    if (!pv_eagle_list_hardware_devices_func) {
+        print_dl_error("failed to load `pv_eagle_list_hardware_devices`");
+        exit(EXIT_FAILURE);
+    }
+
+    pv_status_t (*pv_eagle_free_hardware_devices_func)(char **, int32_t) =
+        load_symbol(dl_handle, "pv_eagle_free_hardware_devices");
+    if (!pv_eagle_free_hardware_devices_func) {
+        print_dl_error("failed to load `pv_eagle_free_hardware_devices`");
+        exit(EXIT_FAILURE);
+    }
+
+    pv_status_t (*pv_get_error_stack_func)(char ***, int32_t *) =
+        load_symbol(dl_handle, "pv_get_error_stack");
+    if (!pv_get_error_stack_func) {
+        print_dl_error("failed to load 'pv_get_error_stack_func'");
+        exit(EXIT_FAILURE);
+    }
+
+    void (*pv_free_error_stack_func)(char **) =
+        load_symbol(dl_handle, "pv_free_error_stack");
+    if (!pv_free_error_stack_func) {
+        print_dl_error("failed to load 'pv_free_error_stack_func'");
+        exit(EXIT_FAILURE);
+    }
+
+    char **message_stack = NULL;
+    int32_t message_stack_depth = 0;
+    pv_status_t error_status = PV_STATUS_RUNTIME_ERROR;
+
+    char **hardware_devices = NULL;
+    int32_t num_hardware_devices = 0;
+    pv_status_t status = pv_eagle_list_hardware_devices_func(&hardware_devices, &num_hardware_devices);
+    if (status != PV_STATUS_SUCCESS) {
+        fprintf(
+                stderr,
+                "Failed to list hardware devices with `%s`.\n",
+                pv_status_to_string_func(status));
+        error_status = pv_get_error_stack_func(&message_stack, &message_stack_depth);
+        if (error_status != PV_STATUS_SUCCESS) {
+            fprintf(
+                    stderr,
+                    ".\nUnable to get Eagle error state with '%s'.\n",
+                    pv_status_to_string_func(error_status));
+            exit(EXIT_FAILURE);
+        }
+
+        if (message_stack_depth > 0) {
+            fprintf(stderr, ":\n");
+            print_error_message(message_stack, message_stack_depth);
+            pv_free_error_stack_func(message_stack);
+        }
+        exit(EXIT_FAILURE);
+    }
+
+    for (int32_t i = 0; i < num_hardware_devices; i++) {
+        fprintf(stdout, "%s\n", hardware_devices[i]);
+    }
+    pv_eagle_free_hardware_devices_func(hardware_devices, num_hardware_devices);
+    close_dl(dl_handle);
 }
 
 void show_audio_devices(void) {
@@ -136,6 +217,7 @@ void show_audio_devices(void) {
 void speaker_enrollment(
         const char *access_key,
         const char *model_path,
+        const char *device,
         const char *output_profile_path,
         void *eagle_library,
         pv_recorder_t *recorder) {
@@ -153,6 +235,7 @@ void speaker_enrollment(
     }
 
     pv_status_t (*pv_eagle_profiler_init_func)(
+            const char *,
             const char *,
             const char *,
             pv_eagle_profiler_t **) = load_symbol(eagle_library, "pv_eagle_profiler_init");
@@ -232,6 +315,7 @@ void speaker_enrollment(
     pv_status_t eagle_profiler_status = pv_eagle_profiler_init_func(
             access_key,
             model_path,
+            device,
             &eagle_profiler);
     if (eagle_profiler_status != PV_STATUS_SUCCESS) {
         fprintf(stderr, "Failed to create an instance of eagle profiler");
@@ -416,6 +500,7 @@ void speaker_enrollment(
 void speaker_recognition(
         const char *access_key,
         const char *model_path,
+        const char *device,
         const char *input_profile_path,
         void *eagle_library,
         pv_recorder_t *recorder) {
@@ -433,6 +518,7 @@ void speaker_recognition(
     }
 
     pv_status_t (*pv_eagle_init_func)(
+            const char *,
             const char *,
             const char *,
             int32_t,
@@ -512,6 +598,7 @@ void speaker_recognition(
     pv_status_t eagle_status = pv_eagle_init_func(
             access_key,
             model_path,
+            device,
             1,
             (const void *const *) &speaker_profile,
             &eagle);
@@ -598,12 +685,14 @@ int picovoice_main(int argc, char *argv[]) {
     const char *access_key = NULL;
     const char *library_path = NULL;
     const char *model_path = NULL;
+    char *device = "best";
+    bool show_inference_devices = NULL;
     const char *input_profile_path = NULL;
     const char *output_profile_path = NULL;
     int32_t device_index = -1;
 
     int c;
-    while ((c = getopt_long(argc, argv, "sa:d:l:m:e:t:", long_options, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "sa:d:l:m:y:ie:t:", long_options, NULL)) != -1) {
         switch (c) {
             case 's':
                 show_audio_devices();
@@ -623,12 +712,29 @@ int picovoice_main(int argc, char *argv[]) {
             case 'm':
                 model_path = optarg;
                 break;
+            case 'y':
+                device = optarg;
+                break;
+            case 'i':
+                show_inference_devices = true;
+                break;
             case 'd':
                 device_index = (int32_t) strtol(optarg, NULL, 10);
                 break;
             default:
                 exit(EXIT_FAILURE);
         }
+    }
+
+    if (show_inference_devices) {
+        if (!library_path) {
+            fprintf(stderr, "`library_path` is required to view available inference devices.\n");
+            print_usage(argv[0]);
+            exit(EXIT_FAILURE);
+        }
+
+        print_inference_devices(library_path);
+        return EXIT_SUCCESS;
     }
 
     if (!library_path || !access_key || !model_path) {
@@ -694,6 +800,7 @@ int picovoice_main(int argc, char *argv[]) {
         speaker_enrollment(
                 access_key,
                 model_path,
+                device,
                 output_profile_path,
                 eagle_library,
                 recorder);
@@ -701,6 +808,7 @@ int picovoice_main(int argc, char *argv[]) {
         speaker_recognition(
                 access_key,
                 model_path,
+                device,
                 input_profile_path,
                 eagle_library,
                 recorder);
