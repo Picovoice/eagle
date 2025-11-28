@@ -89,7 +89,7 @@ public class EagleBase {
     ///   - message: message to include with the EagleError.
     ///   - messageStack: Error stack returned from Eagle.
     /// - Returns: An EagleError.
-    internal func pvStatusToEagleError(
+    internal static func pvStatusToEagleError(
         _ status: pv_status_t,
         _ message: String,
         _ messageStack: [String] = []) -> EagleError {
@@ -145,7 +145,7 @@ public class EagleBase {
         }
     }
 
-    internal func getMessageStack() throws -> [String] {
+    internal static func getMessageStack() throws -> [String] {
         var messageStackRef: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>?
         var messageStackDepth: Int32 = 0
         let status = pv_get_error_stack(&messageStackRef, &messageStackDepth)
