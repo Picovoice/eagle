@@ -51,7 +51,7 @@ public class EagleBase {
         var numHardwareDevices: Int32 = 0
         let status = pv_eagle_list_hardware_devices(&cHardwareDevices, &numHardwareDevices)
         if status != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
+            let messageStack = try EagleBase.getMessageStack()
             throw EagleBase.pvStatusToEagleError(status, "Eagle getAvailableDevices failed", messageStack)
         }
 

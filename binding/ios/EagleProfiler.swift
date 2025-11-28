@@ -87,7 +87,10 @@ public class EagleProfiler: EagleBase {
             &cMinAudioLengthSamples)
         if status != PV_STATUS_SUCCESS {
             let messageStack = try EagleProfiler.getMessageStack()
-            throw EagleProfiler.pvStatusToEagleError(status, "EagleProfiler enrollment_min_audio_length_sample failed", messageStack)
+            throw EagleProfiler.pvStatusToEagleError(
+                status,
+                "EagleProfiler enrollment_min_audio_length_sample failed",
+                messageStack)
         }
         minEnrollAudioLength = Int(cMinAudioLengthSamples)
     }
