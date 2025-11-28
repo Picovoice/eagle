@@ -26,6 +26,12 @@ public class Eagle: EagleBase {
     ///   - accessKey: AccessKey obtained from the Picovoice Console (https://console.picovoice.ai/)
     ///   - speakerProfiles: An array of EagleProfile objects obtained from EagleProfiler.
     ///   - modelPath: Absolute path to file containing model parameters.
+    ///   - device: String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
+    ///     suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU
+    //      device. To select a specific GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}`
+    //      is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the default
+    //      number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
+    //      where `${NUM_THREADS}` is the desired number of threads.
     /// - Throws: EagleError
     public init(
         accessKey: String,
@@ -65,6 +71,7 @@ public class Eagle: EagleBase {
         let status = pv_eagle_init(
             accessKey,
             modelPathArg,
+            device,
             Int32(speakerCount),
             speakerHandles,
             &handle)
@@ -80,12 +87,24 @@ public class Eagle: EagleBase {
     ///   - accessKey: AccessKey obtained from the Picovoice Console (https://console.picovoice.ai/)
     ///   - speakerProfile: An EagleProfile object obtained from EagleProfiler.
     ///   - modelPath: Absolute path to file containing model parameters.
+    ///   - device: String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
+    ///     suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU
+    //      device. To select a specific GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}`
+    //      is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the default
+    //      number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
+    //      where `${NUM_THREADS}` is the desired number of threads.
     /// - Throws: EagleError
-    public convenience init(accessKey: String, speakerProfile: EagleProfile, modelPath: String? = nil) throws {
+    public convenience init(
+        accessKey: String,
+        speakerProfile: EagleProfile,
+        modelPath: String? = nil,
+        device: String = "best"
+    ) throws {
         try self.init(
             accessKey: accessKey,
             speakerProfiles: [speakerProfile],
-            modelPath: modelPath)
+            modelPath: modelPath,
+            device: device)
     }
 
     deinit {
