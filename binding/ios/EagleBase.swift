@@ -41,6 +41,30 @@ public class EagleBase {
         self.sdk = sdk
     }
 
+    /// Lists all available devices that Eagle can use for inference.
+    /// Entries in the list can be used as the `device` argument when initializing Eagle.
+    ///
+    /// - Throws: EagleError
+    /// - Returns: Array of available devices that Eagle can be used for inference.
+    public static func getAvailableDevices() throws -> [String] {
+        var cHardwareDevices: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>?
+        var numHardwareDevices: Int32 = 0
+        let status = pv_eagle_list_hardware_devices(&cHardwareDevices, &numHardwareDevices)
+        if status != PV_STATUS_SUCCESS {
+            let messageStack = try getMessageStack()
+            throw pvStatusToEagleError(status, "Eagle getAvailableDevices failed", messageStack)
+        }
+
+        var hardwareDevices: [String] = []
+        for i in 0..<numHardwareDevices {
+            hardwareDevices.append(String(cString: cHardwareDevices!.advanced(by: Int(i)).pointee!))
+        }
+
+        pv_eagle_free_hardware_devices(cHardwareDevices, numHardwareDevices)
+
+        return hardwareDevices
+    }
+
     /// Given a path, return the full path to the resource.
     ///
     /// - Parameters:

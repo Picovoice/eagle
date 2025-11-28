@@ -33,7 +33,11 @@ public class EagleProfiler: EagleBase {
     ///   - accessKey: AccessKey obtained from the Picovoice Console (https://console.picovoice.ai/)
     ///   - modelPath: Absolute path to file containing model parameters.
     /// - Throws: EagleError
-    public init(accessKey: String, modelPath: String? = nil) throws {
+    public init(
+        accessKey: String,
+        modelPath: String? = nil,
+        device: String = "best"
+    ) throws {
         super.init()
 
         var modelPathArg = modelPath

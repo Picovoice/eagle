@@ -1,5 +1,5 @@
 //
-//  Copyright 2023-2024 Picovoice Inc.
+//  Copyright 2023-2025 Picovoice Inc.
 //  You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 //  file accompanying this source.
 //  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
@@ -14,6 +14,7 @@ import Eagle
 
 class PerformanceTest: XCTestCase {
     let accessKey: String = "{TESTING_ACCESS_KEY_HERE}"
+    let device: String = "{TESTING_DEVICE_HERE}"
     let iterationString: String = "{NUM_TEST_ITERATIONS}"
     let enrollThresholdString: String = "{ENROLL_PERFORMANCE_THRESHOLD_SEC}"
     let procThresholdString: String = "{PROC_PERFORMANCE_THRESHOLD_SEC}"
@@ -41,7 +42,7 @@ class PerformanceTest: XCTestCase {
             audioData.copyBytes(to: $0, from: 44..<audioData.count)
         }
 
-        let eagleProfiler = try EagleProfiler(accessKey: accessKey)
+        let eagleProfiler = try EagleProfiler(accessKey: accessKey, device: device)
 
         var results: [Double] = []
         for _ in 0...numTestIterations {
@@ -73,7 +74,7 @@ class PerformanceTest: XCTestCase {
             bundle.url(forResource: "speaker_1_utt_1", withExtension: "wav", subdirectory: "audio_samples")!,
             bundle.url(forResource: "speaker_1_utt_2", withExtension: "wav", subdirectory: "audio_samples")!
         ]
-        let eagleProfiler = try EagleProfiler(accessKey: accessKey)
+        let eagleProfiler = try EagleProfiler(accessKey: accessKey, device: device)
         for enrollUrl in enrollUrls {
             let audioData = try Data(contentsOf: enrollUrl)
             var pcm = [Int16](repeating: 0, count: (audioData.count - 44) / 2)
@@ -96,7 +97,7 @@ class PerformanceTest: XCTestCase {
             audioData.copyBytes(to: $0, from: 44..<audioData.count)
         }
 
-        let eagle = try Eagle(accessKey: accessKey, speakerProfiles: [profile])
+        let eagle = try Eagle(accessKey: accessKey, speakerProfiles: [profile], device: device)
 
         var results: [Double] = []
         for _ in 0...numTestIterations {

@@ -1,5 +1,5 @@
 //
-//  Copyright 2023-2024 Picovoice Inc.
+//  Copyright 2023-2025 Picovoice Inc.
 //  You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 //  file accompanying this source.
 //  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
@@ -39,7 +39,7 @@ class EagleAppTestUITests: BaseTest {
     private func initEagle() throws -> Eagle {
         let enrollUrls = enrollUrls()
 
-        let eagleProfiler = try EagleProfiler(accessKey: accessKey)
+        let eagleProfiler = try EagleProfiler(accessKey: accessKey, device: device)
         for url in enrollUrls {
             let pcm = try readPcmFromFile(testAudioURL: url)
             (_, _) = try eagleProfiler.enroll(pcm: pcm)
@@ -48,7 +48,7 @@ class EagleAppTestUITests: BaseTest {
         let profile = try eagleProfiler.export()
         eagleProfiler.delete()
 
-        return try Eagle(accessKey: accessKey, speakerProfiles: [profile])
+        return try Eagle(accessKey: accessKey, speakerProfiles: [profile], device: device)
     }
 
     func testEagleEnrollment() throws {
@@ -57,7 +57,7 @@ class EagleAppTestUITests: BaseTest {
         var percentage: Float = 0.0
         var feedback: EagleProfilerEnrollFeedback?
 
-        let eagleProfiler = try EagleProfiler(accessKey: accessKey)
+        let eagleProfiler = try EagleProfiler(accessKey: accessKey, device: device)
         for url in enrollUrls {
             let pcm = try readPcmFromFile(testAudioURL: url)
             (percentage, feedback) = try eagleProfiler.enroll(pcm: pcm)
@@ -110,10 +110,18 @@ class EagleAppTestUITests: BaseTest {
         eagle.delete()
     }
 
+    func testGetAvailableDevices() throws {
+        let devices = try Eagle.getAvailableDevices()
+        XCTAssert(!devices.isEmpty)
+        for device in devices {
+            XCTAssert(!device.isEmpty)
+        }
+    }
+
     func testMessageStack() throws {
         let enrollUrls = enrollUrls()
 
-        let eagleProfiler = try EagleProfiler(accessKey: accessKey)
+        let eagleProfiler = try EagleProfiler(accessKey: accessKey, device: device)
         for url in enrollUrls {
             let pcm = try readPcmFromFile(testAudioURL: url)
             (_, _) = try eagleProfiler.enroll(pcm: pcm)
@@ -124,7 +132,7 @@ class EagleAppTestUITests: BaseTest {
 
         var first_error: String = ""
         do {
-            let eagle = try Eagle(accessKey: "invalid", speakerProfiles: [profile])
+            let eagle = try Eagle(accessKey: "invalid", speakerProfiles: [profile], device: device)
             XCTAssertNil(eagle)
         } catch {
             first_error = "\(error.localizedDescription)"
@@ -132,7 +140,7 @@ class EagleAppTestUITests: BaseTest {
         }
 
         do {
-            let eagle = try Eagle(accessKey: "invalid", speakerProfiles: [profile])
+            let eagle = try Eagle(accessKey: "invalid", speakerProfiles: [profile], device: device)
             XCTAssertNil(eagle)
         } catch {
             XCTAssert("\(error.localizedDescription)".count == first_error.count)
@@ -140,7 +148,7 @@ class EagleAppTestUITests: BaseTest {
     }
 
     func testEnrollExportMessageStack() throws {
-        let e = try EagleProfiler.init(accessKey: accessKey)
+        let e = try EagleProfiler.init(accessKey: accessKey, device: device)
         e.delete()
 
         var testPcm: [Int16] = []
@@ -166,7 +174,7 @@ class EagleAppTestUITests: BaseTest {
     func testProcessMessageStack() throws {
         let enrollUrls = enrollUrls()
 
-        let eagleProfiler = try EagleProfiler(accessKey: accessKey)
+        let eagleProfiler = try EagleProfiler(accessKey: accessKey, device: device)
         for url in enrollUrls {
             let pcm = try readPcmFromFile(testAudioURL: url)
             (_, _) = try eagleProfiler.enroll(pcm: pcm)
@@ -175,7 +183,7 @@ class EagleAppTestUITests: BaseTest {
         let profile = try eagleProfiler.export()
         eagleProfiler.delete()
 
-        let e = try Eagle.init(accessKey: accessKey, speakerProfiles: [profile])
+        let e = try Eagle.init(accessKey: accessKey, speakerProfiles: [profile], device: device)
         e.delete()
 
         var testPcm: [Int16] = []
