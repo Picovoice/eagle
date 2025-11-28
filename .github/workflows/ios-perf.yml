@@ -55,7 +55,7 @@ jobs:
 
       - name: Inject Device
         run: sed -i '.bak' 's:{TESTING_DEVICE_HERE}:cpu\:1:'
-          EagleAppTestUITests/PerformanceTest.swift
+          PerformanceTest/PerformanceTest.swift
 
       - name: Inject Number of Iterations
         run: sed -i '.bak' 's:{NUM_TEST_ITERATIONS}:100:'

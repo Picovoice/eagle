@@ -52,7 +52,7 @@ public class EagleBase {
         let status = pv_eagle_list_hardware_devices(&cHardwareDevices, &numHardwareDevices)
         if status != PV_STATUS_SUCCESS {
             let messageStack = try getMessageStack()
-            throw pvStatusToEagleError(status, "Eagle getAvailableDevices failed", messageStack)
+            throw EagleBase.pvStatusToEagleError(status, "Eagle getAvailableDevices failed", messageStack)
         }
 
         var hardwareDevices: [String] = []
@@ -150,7 +150,7 @@ public class EagleBase {
         var messageStackDepth: Int32 = 0
         let status = pv_get_error_stack(&messageStackRef, &messageStackDepth)
         if status != PV_STATUS_SUCCESS {
-            throw pvStatusToEagleError(status, "Unable to get Eagle error state")
+            throw EagleBase.pvStatusToEagleError(status, "Unable to get Eagle error state")
         }
 
         var messageStack: [String] = []

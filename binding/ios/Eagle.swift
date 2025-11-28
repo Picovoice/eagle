@@ -76,8 +76,8 @@ public class Eagle: EagleBase {
             speakerHandles,
             &handle)
         if status != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToEagleError(status, "Eagle init failed", messageStack)
+            let messageStack = try Eagle.getMessageStack()
+            throw Eagle.pvStatusToEagleError(status, "Eagle init failed", messageStack)
         }
     }
 
@@ -141,8 +141,8 @@ public class Eagle: EagleBase {
             scores.baseAddress)
 
         if status != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToEagleError(status, "Eagle process failed", messageStack)
+            let messageStack = try Eagle.getMessageStack()
+            throw Eagle.pvStatusToEagleError(status, "Eagle process failed", messageStack)
         }
 
         return Array(scores)
@@ -163,8 +163,8 @@ public class Eagle: EagleBase {
         let status = pv_eagle_reset(handle)
 
         if status != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToEagleError(status, "Eagle reset failed", messageStack)
+            let messageStack = try Eagle.getMessageStack()
+            throw Eagle.pvStatusToEagleError(status, "Eagle reset failed", messageStack)
         }
     }
 }
