@@ -17,9 +17,18 @@ import unittest
 import wave
 from typing import Sequence
 
-from ._eagle import Eagle, EagleError, EagleProfiler, EagleProfilerEnrollFeedback
-from ._factory import available_devices
-from ._util import default_library_path, default_model_path
+from _eagle import (
+    Eagle,
+    EagleError,
+    EagleProfiler,
+    EagleProfilerEnrollFeedback,
+    list_hardware_devices
+)
+
+from _util import (
+    default_library_path,
+    default_model_path
+)
 
 
 class EagleTestCase(unittest.TestCase):
@@ -202,7 +211,7 @@ class EagleTestCase(unittest.TestCase):
         eagle._eagle = address
 
     def test_available_devices(self) -> None:
-        res = available_devices(library_path=default_library_path("../.."))
+        res = list_hardware_devices(library_path=default_library_path("../.."))
         self.assertGreater(len(res), 0)
         for x in res:
             self.assertIsInstance(x, str)

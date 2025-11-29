@@ -18,8 +18,8 @@ import wave
 from time import perf_counter
 from typing import Sequence
 
-from ._eagle import Eagle, EagleProfiler
-from ._util import default_library_path, default_model_path
+from _eagle import Eagle, EagleProfiler
+from _util import default_library_path, default_model_path
 
 
 class EaglePerformanceTestCase(unittest.TestCase):

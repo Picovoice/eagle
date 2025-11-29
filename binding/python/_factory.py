@@ -9,17 +9,6 @@
 # specific language governing permissions and limitations under the License.
 #
 
-import os
-
-from ctypes import (
-    cdll,
-    POINTER,
-    RTLD_LOCAL,
-    byref,
-    c_char_p,
-    c_int32,
-)
-
 from typing import (
     Optional,
     Sequence,
@@ -30,8 +19,7 @@ from ._eagle import (
     Eagle,
     EagleProfile,
     EagleProfiler,
-    PicovoiceStatuses,
-    _PICOVOICE_STATUS_TO_EXCEPTION
+    list_hardware_devices
 )
 from ._util import (
     default_library_path,
@@ -134,37 +122,13 @@ def available_devices(library_path: Optional[str] = None) -> Sequence[str]:
     """
 
     if library_path is None:
-        library_path = default_library_path('')
+        library_path = default_library_path()
 
-    dll_dir_obj = None
-    if hasattr(os, "add_dll_directory"):
-        dll_dir_obj = os.add_dll_directory(os.path.dirname(library_path))
-
-    library = cdll.LoadLibrary(library_path)
-
-    if dll_dir_obj is not None:
-        dll_dir_obj.close()
-
-    list_hardware_devices_func = library.pv_eagle_list_hardware_devices
-    list_hardware_devices_func.argtypes = [POINTER(POINTER(c_char_p)), POINTER(c_int32)]
-    list_hardware_devices_func.restype = PicovoiceStatuses
-    c_hardware_devices = POINTER(c_char_p)()
-    c_num_hardware_devices = c_int32()
-    status = list_hardware_devices_func(byref(c_hardware_devices), byref(c_num_hardware_devices))
-    if status is not PicovoiceStatuses.SUCCESS:
-        raise _PICOVOICE_STATUS_TO_EXCEPTION[status](message='`pv_eagle_list_hardware_devices` failed.')
-    res = [c_hardware_devices[i].decode() for i in range(c_num_hardware_devices.value)]
-
-    free_hardware_devices_func = library.pv_eagle_free_hardware_devices
-    free_hardware_devices_func.argtypes = [POINTER(c_char_p), c_int32]
-    free_hardware_devices_func.restype = None
-    free_hardware_devices_func(c_hardware_devices, c_num_hardware_devices.value)
-
-    return res
+    return list_hardware_devices(library_path=library_path)
 
 
 __all__ = [
+    "available_devices",
     "create_recognizer",
-    "create_profiler",
-    "available_devices"
+    "create_profiler"
 ]
