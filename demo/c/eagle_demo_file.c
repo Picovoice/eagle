@@ -103,7 +103,8 @@ static void print_usage(const char *program_name) {
     fprintf(stdout,
             "Usage: %s [-e OUTPUT_PROFILE_PATH | -t INPUT_PROFILE_PATH ] \n"
             "[-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY -y DEVICE WAV_AUDIO_PATH_1 WAV_AUDIO_PATH_2 ...]\n"
-            "-i: show inference devices\n",
+            "        %s [-i, --show_inference_devices] -l LIBRARY_PATH",
+            program_name,
             program_name);
 }
 
@@ -716,7 +717,7 @@ int picovoice_main(int argc, char *argv[]) {
     const char *library_path = NULL;
     const char *model_path = NULL;
     char *device = "best";
-    bool show_inference_devices = NULL;
+    bool show_inference_devices = false;
     const char *input_profile_path = NULL;
     const char *output_profile_path = NULL;
 
