@@ -507,7 +507,7 @@ export class Eagle {
     }
   }
 
-    /**
+  /**
    * Lists all available devices that Eagle can use for inference. Each entry in the list can be the `device` argument
    * of the constructor.
    *

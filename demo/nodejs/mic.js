@@ -33,17 +33,17 @@ const FEEDBACK_TO_DESCRIPTIVE_MSG = {
 };
 
 program
-  .option('-s, --show_audio_devices', 'List available audio input devices and exit', false)
+  .option('-si, --show_audio_devices', 'List available audio input devices and exit', false)
+  .option("-sy, --show_inference_devices", "Print the list of devices available to run Eagle inference.", false)
   .option('-i, --audio_device_index <number>', 'index of audio device to use to record audio', Number, -1)
   .option('-a, --access_key <string>', 'AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)')
   .option('-l, --library_path [value]', 'Absolute path to dynamic library. Default: using the library provided by `pveagle`')
   .option('-m, --model_path [value]', 'Absolute path to Eagle model. Default: using the model provided by `pveagle`')
-  .option('-d, --device [value]', 'Device to run inference on (`best`, `cpu:{num_threads}`, `gpu:{gpu_index}`). Default: selects best device for `pveagle`')
+  .option('-y, --device [value]', 'Device to run inference on (`best`, `cpu:{num_threads}`, `gpu:{gpu_index}`). Default: selects best device for `pveagle`')
   .option('--enroll', 'Enroll a new speaker profile')
   .option('--test', "Evaluate Eagle's performance using the provided speaker profiles.")
   .option('--output_profile_path <string>', 'Absolute path to output file for the created profile')
-  .option('--input_profile_paths <strings...>', 'Absolute path(s) to speaker profile(s)')
-  .option("--show_inference_devices", "Show the list of available devices for Eagle inference.", false)
+  .option('--input_profile_paths <strings...>', 'Absolute path(s) to speaker profile(s)');
 if (process.argv.length < 1) {
   program.help();
 }

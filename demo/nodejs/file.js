@@ -44,7 +44,7 @@ program
   .option('--test_audio_path <string>', 'Absolute path to test audio file')
   .option('--output_profile_path <string>', 'Absolute path to output file for the created profile')
   .option('--input_profile_paths <strings...>', 'Absolute path(s) to speaker profile(s)')
-  .option("--show_inference_devices", "Show the list of available devices for Eagle inference.", false)
+  .option("-sy, --show_inference_devices", "Print the list of devices available to run Eagle inference.", false)
 
 if (process.argv.length < 1) {
   program.help();
