@@ -29,6 +29,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        device: [cpu:1, cpu]
         node-version: [18.x, 20.x, 22.x, 24.x]
 
     steps:
@@ -39,30 +40,50 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      # ************** REMOVE AFTER RELEASE ********************
+      - name: Build Local Packages
+        run: yarn && yarn build
+        working-directory: binding/nodejs
+      # ********************************************************
+
       - name: Install dependencies
         run: yarn install
 
       - name: Test enroll
-        run: yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}} --enroll --enroll_audio_paths ../../resources/audio_samples/speaker_1_utt_1.wav ../../resources/audio_samples/speaker_1_utt_2.wav --output_profile_path test.egl
+        run: yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}} -y ${{ matrix.device }} --enroll --enroll_audio_paths ../../resources/audio_samples/speaker_1_utt_1.wav ../../resources/audio_samples/speaker_1_utt_2.wav --output_profile_path test.egl
 
       - name: Test inference
-        run: yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}} --test --input_profile_paths test.egl --test_audio_path ../../resources/audio_samples/speaker_1_test_utt.wav
+        run: yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}} -y ${{ matrix.device }} --test --input_profile_paths test.egl --test_audio_path ../../resources/audio_samples/speaker_1_test_utt.wav
 
   build-self-hosted:
     runs-on: ${{ matrix.machine }}
 
     strategy:
       matrix:
+        device: [best]
         machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, pv-windows-arm64]
+        include:
+          - device: gpu
+            machine: pv-linux
+          - device: gpu
+            machine: pv-windows
+          - device: gpu
+            machine: pv-ios
 
     steps:
       - uses: actions/checkout@v3
+
+      # ************** REMOVE AFTER RELEASE ********************
+      - name: Build Local Packages
+        run: yarn && yarn build
+        working-directory: binding/nodejs
+      # ********************************************************
 
       - name: Install dependencies
         run: yarn install
 
       - name: Test enroll
-        run: yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}} --enroll --enroll_audio_paths ../../resources/audio_samples/speaker_1_utt_1.wav ../../resources/audio_samples/speaker_1_utt_2.wav --output_profile_path test.egl
+        run: yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}} -y ${{ matrix.device }} --enroll --enroll_audio_paths ../../resources/audio_samples/speaker_1_utt_1.wav ../../resources/audio_samples/speaker_1_utt_2.wav --output_profile_path test.egl
 
       - name: Test inference
-        run: yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}} --test --input_profile_paths test.egl --test_audio_path ../../resources/audio_samples/speaker_1_test_utt.wav
+        run: yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}} -y ${{ matrix.device }} --test --input_profile_paths test.egl --test_audio_path ../../resources/audio_samples/speaker_1_test_utt.wav

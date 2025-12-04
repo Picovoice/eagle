@@ -335,8 +335,7 @@ export class Eagle {
   constructor(
     accessKey: string,
     speakerProfiles: Uint8Array[] | Uint8Array,
-    options: EagleOptions = {})
-  {
+    options: EagleOptions = {}) {
     assert(typeof accessKey === 'string');
     if (
       accessKey === null ||

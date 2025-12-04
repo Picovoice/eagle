@@ -249,7 +249,7 @@ describe('error message stack', () => {
 
     let profiler = new EagleProfiler(ACCESS_KEY, {
       device: DEVICE
-    });;
+    });
     const testPcm = new Int16Array(profiler.minEnrollSamples);
     const profilerBytes = profiler;
     // @ts-ignore
