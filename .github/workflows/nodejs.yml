@@ -54,12 +54,12 @@ jobs:
         device: [cpu:1, cpu]
         machine: [pv-windows-arm64]
         include:
-          - device: gpu
-            machine: pv-linux
 #          - device: gpu
-#            machine: pv-windows
+#            machine: pv-linux
           - device: gpu
-            machine: pv-ios
+            machine: pv-windows
+#          - device: gpu
+#            machine: pv-ios
 
     steps:
       - uses: actions/checkout@v3
