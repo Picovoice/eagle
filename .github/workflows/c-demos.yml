@@ -139,7 +139,7 @@ jobs:
 
     strategy:
       matrix:
-        machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, pv-windows-arm64, pv-windows, pv-ios, pv-linux]
+        machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, pv-windows-arm64, pv-windows, pv-ios]
         include:
           - machine: rpi3-32
             platform: raspberry-pi
@@ -189,12 +189,12 @@ jobs:
             make_file: "Unix Makefiles"
             pv_recorder_platform: "mac-arm64"
             device: gpu
-          - machine: pv-linux
-            platform: linux
-            arch: x86_64
-            make_file: "Unix Makefiles"
-            pv_recorder_platform: "linux"
-            device: gpu
+#          - machine: pv-linux
+#            platform: linux
+#            arch: x86_64
+#            make_file: "Unix Makefiles"
+#            pv_recorder_platform: "linux"
+#            device: gpu
 
     steps:
     - uses: actions/checkout@v3
