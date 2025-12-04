@@ -9,6 +9,7 @@
 #    specific language governing permissions and limitations under the License.
 #
 
+import os
 import os.path
 import subprocess
 import sys
@@ -23,7 +24,7 @@ class EagleCTestCase(unittest.TestCase):
         cls._device = sys.argv[2]
         cls._platform = sys.argv[3]
         cls._arch = "" if len(sys.argv) != 5 else sys.argv[4]
-        cls._root_dir = os.path.join(os.path.dirname(__file__), "../../..")
+        cls._root_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..")
 
     @staticmethod
     def _get_lib_ext(platform):
@@ -38,6 +39,10 @@ class EagleCTestCase(unittest.TestCase):
         return os.path.join(self._root_dir, 'lib/common/eagle_params.pv')
 
     def _get_library_file(self):
+        if self._platform == "windows":
+            if self._arch == "amd64":
+                os.environ["PATH"] += os.pathsep + os.path.join(self._root_dir, "lib", "windows", "amd64")
+
         return os.path.join(
             self._root_dir,
             "lib",
