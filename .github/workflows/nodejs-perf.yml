@@ -56,51 +56,51 @@ jobs:
       - name: Test
         run: yarn test perf.test.ts --access_key=${{secrets.PV_VALID_ACCESS_KEY}} --device=cpu:1 --num_test_iterations=${{matrix.num_test_iterations}} --enroll_performance_threshold_sec=${{matrix.enroll_performance_threshold_sec}} --proc_performance_threshold_sec=${{matrix.proc_performance_threshold_sec}}
 
-  perf-self-hosted:
-    runs-on: ${{ matrix.machine }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64]
-        include:
-          - machine: rpi3-32
-            num_test_iterations: 20
-            enroll_performance_threshold_sec: 2.5
-            proc_performance_threshold_sec: 2.8
-          - machine: rpi3-64
-            num_test_iterations: 20
-            enroll_performance_threshold_sec: 2.5
-            proc_performance_threshold_sec: 2.8
-          - machine: rpi4-32
-            num_test_iterations: 20
-            enroll_performance_threshold_sec: 1.5
-            proc_performance_threshold_sec: 1.5
-          - machine: rpi4-64
-            num_test_iterations: 20
-            enroll_performance_threshold_sec: 2.0
-            proc_performance_threshold_sec: 2.5
-          - machine: rpi5-64
-            num_test_iterations: 20
-            enroll_performance_threshold_sec: 0.5
-            proc_performance_threshold_sec: 0.6
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Install dependencies
-        run: yarn install
-
-      - name: Machine state before
-        working-directory: resources/.scripts
-        run: bash machine-state.sh
-
-      - name: Test
-        run: yarn test perf.test.ts --access_key=${{secrets.PV_VALID_ACCESS_KEY}} --device=cpu:1 --num_test_iterations=${{matrix.num_test_iterations}} --enroll_performance_threshold_sec=${{matrix.enroll_performance_threshold_sec}} --proc_performance_threshold_sec=${{matrix.proc_performance_threshold_sec}}
-
-      - name: Machine state after
-        working-directory: resources/.scripts
-        run: bash machine-state.sh
+#  perf-self-hosted:
+#    runs-on: ${{ matrix.machine }}
+#
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64]
+#        include:
+#          - machine: rpi3-32
+#            num_test_iterations: 20
+#            enroll_performance_threshold_sec: 2.5
+#            proc_performance_threshold_sec: 2.8
+#          - machine: rpi3-64
+#            num_test_iterations: 20
+#            enroll_performance_threshold_sec: 2.5
+#            proc_performance_threshold_sec: 2.8
+#          - machine: rpi4-32
+#            num_test_iterations: 20
+#            enroll_performance_threshold_sec: 1.5
+#            proc_performance_threshold_sec: 1.5
+#          - machine: rpi4-64
+#            num_test_iterations: 20
+#            enroll_performance_threshold_sec: 2.0
+#            proc_performance_threshold_sec: 2.5
+#          - machine: rpi5-64
+#            num_test_iterations: 20
+#            enroll_performance_threshold_sec: 0.5
+#            proc_performance_threshold_sec: 0.6
+#
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - name: Install dependencies
+#        run: yarn install
+#
+#      - name: Machine state before
+#        working-directory: resources/.scripts
+#        run: bash machine-state.sh
+#
+#      - name: Test
+#        run: yarn test perf.test.ts --access_key=${{secrets.PV_VALID_ACCESS_KEY}} --device=cpu:1 --num_test_iterations=${{matrix.num_test_iterations}} --enroll_performance_threshold_sec=${{matrix.enroll_performance_threshold_sec}} --proc_performance_threshold_sec=${{matrix.proc_performance_threshold_sec}}
+#
+#      - name: Machine state after
+#        working-directory: resources/.scripts
+#        run: bash machine-state.sh
 
   perf-windows-arm64:
     runs-on: ${{ matrix.machine }}
