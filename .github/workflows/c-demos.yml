@@ -138,7 +138,7 @@ jobs:
 
     strategy:
       matrix:
-        machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, pv-windows-arm64]
+        machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, pv-windows-arm64, pv-windows, pv-ios, pv-linux]
         include:
           - machine: rpi3-32
             platform: raspberry-pi
