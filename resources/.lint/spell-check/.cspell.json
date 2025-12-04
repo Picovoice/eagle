@@ -47,6 +47,13 @@
     "**/gradle.properties",
     "**/gradlew",
     "**/gradlew.bat",
-    "**/proguard-rules.pro"
+    "**/proguard-rules.pro",
+
+    // wasm
+    "**/lib/wasm/**/*.js",
+
+    // submodules
+    "**/demo/c/dr_libs/**",
+    "**/demo/c/pvrecorder/**"
   ]
 }
