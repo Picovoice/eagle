@@ -132,3 +132,84 @@ jobs:
 
     - name: Test
       run: python test/test_eagle_c.py ${{secrets.PV_VALID_ACCESS_KEY}} ${{ matrix.platform }} ${{ matrix.arch }}
+
+  build-filedemo-self-hosted:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, pv-windows-arm64]
+        include:
+          - machine: rpi3-32
+            platform: raspberry-pi
+            arch: cortex-a53
+            make_file: "Unix Makefiles"
+            pv_recorder_platform: "raspberry-pi3"
+            device: best
+          - machine: rpi3-64
+            platform: raspberry-pi
+            arch: cortex-a53-aarch64
+            make_file: "Unix Makefiles"
+            pv_recorder_platform: "raspberry-pi3-64"
+            device: best
+          - machine: rpi4-32
+            platform: raspberry-pi
+            arch: cortex-a72
+            make_file: "Unix Makefiles"
+            pv_recorder_platform: "raspberry-pi4"
+            device: best
+          - machine: rpi4-64
+            platform: raspberry-pi
+            arch: cortex-a72-aarch64
+            make_file: "Unix Makefiles"
+            pv_recorder_platform: "raspberry-pi4-64"
+            device: best
+          - machine: rpi5-64
+            platform: raspberry-pi
+            arch: cortex-a76-aarch64
+            make_file: "Unix Makefiles"
+            pv_recorder_platform: "raspberry-pi5-64"
+            device: best
+          - machine: pv-windows-arm64
+            platform: windows
+            arch: arm64
+            make_file: "MinGW Makefiles"
+            pv_recorder_platform: "windows-arm64"
+            device: best
+          - machine: pv-windows
+            platform: windows
+            arch: amd64
+            make_file: "MinGW Makefiles"
+            pv_recorder_platform: "windows-amd64"
+            device: gpu
+          - machine: pv-ios
+            platform: mac
+            arch: arm64
+            make_file: "Unix Makefiles"
+            pv_recorder_platform: "mac-arm64"
+            device: gpu
+          - machine: pv-linux
+            platform: linux
+            arch: x86_64
+            make_file: "Unix Makefiles"
+            pv_recorder_platform: "linux"
+            device: gpu
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Set up Python '3.10'
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
+
+    - name: Create build directory
+      run: cmake -G "${{ matrix.make_file }}" -B ./build -DPV_RECORDER_PLATFORM="${{ matrix.pv_recorder_platform }}"
+
+    - name: Build filedemo
+      run: cmake --build ./build --target eagle_demo_file
+
+    - name: Test
+      run: python3 test/test_eagle_c.py ${{secrets.PV_VALID_ACCESS_KEY}} ${{ matrix.device }} ${{ matrix.platform }} ${{ matrix.arch }}
