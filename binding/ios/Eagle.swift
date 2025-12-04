@@ -37,7 +37,7 @@ public class Eagle: EagleBase {
         accessKey: String,
         speakerProfiles: [EagleProfile],
         modelPath: String? = nil,
-        device: String = "best"
+        device: String? = nil
     ) throws {
         super.init()
 
@@ -58,6 +58,11 @@ public class Eagle: EagleBase {
             modelPathArg = try self.getResourcePath(modelPathArg!)
         }
 
+        var deviceArg = device
+        if device == nil {
+            deviceArg = "best"
+        }
+
         var speakerHandles: [UnsafeRawPointer?] = []
         for profile in speakerProfiles {
             var profileBytes = profile.getBytes()
@@ -71,7 +76,7 @@ public class Eagle: EagleBase {
         let status = pv_eagle_init(
             accessKey,
             modelPathArg,
-            device,
+            deviceArg,
             Int32(speakerCount),
             speakerHandles,
             &handle)

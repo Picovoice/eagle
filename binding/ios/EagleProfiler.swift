@@ -42,7 +42,7 @@ public class EagleProfiler: EagleBase {
     public init(
         accessKey: String,
         modelPath: String? = nil,
-        device: String = "best"
+        device: String? = nil
     ) throws {
         super.init()
 
@@ -59,12 +59,18 @@ public class EagleProfiler: EagleBase {
             modelPathArg = try getResourcePath(modelPathArg!)
         }
 
+
+        var deviceArg = device
+        if device == nil {
+            deviceArg = "best"
+        }
+
         pv_set_sdk(EagleProfiler.sdk)
 
         var status = pv_eagle_profiler_init(
             accessKey,
             modelPathArg,
-            device,
+            deviceArg,
             &handle)
         if status != PV_STATUS_SUCCESS {
             let messageStack = try EagleProfiler.getMessageStack()
