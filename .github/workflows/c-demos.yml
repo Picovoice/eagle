@@ -201,11 +201,6 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Set up Python '3.10'
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.10'
-
     - name: Create build directory
       run: cmake -G "${{ matrix.make_file }}" -B ./build -DPV_RECORDER_PLATFORM="${{ matrix.pv_recorder_platform }}"
 
