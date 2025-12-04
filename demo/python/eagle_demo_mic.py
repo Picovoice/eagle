@@ -103,15 +103,15 @@ def main():
         required=True,
         help='AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)')
     common_parser.add_argument(
-        '--device',
-        help='Device to run inference on (`best`, `cpu:{num_threads}`, `gpu:{gpu_index}`). '
-             'Default: automatically selects best device for `pveagle`')
-    common_parser.add_argument(
         '--library_path',
         help='Absolute path to dynamic library. Default: using the library provided by `pveagle`')
     common_parser.add_argument(
         '--model_path',
         help='Absolute path to Eagle model. Default: using the model provided by `pveagle`')
+    common_parser.add_argument(
+        '--device',
+        help='Device to run inference on (`best`, `cpu:{num_threads}` or `gpu:{gpu_index}`). '
+             'Default: automatically selects best device for `pveagle`')
     common_parser.add_argument('--audio_device_index', type=int, default=-1, help='Index of input audio device')
     common_parser.add_argument(
         '--output_audio_path',

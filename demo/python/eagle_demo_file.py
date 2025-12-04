@@ -70,12 +70,12 @@ def main():
         required=True,
         help='AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)')
     common_parser.add_argument(
-        '--device',
-        help='Device to run inference on (`best`, `cpu:{num_threads}`, `gpu:{gpu_index}`). '
-             'Default: automatically selects best device for `pveagle`')
-    common_parser.add_argument(
         '--model_path',
         help='Absolute path to Eagle model. Default: using the model provided by `pveagle`')
+    common_parser.add_argument(
+        '--device',
+        help='Device to run inference on (`best`, `cpu:{num_threads}` or `gpu:{gpu_index}`). '
+             'Default: automatically selects best device for `pveagle`')
 
     subparsers = parser.add_subparsers(dest='command')
 
