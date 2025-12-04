@@ -100,6 +100,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        device: [cpu:1, cpu]
         include:
         - os: ubuntu-latest
           platform: linux
@@ -131,10 +132,10 @@ jobs:
       run: cmake --build ./build --target eagle_demo_file
 
     - name: Test
-      run: python test/test_eagle_c.py ${{secrets.PV_VALID_ACCESS_KEY}} ${{ matrix.platform }} ${{ matrix.arch }}
+      run: python test/test_eagle_c.py ${{secrets.PV_VALID_ACCESS_KEY}} ${{ matrix.device }} ${{ matrix.platform }} ${{ matrix.arch }}
 
   build-filedemo-self-hosted:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.machine }}
 
     strategy:
       matrix:
