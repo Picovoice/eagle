@@ -1,5 +1,5 @@
 #
-#    Copyright 2023 Picovoice Inc.
+#    Copyright 2023-2025 Picovoice Inc.
 #
 #    You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 #    file accompanying this source.
@@ -89,6 +89,13 @@ def main():
         '--show_audio_devices',
         action='store_true',
         help='List available audio input devices and exit')
+    parser.add_argument(
+        '--show_inference_devices',
+        action='store_true',
+        help='Show the list of available devices for Eagle inference and exit')
+    parser.add_argument(
+        '--library_path',
+        help='Absolute path to dynamic library. Default: using the library provided by `pveagle`')
 
     common_parser = argparse.ArgumentParser(add_help=False)
     common_parser.add_argument(
@@ -101,6 +108,10 @@ def main():
     common_parser.add_argument(
         '--model_path',
         help='Absolute path to Eagle model. Default: using the model provided by `pveagle`')
+    common_parser.add_argument(
+        '--device',
+        help='Device to run inference on (`best`, `cpu:{num_threads}` or `gpu:{gpu_index}`). '
+             'Default: automatically selects best device for `pveagle`')
     common_parser.add_argument('--audio_device_index', type=int, default=-1, help='Index of input audio device')
     common_parser.add_argument(
         '--output_audio_path',
@@ -131,11 +142,16 @@ def main():
             print('Device #%d: %s' % (index, name))
         return
 
+    if args.show_inference_devices:
+        print('\n'.join(pveagle.available_devices(library_path=args.library_path)))
+        return
+
     if args.command == 'enroll':
         try:
             eagle_profiler = pveagle.create_profiler(
                 access_key=args.access_key,
                 model_path=args.model_path,
+                device=args.device,
                 library_path=args.library_path)
         except pveagle.EagleError as e:
             print("Failed to initialize Eagle: %s" % e)
@@ -205,6 +221,7 @@ def main():
             eagle = pveagle.create_recognizer(
                 access_key=args.access_key,
                 model_path=args.model_path,
+                device=args.device,
                 library_path=args.library_path,
                 speaker_profiles=profiles)
 

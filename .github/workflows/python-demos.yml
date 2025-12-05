@@ -27,8 +27,9 @@ jobs:
 
     strategy:
       matrix:
+        device: [ cpu:1, cpu ]
         os: [ ubuntu-latest, windows-latest, macos-latest ]
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
 
     steps:
     - uses: actions/checkout@v3
@@ -40,6 +41,11 @@ jobs:
 
     - name: Pre-build dependencies
       run: python -m pip install --upgrade pip
+    # ************** REMOVE AFTER RELEASE ********************
+    - name: Build binding
+      run: |
+        pip install wheel setuptools && cd ../../binding/python && python3 setup.py sdist bdist_wheel && pip install dist/pveagle-2.0.0-py3-none-any.whl
+    # ********************************************************
 
     - name: Install dependencies
       run: pip install -r requirements.txt
@@ -48,6 +54,7 @@ jobs:
       run: >
         python eagle_demo_file.py enroll
         --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
+        --device ${{ matrix.device }}
         --enroll_audio_paths ../../resources/audio_samples/speaker_1_utt_1.wav ../../resources/audio_samples/speaker_1_utt_2.wav
         --output_profile_path test.egl
 
@@ -55,6 +62,7 @@ jobs:
       run: >
         python eagle_demo_file.py test
         --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
+        --device ${{ matrix.device }}
         --input_profile_paths test.egl
         --test_audio_path ../../resources/audio_samples/speaker_1_test_utt.wav
 
@@ -63,13 +71,27 @@ jobs:
 
     strategy:
       matrix:
-        machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, pv-windows-arm64]
+        device: [ best ]
+        machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, pv-windows-arm64 ]
+        include:
+          - device: gpu
+            machine: pv-linux
+          - device: gpu
+            machine: pv-windows
+          - device: gpu
+            machine: pv-ios
 
     steps:
       - uses: actions/checkout@v3
 
       - name: Pre-build dependencies
         run: python3 -m pip install --upgrade pip
+
+      # ************** REMOVE AFTER RELEASE ********************
+      - name: Build binding
+        run: |
+          pip install wheel setuptools && cd ../../binding/python && python3 setup.py sdist bdist_wheel && pip install dist/pveagle-2.0.0-py3-none-any.whl
+      # ********************************************************
 
       - name: Install dependencies
         run: pip3 install -r requirements.txt
@@ -78,6 +100,7 @@ jobs:
         run: >
           python3 eagle_demo_file.py enroll
           --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
+          --device ${{ matrix.device }}
           --enroll_audio_paths ../../resources/audio_samples/speaker_1_utt_1.wav ../../resources/audio_samples/speaker_1_utt_2.wav
           --output_profile_path test.egl
 
@@ -85,5 +108,6 @@ jobs:
         run: >
           python3 eagle_demo_file.py test
           --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
+          --device ${{ matrix.device }}
           --input_profile_paths test.egl
           --test_audio_path ../../resources/audio_samples/speaker_1_test_utt.wav
