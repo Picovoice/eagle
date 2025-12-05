@@ -1,5 +1,5 @@
 //
-//  Copyright 2023-2024 Picovoice Inc.
+//  Copyright 2023-2025 Picovoice Inc.
 //  You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 //  file accompanying this source.
 //  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
@@ -26,8 +26,19 @@ public class Eagle: EagleBase {
     ///   - accessKey: AccessKey obtained from the Picovoice Console (https://console.picovoice.ai/)
     ///   - speakerProfiles: An array of EagleProfile objects obtained from EagleProfiler.
     ///   - modelPath: Absolute path to file containing model parameters.
+    ///   - device: String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
+    ///     suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU
+    ///     device. To select a specific GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}`
+    ///     is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the default
+    ///     number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
+    ///     where `${NUM_THREADS}` is the desired number of threads.
     /// - Throws: EagleError
-    public init(accessKey: String, speakerProfiles: [EagleProfile], modelPath: String? = nil) throws {
+    public init(
+        accessKey: String,
+        speakerProfiles: [EagleProfile],
+        modelPath: String? = nil,
+        device: String? = nil
+    ) throws {
         super.init()
 
         if speakerProfiles.isEmpty {
@@ -47,6 +58,11 @@ public class Eagle: EagleBase {
             modelPathArg = try self.getResourcePath(modelPathArg!)
         }
 
+        var deviceArg = device
+        if device == nil {
+            deviceArg = "best"
+        }
+
         var speakerHandles: [UnsafeRawPointer?] = []
         for profile in speakerProfiles {
             var profileBytes = profile.getBytes()
@@ -60,12 +76,13 @@ public class Eagle: EagleBase {
         let status = pv_eagle_init(
             accessKey,
             modelPathArg,
+            deviceArg,
             Int32(speakerCount),
             speakerHandles,
             &handle)
         if status != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToEagleError(status, "Eagle init failed", messageStack)
+            let messageStack = try Eagle.getMessageStack()
+            throw Eagle.pvStatusToEagleError(status, "Eagle init failed", messageStack)
         }
     }
 
@@ -75,12 +92,24 @@ public class Eagle: EagleBase {
     ///   - accessKey: AccessKey obtained from the Picovoice Console (https://console.picovoice.ai/)
     ///   - speakerProfile: An EagleProfile object obtained from EagleProfiler.
     ///   - modelPath: Absolute path to file containing model parameters.
+    ///   - device: String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
+    ///     suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU
+    ///     device. To select a specific GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}`
+    ///     is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the default
+    ///     number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
+    ///     where `${NUM_THREADS}` is the desired number of threads.
     /// - Throws: EagleError
-    public convenience init(accessKey: String, speakerProfile: EagleProfile, modelPath: String? = nil) throws {
+    public convenience init(
+        accessKey: String,
+        speakerProfile: EagleProfile,
+        modelPath: String? = nil,
+        device: String = "best"
+    ) throws {
         try self.init(
             accessKey: accessKey,
             speakerProfiles: [speakerProfile],
-            modelPath: modelPath)
+            modelPath: modelPath,
+            device: device)
     }
 
     deinit {
@@ -117,8 +146,8 @@ public class Eagle: EagleBase {
             scores.baseAddress)
 
         if status != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToEagleError(status, "Eagle process failed", messageStack)
+            let messageStack = try Eagle.getMessageStack()
+            throw Eagle.pvStatusToEagleError(status, "Eagle process failed", messageStack)
         }
 
         return Array(scores)
@@ -139,8 +168,8 @@ public class Eagle: EagleBase {
         let status = pv_eagle_reset(handle)
 
         if status != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToEagleError(status, "Eagle reset failed", messageStack)
+            let messageStack = try Eagle.getMessageStack()
+            throw Eagle.pvStatusToEagleError(status, "Eagle reset failed", messageStack)
         }
     }
 }

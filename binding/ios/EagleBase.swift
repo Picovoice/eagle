@@ -41,6 +41,30 @@ public class EagleBase {
         self.sdk = sdk
     }
 
+    /// Lists all available devices that Eagle can use for inference.
+    /// Entries in the list can be used as the `device` argument when initializing Eagle.
+    ///
+    /// - Throws: EagleError
+    /// - Returns: Array of available devices that Eagle can be used for inference.
+    public static func getAvailableDevices() throws -> [String] {
+        var cHardwareDevices: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>?
+        var numHardwareDevices: Int32 = 0
+        let status = pv_eagle_list_hardware_devices(&cHardwareDevices, &numHardwareDevices)
+        if status != PV_STATUS_SUCCESS {
+            let messageStack = try EagleBase.getMessageStack()
+            throw EagleBase.pvStatusToEagleError(status, "Eagle getAvailableDevices failed", messageStack)
+        }
+
+        var hardwareDevices: [String] = []
+        for i in 0..<numHardwareDevices {
+            hardwareDevices.append(String(cString: cHardwareDevices!.advanced(by: Int(i)).pointee!))
+        }
+
+        pv_eagle_free_hardware_devices(cHardwareDevices, numHardwareDevices)
+
+        return hardwareDevices
+    }
+
     /// Given a path, return the full path to the resource.
     ///
     /// - Parameters:
@@ -65,7 +89,7 @@ public class EagleBase {
     ///   - message: message to include with the EagleError.
     ///   - messageStack: Error stack returned from Eagle.
     /// - Returns: An EagleError.
-    internal func pvStatusToEagleError(
+    internal static func pvStatusToEagleError(
         _ status: pv_status_t,
         _ message: String,
         _ messageStack: [String] = []) -> EagleError {
@@ -121,12 +145,12 @@ public class EagleBase {
         }
     }
 
-    internal func getMessageStack() throws -> [String] {
+    internal static func getMessageStack() throws -> [String] {
         var messageStackRef: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>?
         var messageStackDepth: Int32 = 0
         let status = pv_get_error_stack(&messageStackRef, &messageStackDepth)
         if status != PV_STATUS_SUCCESS {
-            throw pvStatusToEagleError(status, "Unable to get Eagle error state")
+            throw EagleBase.pvStatusToEagleError(status, "Unable to get Eagle error state")
         }
 
         var messageStack: [String] = []

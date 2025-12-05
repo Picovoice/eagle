@@ -15,7 +15,7 @@ Eagle is an on-device speaker recognition engine. Eagle is:
 
 ## Compatibility
 
-- iOS 13.0+
+- iOS 16.0+
 
 ## Installation
 <!-- markdown-link-check-disable -->
