@@ -96,8 +96,10 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/retry/-/retry-0.4.2.tgz#1860473de7dfa1546767448f333db80cb0ff2161"
   integrity sha512-xeO57FpIu4p1Ri3Jq/EXq4ClRm86dVF2z/+kvFnyqVYRavTZmaFaUBbWCOuuTh0o/g7DSsk6kc2vrS4Vl5oPOQ==
 
-"@picovoice/eagle-web@../../binding/web":
+"@picovoice/eagle-web@2.0.0":
   version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@picovoice/eagle-web/-/eagle-web-2.0.0.tgz#1253b30ee74b0eacc4e2e9a57f4372aadb9529e4"
+  integrity sha512-hifG0nkTbb9HyzPdm3rwiqZafq/CjPBOWatRNWDArbor4doUpLXCvRATNB7zYG5GRaoo7l/c+MExnaLBWgC2cA==
   dependencies:
     "@picovoice/web-utils" "=1.4.3"
 
