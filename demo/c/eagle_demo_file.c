@@ -101,7 +101,7 @@ void (*pv_free_error_stack_func)(char **) = NULL;
 
 static void print_usage(const char *program_name) {
     fprintf(stdout,
-            "Usage: %s [-e OUTPUT_PROFILE_PATH | -t INPUT_PROFILE_PATH ] \n"
+            "Usage: %s [-e OUTPUT_PROFILE_PATH | -t INPUT_PROFILE_PATH ] "
             "[-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY -y DEVICE WAV_AUDIO_PATH_1 WAV_AUDIO_PATH_2 ...]\n"
             "        %s [-i, --show_inference_devices] -l LIBRARY_PATH",
             program_name,

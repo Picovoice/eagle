@@ -102,7 +102,8 @@ void (*pv_free_error_stack_func)(char **) = NULL;
 
 static void print_usage(const char *program_name) {
     fprintf(stdout,
-            "Usage: %s [-e OUTPUT_PROFILE_PATH | -t INPUT_PROFILE_PATH] [-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY -d AUDIO_DEVICE_INDEX]\n"
+            "Usage: %s [-e OUTPUT_PROFILE_PATH | -t INPUT_PROFILE_PATH] "
+            "[-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY -d AUDIO_DEVICE_INDEX -y DEVICE]\n"
             "        %s [-s, --show_audio_devices]\n"
             "        %s [-i, --show_inference_devices] -l LIBRARY_PATH\n",
             program_name,
