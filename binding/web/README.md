@@ -39,6 +39,8 @@ Browsers that don't support `SharedArrayBuffers` or applications that don't incl
 IndexedDB is required to use `Eagle` in a worker thread. Browsers without IndexedDB support
 (i.e. Firefox Incognito Mode) should use `Eagle` in the main thread.
 
+Multi-threading is only enabled for Eagle when using on a web worker.
+
 ## Installation
 
 Using `yarn`:
