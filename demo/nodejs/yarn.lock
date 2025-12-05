@@ -2,10 +2,8 @@
 # yarn lockfile v1
 
 
-"@picovoice/eagle-node@=1.0.4":
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/@picovoice/eagle-node/-/eagle-node-1.0.4.tgz#8027e8c84615de9c76be039acae70f132ed3e4d9"
-  integrity sha512-Dct239o9E6vsUZkxa8yO4eCnGp8U270nTyIHmen266f9SzputVd2nmMeBM7oyvW0xt9vTL/Qi85NhdqARq/+KA==
+"@picovoice/eagle-node@file:../../binding/nodejs":
+  version "2.0.0"
 
 "@picovoice/pvrecorder-node@^1.2.6":
   version "1.2.6"
