@@ -498,11 +498,13 @@ Build an instance of the profiler:
 ```c
 const char *access_key = "${ACCESS_KEY}";
 const char *model_path = "${MODEL_PATH}";
+const char *device = "best";
 
 pv_eagle_profiler_t *eagle_profiler = NULL;
 pv_status_t status = pv_eagle_profiler_init(
             access_key,
             model_path,
+            device,
             &eagle_profiler);
 if (status != PV_STATUS_SUCCESS) {
     // error handling logic
@@ -559,6 +561,7 @@ pv_eagle_t *eagle = NULL;
 pv_status_t status = pv_eagle_init(
         access_key,
         model_path,
+        device,
         1,
         (const void *const *) &speaker_profile,
         &eagle);
@@ -746,6 +749,13 @@ eagle.release()
 ```
 
 ## Releases
+
+### v2.0.0 - December 5th, 2025
+
+ - Improved engine performance
+ - Added support for running on GPU or multiple CPU cores
+ - Node.js min version bumped to Node 18
+ - iOS min version bumped to iOS 16
 
 ### v1.0.0 - January 24th, 2024
 
