@@ -237,7 +237,7 @@
 			);
 			mainGroup = 1E0064BB27CEEA65006FF6E9;
 			packageReferences = (
-				E173C8FB2CFE40F000A0903C /* XCLocalSwiftPackageReference "../../../../eagle" */,
+				E1F352FC2D00E9790069B0E6 /* XCRemoteSwiftPackageReference "eagle" */,
 			);
 			productRefGroup = 1E0064C527CEEA65006FF6E9 /* Products */;
 			projectDirPath = "";
@@ -664,7 +664,7 @@
 			repositoryURL = "https://github.com/Picovoice/eagle";
 			requirement = {
 				kind = exactVersion;
-				version = 1.0.2;
+				version = 2.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

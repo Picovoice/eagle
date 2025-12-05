@@ -112,7 +112,7 @@
 			mainGroup = 02447A8026D94F74004A6CE9;
 			packageReferences = (
 				E19F4D232CF51CC40097F2C5 /* XCRemoteSwiftPackageReference "ios-voice-processor" */,
-				1E4229AF2ED53B530052E028 /* XCLocalSwiftPackageReference "../../../../eagle" */,
+				E1F352F92D00E8E30069B0E6 /* XCRemoteSwiftPackageReference "eagle" */,
 			);
 			productRefGroup = 02447A8A26D94F75004A6CE9 /* Products */;
 			projectDirPath = "";
@@ -352,7 +352,7 @@
 			repositoryURL = "https://github.com/Picovoice/eagle";
 			requirement = {
 				kind = exactVersion;
-				version = 1.0.2;
+				version = 2.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
