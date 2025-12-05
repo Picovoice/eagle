@@ -21,7 +21,7 @@ async function testEnrollPerformance(
       publicPath: '/test/eagle_params.pv',
       forceWrite: true,
     },
-    DEVICE
+    { device: DEVICE }
   );
 
   for (let i = 0; i < NUM_TEST_ITERATIONS + 1; i++) {
@@ -58,7 +58,7 @@ async function testProcessPerformance(
       publicPath: '/test/eagle_params.pv',
       forceWrite: true,
     },
-    DEVICE
+    { device: DEVICE }
   );
   for (const pcm of enrollPcm) {
     await profiler.enroll(pcm);

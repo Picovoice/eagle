@@ -39,7 +39,7 @@ const initRequest = async (request: EagleWorkerInitRequest): Promise<any> => {
       request.accessKey,
       request.modelPath,
       request.speakerProfiles,
-      request.device
+      request.options
     );
     return {
       command: 'ok',

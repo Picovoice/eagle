@@ -40,7 +40,7 @@ const initRequest = async (
     profiler = await EagleProfiler._init(
       request.accessKey,
       request.modelPath,
-      request.device
+      request.options
     );
     return {
       command: 'ok',

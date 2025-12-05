@@ -44,6 +44,16 @@ export type EagleProfile = {
   bytes: Uint8Array;
 };
 
+export type EagleOptions = {
+  /** @defaultValue `best` */
+  device?: string;
+};
+
+export type EagleProfilerOptions = {
+  /** @defaultValue `best` */
+  device?: string;
+};
+
 export type EagleProfilerEnrollResult = {
   feedback: EagleProfilerEnrollFeedback;
   percentage: number;
@@ -53,7 +63,7 @@ export type EagleProfilerWorkerInitRequest = {
   command: 'init';
   accessKey: string;
   modelPath: string;
-  device?: string;
+  options: EagleProfilerOptions;
   wasmSimd: string;
   wasmSimdLib: string;
   wasmPThread: string;
@@ -139,7 +149,7 @@ export type EagleWorkerInitRequest = {
   accessKey: string;
   modelPath: string;
   speakerProfiles: EagleProfile[];
-  device?: string;
+  options: EagleOptions;
   wasmSimd: string;
   wasmSimdLib: string;
   wasmPThread: string;

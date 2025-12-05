@@ -13,11 +13,13 @@ import PvWorker from 'web-worker:./eagle_worker_handler.ts';
 
 import {
   EagleModel,
+  EagleOptions,
   EagleWorkerProcessResponse,
   EagleWorkerInitResponse,
   EagleWorkerReleaseResponse,
   EagleWorkerResetResponse,
   EagleProfile,
+  PvStatus,
 } from './types';
 import { loadModel } from '@picovoice/web-utils';
 import { pvStatusToException } from "./eagle_errors";
@@ -33,7 +35,7 @@ export class EagleWorker {
   private static _wasmPThread: string;
   private static _wasmPThreadLib: string;
 
-  private static _sdk: string = "web";
+  private static _sdk: string = 'web';
 
   private constructor(
     worker: Worker,
@@ -124,7 +126,8 @@ export class EagleWorker {
    * @param model.forceWrite Flag to overwrite the model in storage even if it exists.
    * @param model.version Version of the model file. Increment to update the model file in storage.
    * @param speakerProfiles One or more Eagle speaker profiles. These can be constructed using `EagleProfiler`.
-   * @param device (Optional) String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
+   * @param options Optional configuration arguments.
+   * @param options.device String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
    * suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU device. To select a specific
    * GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the target GPU. If set to
    * `cpu`, the engine will run on the CPU with the default number of threads. To specify the number of threads, set this
@@ -136,7 +139,7 @@ export class EagleWorker {
     accessKey: string,
     model: EagleModel,
     speakerProfiles: EagleProfile[] | EagleProfile,
-    device?: string,
+    options: EagleOptions = {}
   ): Promise<EagleWorker> {
     const customWritePath = model.customWritePath
       ? model.customWritePath
@@ -164,11 +167,22 @@ export class EagleWorker {
               break;
             case 'failed':
             case 'error':
-              reject(pvStatusToException(event.data.status, event.data.shortMessage, event.data.messageStack));
+              reject(
+                pvStatusToException(
+                  event.data.status,
+                  event.data.shortMessage,
+                  event.data.messageStack
+                )
+              );
               break;
             default:
-              // @ts-ignore
-              reject(pvStatusToException(PvStatus.RUNTIME_ERROR, `Unrecognized command: ${event.data.command}`));
+              reject(
+                pvStatusToException(
+                  PvStatus.RUNTIME_ERROR,
+                  // @ts-ignore
+                  `Unrecognized command: ${event.data.command}`
+                )
+              );
           }
         };
       }
@@ -181,7 +195,7 @@ export class EagleWorker {
       speakerProfiles: !Array.isArray(speakerProfiles)
         ? [speakerProfiles]
         : speakerProfiles,
-      device: device,
+      options: options,
       wasmSimd: this._wasmSimd,
       wasmSimdLib: this._wasmSimdLib,
       wasmPThread: this._wasmPThread,
@@ -213,11 +227,22 @@ export class EagleWorker {
             break;
           case 'failed':
           case 'error':
-            reject(pvStatusToException(event.data.status, event.data.shortMessage, event.data.messageStack));
+            reject(
+              pvStatusToException(
+                event.data.status,
+                event.data.shortMessage,
+                event.data.messageStack
+              )
+            );
             break;
           default:
-            // @ts-ignore
-            reject(pvStatusToException(PvStatus.RUNTIME_ERROR, `Unrecognized command: ${event.data.command}`));
+            reject(
+              pvStatusToException(
+                PvStatus.RUNTIME_ERROR,
+                // @ts-ignore
+                `Unrecognized command: ${event.data.command}`
+              )
+            );
         }
       };
     });
@@ -245,11 +270,22 @@ export class EagleWorker {
             break;
           case 'failed':
           case 'error':
-            reject(pvStatusToException(event.data.status, event.data.shortMessage, event.data.messageStack));
+            reject(
+              pvStatusToException(
+                event.data.status,
+                event.data.shortMessage,
+                event.data.messageStack
+              )
+            );
             break;
           default:
-            // @ts-ignore
-            reject(pvStatusToException(PvStatus.RUNTIME_ERROR, `Unrecognized command: ${event.data.command}`));
+            reject(
+              pvStatusToException(
+                PvStatus.RUNTIME_ERROR,
+                // @ts-ignore
+                `Unrecognized command: ${event.data.command}`
+              )
+            );
         }
       };
     });
@@ -274,11 +310,22 @@ export class EagleWorker {
             break;
           case 'failed':
           case 'error':
-            reject(pvStatusToException(event.data.status, event.data.shortMessage, event.data.messageStack));
+            reject(
+              pvStatusToException(
+                event.data.status,
+                event.data.shortMessage,
+                event.data.messageStack
+              )
+            );
             break;
           default:
-            // @ts-ignore
-            reject(pvStatusToException(PvStatus.RUNTIME_ERROR, `Unrecognized command: ${event.data.command}`));
+            reject(
+              pvStatusToException(
+                PvStatus.RUNTIME_ERROR,
+                // @ts-ignore
+                `Unrecognized command: ${event.data.command}`
+              )
+            );
         }
       };
     });

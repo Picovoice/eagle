@@ -58,7 +58,7 @@ before(() => {
               publicPath: '/test/eagle_params.pv',
               forceWrite: true,
             },
-            DEVICE
+            { device: DEVICE }
           );
           testProfile = await getProfile(
             profiler,
@@ -86,7 +86,7 @@ describe('Eagle Profiler', async function () {
             publicPath: '/test/eagle_params.pv',
             forceWrite: true,
           },
-          DEVICE
+          { device: DEVICE }
         );
         expect(profiler.sampleRate).to.be.gt(0);
         expect(profiler.minEnrollSamples).to.be.gt(0);
@@ -106,7 +106,7 @@ describe('Eagle Profiler', async function () {
             base64: eagleParams,
             forceWrite: true,
           },
-          DEVICE
+          { device: DEVICE }
         );
 
         expect(profiler.sampleRate).to.be.gt(0);
@@ -131,7 +131,7 @@ describe('Eagle Profiler', async function () {
                     publicPath: '/test/eagle_params.pv',
                     forceWrite: true,
                   },
-                  DEVICE
+                  { device: DEVICE }
                 );
 
                 const profile = await getProfile(
@@ -170,7 +170,7 @@ describe('Eagle Profiler', async function () {
         const eagle = await instance.create(
           "invalidAccessKey",
           { base64: eagleParams, forceWrite: true },
-          DEVICE
+          { device: DEVICE }
         );
         await eagle.release();
         expect(eagle).to.be.undefined;
@@ -185,7 +185,7 @@ describe('Eagle Profiler', async function () {
         const eagle = await instance.create(
           "invalidAccessKey",
           { base64: eagleParams, forceWrite: true },
-          DEVICE
+          { device: DEVICE }
         );
         await eagle.release();
         expect(eagle).to.be.undefined;
@@ -200,7 +200,7 @@ describe('Eagle Profiler', async function () {
         const eagle = await instance.create(
           ACCESS_KEY,
           { base64: eagleParams, forceWrite: true },
-          "cloud:9"
+          { device: "cloud:9" }
         );
         expect(eagle).to.be.undefined;
       } catch (e: any) {
@@ -218,7 +218,7 @@ describe('Eagle Profiler', async function () {
     const eagle = await EagleProfiler.create(
       ACCESS_KEY,
       { base64: eagleParams, forceWrite: true },
-      DEVICE
+      { device: DEVICE }
     );
 
     const testPcm = new Int16Array(eagle.minEnrollSamples);
@@ -270,7 +270,7 @@ describe('Eagle', function () {
           forceWrite: true,
         },
         testProfile,
-        DEVICE
+        { device: DEVICE }
       );
       expect(eagle.sampleRate).to.be.gt(0);
       expect(eagle.frameLength).to.be.gt(0);
@@ -287,7 +287,7 @@ describe('Eagle', function () {
           forceWrite: true,
         },
         testProfile,
-        DEVICE
+        { device: DEVICE }
       );
       expect(eagle.sampleRate).to.be.gt(0);
       expect(eagle.frameLength).to.be.gt(0);
@@ -303,7 +303,7 @@ describe('Eagle', function () {
           "invalidAccessKey",
           { base64: eagleParams, forceWrite: true },
           testProfile,
-          DEVICE
+          { device: DEVICE }
         );
         await eagle.release();
         expect(eagle).to.be.undefined;
@@ -319,7 +319,7 @@ describe('Eagle', function () {
           "invalidAccessKey",
           { base64: eagleParams, forceWrite: true },
           testProfile,
-          DEVICE
+          { device: DEVICE }
         );
         await eagle.release();
         expect(eagle).to.be.undefined;
@@ -335,7 +335,7 @@ describe('Eagle', function () {
           ACCESS_KEY,
           { base64: eagleParams, forceWrite: true },
           testProfile,
-          "cloud:9"
+          { device: "cloud:9" }
         );
         expect(eagle).to.be.undefined;
       } catch (e: any) {
@@ -357,7 +357,7 @@ describe('Eagle', function () {
                 forceWrite: true,
               },
               testProfile,
-              DEVICE
+              { device: DEVICE }
             );
             const scores = await getScores(eagle, testPcm);
 
@@ -386,7 +386,7 @@ describe('Eagle', function () {
                 forceWrite: true,
               },
               testProfile,
-              DEVICE
+              { device: DEVICE }
             );
             const scores = await getScores(eagle, testPcm);
 
@@ -413,7 +413,7 @@ describe('Eagle', function () {
       ACCESS_KEY,
       { base64: eagleParams, forceWrite: true },
       testProfile,
-      DEVICE
+      { device: DEVICE }
     );
     const testPcm = new Int16Array(eagle.frameLength);
     // @ts-ignore

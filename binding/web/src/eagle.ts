@@ -27,8 +27,10 @@ import { simd } from 'wasm-feature-detect';
 
 import {
   EagleModel,
+  EagleOptions,
   EagleProfile,
   EagleProfilerEnrollResult,
+  EagleProfilerOptions,
   PvStatus
 } from './types';
 
@@ -408,7 +410,8 @@ export class EagleProfiler extends EagleBase {
    * Set to a different name to use multiple models across `eagle` instances.
    * @param model.forceWrite Flag to overwrite the model in storage even if it exists.
    * @param model.version Version of the model file. Increment to update the model file in storage.
-   * @param device (Optional) String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
+   * @param options Optional configuration arguments.
+   * @param options.device String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
    * suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU device. To select a specific
    * GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the target GPU. If set to
    * `cpu`, the engine will run on the CPU with the default number of threads. To specify the number of threads, set this
@@ -419,31 +422,46 @@ export class EagleProfiler extends EagleBase {
   public static async create(
     accessKey: string,
     model: EagleModel,
-    device?: string,
+    options: EagleProfilerOptions = {}
   ): Promise<EagleProfiler> {
     const customWritePath = model.customWritePath
       ? model.customWritePath
       : 'eagle_model';
     const modelPath = await loadModel({ ...model, customWritePath });
 
-    return EagleProfiler._init(accessKey, modelPath, device);
+    return EagleProfiler._init(accessKey, modelPath, options);
   }
 
   public static async _init(
     accessKey: string,
     modelPath: string,
-    device?: string,
+    options: EagleProfilerOptions = {}
   ): Promise<EagleProfiler> {
     if (!isAccessKeyValid(accessKey)) {
       throw new EagleErrors.EagleInvalidArgumentError('Invalid AccessKey');
     }
+
+    let { device = "best" } = options;
 
     const isSimd = await simd();
     if (!isSimd) {
       throw new EagleErrors.EagleRuntimeError('Browser not supported.');
     }
 
-    const sabDefined = typeof SharedArrayBuffer !== 'undefined';
+    const isWorkerScope =
+      typeof WorkerGlobalScope !== 'undefined' &&
+      self instanceof WorkerGlobalScope;
+    if (
+      !isWorkerScope &&
+      (device === 'best' || (device.startsWith('cpu') && device !== 'cpu:1'))
+    ) {
+      // eslint-disable-next-line no-console
+      console.warn('Multi-threading is not supported on main thread.');
+      device = 'cpu:1';
+    }
+
+    const sabDefined = typeof SharedArrayBuffer !== 'undefined'
+      && (device !== "cpu:1");
 
     return new Promise<EagleProfiler>((resolve, reject) => {
       EagleProfiler._eagleMutex
@@ -451,10 +469,10 @@ export class EagleProfiler extends EagleBase {
           const wasmOutput = await EagleProfiler._initProfilerWasm(
             accessKey.trim(),
             modelPath.trim(),
-            (device) ? device : "best",
-            (sabDefined) ? this._wasmPThread : this._wasmSimd,
-            (sabDefined) ? this._wasmPThreadLib : this._wasmSimdLib,
-            (sabDefined) ? createModulePThread : createModuleSimd,
+            device,
+            sabDefined ? this._wasmPThread : this._wasmSimd,
+            sabDefined ? this._wasmPThreadLib : this._wasmSimdLib,
+            sabDefined ? createModulePThread : createModuleSimd
           );
           return new EagleProfiler(wasmOutput);
         })
@@ -494,7 +512,9 @@ export class EagleProfiler extends EagleBase {
    */
   public async enroll(pcm: Int16Array): Promise<EagleProfilerEnrollResult> {
     if (!(pcm instanceof Int16Array)) {
-      throw new EagleErrors.EagleInvalidArgumentError("The argument 'pcm' must be provided as an Int16Array");
+      throw new EagleErrors.EagleInvalidArgumentError(
+        "The argument 'pcm' must be provided as an Int16Array"
+      );
     }
 
     if (pcm.length > this._maxEnrollSamples) {
@@ -507,7 +527,9 @@ export class EagleProfiler extends EagleBase {
       this._functionMutex
         .runExclusive(async () => {
           if (this._module === undefined) {
-            throw new EagleErrors.EagleInvalidStateError('Attempted to call `.enroll()` after release');
+            throw new EagleErrors.EagleInvalidStateError(
+              'Attempted to call `.enroll()` after release'
+            );
           }
 
           const pcmAddress = this._module._malloc(
@@ -537,11 +559,21 @@ export class EagleProfiler extends EagleBase {
               this._module.HEAPU8
             );
 
-            throw pvStatusToException(status, "EagleProfiler enroll failed", messageStack);
+            throw pvStatusToException(
+              status,
+              'EagleProfiler enroll failed',
+              messageStack
+            );
           }
 
-          const feedback = this._module.HEAP32[this._feedbackAddress / Int32Array.BYTES_PER_ELEMENT];
-          const percentage = this._module.HEAPF32[this._percentageAddress / Float32Array.BYTES_PER_ELEMENT];
+          const feedback =
+            this._module.HEAP32[
+              this._feedbackAddress / Int32Array.BYTES_PER_ELEMENT
+            ];
+          const percentage =
+            this._module.HEAPF32[
+              this._percentageAddress / Float32Array.BYTES_PER_ELEMENT
+            ];
 
           return { feedback, percentage };
         })
@@ -565,7 +597,9 @@ export class EagleProfiler extends EagleBase {
       this._functionMutex
         .runExclusive(async () => {
           if (this._module === undefined) {
-            throw new EagleErrors.EagleInvalidStateError('Attempted to call `.export()` after release');
+            throw new EagleErrors.EagleInvalidStateError(
+              'Attempted to call `.export()` after release'
+            );
           }
 
           const profileAddress = this._module._malloc(
@@ -588,12 +622,16 @@ export class EagleProfiler extends EagleBase {
               this._module.HEAPU8
             );
 
-            throw pvStatusToException(status, "EagleProfiler export failed", messageStack);
+            throw pvStatusToException(
+              status,
+              'EagleProfiler export failed',
+              messageStack
+            );
           }
 
           const profile = this._module.HEAPU8.slice(
             profileAddress,
-            profileAddress + (Uint8Array.BYTES_PER_ELEMENT * this._profileSize)
+            profileAddress + Uint8Array.BYTES_PER_ELEMENT * this._profileSize
           );
           this._module._pv_free(profileAddress);
 
@@ -617,10 +655,14 @@ export class EagleProfiler extends EagleBase {
       this._functionMutex
         .runExclusive(async () => {
           if (this._module === undefined) {
-            throw new EagleErrors.EagleInvalidStateError('Attempted to call `.reset()` after release');
+            throw new EagleErrors.EagleInvalidStateError(
+              'Attempted to call `.reset()` after release'
+            );
           }
 
-          const status = await this._pv_eagle_profiler_reset(this._objectAddress);
+          const status = await this._pv_eagle_profiler_reset(
+            this._objectAddress
+          );
           if (status !== PV_STATUS_SUCCESS) {
             const messageStack = await EagleProfiler.getMessageStack(
               this._module._pv_get_error_stack,
@@ -631,7 +673,11 @@ export class EagleProfiler extends EagleBase {
               this._module.HEAPU8
             );
 
-            throw pvStatusToException(status, "EagleProfiler reset failed", messageStack);
+            throw pvStatusToException(
+              status,
+              'EagleProfiler reset failed',
+              messageStack
+            );
           }
         })
         .then(() => {
@@ -662,59 +708,81 @@ export class EagleProfiler extends EagleBase {
     device: string,
     wasmBase64: string,
     wasmLibBase64: string,
-    createModuleFunc: any,
+    createModuleFunc: any
   ): Promise<EagleProfilerWasmOutput> {
     const baseWasmOutput = await super._initBaseWasm(
       wasmBase64,
       wasmLibBase64,
-      createModuleFunc);
+      createModuleFunc
+    );
 
-    const pv_eagle_profiler_init: pv_eagle_profiler_init_type = this.wrapAsyncFunction(
-      baseWasmOutput.module,
-      "pv_eagle_profiler_init",
-      4);
-    const pv_eagle_profiler_enroll: pv_eagle_profiler_enroll_type = this.wrapAsyncFunction(
-      baseWasmOutput.module,
-      "pv_eagle_profiler_enroll",
-      5);
+    const pv_eagle_profiler_init: pv_eagle_profiler_init_type =
+      this.wrapAsyncFunction(
+        baseWasmOutput.module,
+        'pv_eagle_profiler_init',
+        4
+      );
+    const pv_eagle_profiler_enroll: pv_eagle_profiler_enroll_type =
+      this.wrapAsyncFunction(
+        baseWasmOutput.module,
+        'pv_eagle_profiler_enroll',
+        5
+      );
 
-    const pv_eagle_profiler_reset: pv_eagle_profiler_reset_type = this.wrapAsyncFunction(
-      baseWasmOutput.module,
-      "pv_eagle_profiler_reset",
-      1);
+    const pv_eagle_profiler_reset: pv_eagle_profiler_reset_type =
+      this.wrapAsyncFunction(
+        baseWasmOutput.module,
+        'pv_eagle_profiler_reset',
+        1
+      );
 
-    const pv_eagle_profiler_delete: pv_eagle_profiler_delete_type = this.wrapAsyncFunction(
-      baseWasmOutput.module,
-      "pv_eagle_profiler_delete",
-      1);
+    const pv_eagle_profiler_delete: pv_eagle_profiler_delete_type =
+      this.wrapAsyncFunction(
+        baseWasmOutput.module,
+        'pv_eagle_profiler_delete',
+        1
+      );
 
-    const objectAddressAddress = baseWasmOutput.module._malloc(Int32Array.BYTES_PER_ELEMENT);
+    const objectAddressAddress = baseWasmOutput.module._malloc(
+      Int32Array.BYTES_PER_ELEMENT
+    );
     if (objectAddressAddress === 0) {
       throw new EagleErrors.EagleOutOfMemoryError(
         'malloc failed: Cannot allocate memory'
       );
     }
 
-    const accessKeyAddress = baseWasmOutput.module._malloc((accessKey.length + 1) * Uint8Array.BYTES_PER_ELEMENT);
+    const accessKeyAddress = baseWasmOutput.module._malloc(
+      (accessKey.length + 1) * Uint8Array.BYTES_PER_ELEMENT
+    );
     if (accessKeyAddress === 0) {
       throw new EagleErrors.EagleOutOfMemoryError(
         'malloc failed: Cannot allocate memory'
       );
     }
     for (let i = 0; i < accessKey.length; i++) {
-      baseWasmOutput.module.HEAPU8[accessKeyAddress + i] = accessKey.charCodeAt(i);
+      baseWasmOutput.module.HEAPU8[accessKeyAddress + i] =
+        accessKey.charCodeAt(i);
     }
     baseWasmOutput.module.HEAPU8[accessKeyAddress + accessKey.length] = 0;
 
     const modelPathEncoded = new TextEncoder().encode(modelPath);
-    const modelPathAddress = baseWasmOutput.module._malloc((modelPathEncoded.length + 1) * Uint8Array.BYTES_PER_ELEMENT);
+    const modelPathAddress = baseWasmOutput.module._malloc(
+      (modelPathEncoded.length + 1) * Uint8Array.BYTES_PER_ELEMENT
+    );
     if (modelPathAddress === 0) {
-      throw new EagleErrors.EagleOutOfMemoryError('malloc failed: Cannot allocate memory');
+      throw new EagleErrors.EagleOutOfMemoryError(
+        'malloc failed: Cannot allocate memory'
+      );
     }
     baseWasmOutput.module.HEAPU8.set(modelPathEncoded, modelPathAddress);
-    baseWasmOutput.module.HEAPU8[modelPathAddress + modelPathEncoded.length] = 0;
+    baseWasmOutput.module.HEAPU8[
+      modelPathAddress + modelPathEncoded.length
+    ] = 0;
 
-    const deviceAddress = baseWasmOutput.module._malloc((device.length + 1) * Uint8Array.BYTES_PER_ELEMENT);
+    const deviceAddress = baseWasmOutput.module._malloc(
+      (device.length + 1) * Uint8Array.BYTES_PER_ELEMENT
+    );
     if (deviceAddress === 0) {
       throw new EagleErrors.EagleOutOfMemoryError(
         'malloc failed: Cannot allocate memory'
@@ -729,7 +797,7 @@ export class EagleProfiler extends EagleBase {
       accessKeyAddress,
       modelPathAddress,
       deviceAddress,
-      objectAddressAddress,
+      objectAddressAddress
     );
     baseWasmOutput.module._pv_free(accessKeyAddress);
     baseWasmOutput.module._pv_free(modelPathAddress);
@@ -741,26 +809,32 @@ export class EagleProfiler extends EagleBase {
         baseWasmOutput.messageStackAddressAddressAddress,
         baseWasmOutput.messageStackDepthAddress,
         baseWasmOutput.module.HEAP32,
-        baseWasmOutput.module.HEAPU8,
+        baseWasmOutput.module.HEAPU8
       );
 
       throw pvStatusToException(status, 'Initialization failed', messageStack);
     }
 
-    const objectAddress = baseWasmOutput.module.HEAP32[objectAddressAddress / Int32Array.BYTES_PER_ELEMENT];
+    const objectAddress =
+      baseWasmOutput.module.HEAP32[
+        objectAddressAddress / Int32Array.BYTES_PER_ELEMENT
+      ];
     baseWasmOutput.module._pv_free(objectAddressAddress);
 
-    const minEnrollSamplesAddress = baseWasmOutput.module._malloc(Int32Array.BYTES_PER_ELEMENT);
+    const minEnrollSamplesAddress = baseWasmOutput.module._malloc(
+      Int32Array.BYTES_PER_ELEMENT
+    );
     if (minEnrollSamplesAddress === 0) {
       throw new EagleErrors.EagleOutOfMemoryError(
         'malloc failed: Cannot allocate memory'
       );
     }
 
-    status = baseWasmOutput.module._pv_eagle_profiler_enroll_min_audio_length_samples(
-      objectAddress,
-      minEnrollSamplesAddress
-    );
+    status =
+      baseWasmOutput.module._pv_eagle_profiler_enroll_min_audio_length_samples(
+        objectAddress,
+        minEnrollSamplesAddress
+      );
     if (status !== PV_STATUS_SUCCESS) {
       const messageStack = await EagleProfiler.getMessageStack(
         baseWasmOutput.module._pv_get_error_stack,
@@ -768,16 +842,25 @@ export class EagleProfiler extends EagleBase {
         baseWasmOutput.messageStackAddressAddressAddress,
         baseWasmOutput.messageStackDepthAddress,
         baseWasmOutput.module.HEAP32,
-        baseWasmOutput.module.HEAPU8,
+        baseWasmOutput.module.HEAPU8
       );
 
-      throw pvStatusToException(status, "EagleProfiler failed to get min enroll audio length", messageStack);
+      throw pvStatusToException(
+        status,
+        'EagleProfiler failed to get min enroll audio length',
+        messageStack
+      );
     }
 
-    const minEnrollSamples = baseWasmOutput.module.HEAP32[minEnrollSamplesAddress / Int32Array.BYTES_PER_ELEMENT];
+    const minEnrollSamples =
+      baseWasmOutput.module.HEAP32[
+        minEnrollSamplesAddress / Int32Array.BYTES_PER_ELEMENT
+      ];
     baseWasmOutput.module._pv_free(minEnrollSamplesAddress);
 
-    const profileSizeAddress = baseWasmOutput.module._malloc(Int32Array.BYTES_PER_ELEMENT);
+    const profileSizeAddress = baseWasmOutput.module._malloc(
+      Int32Array.BYTES_PER_ELEMENT
+    );
     if (profileSizeAddress === 0) {
       throw new EagleErrors.EagleOutOfMemoryError(
         'malloc failed: Cannot allocate memory'
@@ -795,30 +878,43 @@ export class EagleProfiler extends EagleBase {
         baseWasmOutput.messageStackAddressAddressAddress,
         baseWasmOutput.messageStackDepthAddress,
         baseWasmOutput.module.HEAP32,
-        baseWasmOutput.module.HEAPU8,
+        baseWasmOutput.module.HEAPU8
       );
 
-      throw pvStatusToException(status, "EagleProfiler failed to get export size", messageStack);
+      throw pvStatusToException(
+        status,
+        'EagleProfiler failed to get export size',
+        messageStack
+      );
     }
 
-    const profileSize = baseWasmOutput.module.HEAP32[profileSizeAddress / Int32Array.BYTES_PER_ELEMENT];
+    const profileSize =
+      baseWasmOutput.module.HEAP32[
+        profileSizeAddress / Int32Array.BYTES_PER_ELEMENT
+      ];
     baseWasmOutput.module._pv_free(profileSizeAddress);
 
-    const feedbackAddress = baseWasmOutput.module._malloc(Int32Array.BYTES_PER_ELEMENT);
+    const feedbackAddress = baseWasmOutput.module._malloc(
+      Int32Array.BYTES_PER_ELEMENT
+    );
     if (feedbackAddress === 0) {
       throw new EagleErrors.EagleOutOfMemoryError(
         'malloc failed: Cannot allocate memory'
       );
     }
 
-    const percentageAddress = baseWasmOutput.module._malloc(Int32Array.BYTES_PER_ELEMENT);
+    const percentageAddress = baseWasmOutput.module._malloc(
+      Int32Array.BYTES_PER_ELEMENT
+    );
     if (percentageAddress === 0) {
       throw new EagleErrors.EagleOutOfMemoryError(
         'malloc failed: Cannot allocate memory'
       );
     }
 
-    const profileAddress = baseWasmOutput.module._malloc(Uint8Array.BYTES_PER_ELEMENT * profileSize);
+    const profileAddress = baseWasmOutput.module._malloc(
+      Uint8Array.BYTES_PER_ELEMENT * profileSize
+    );
     if (profileAddress === 0) {
       throw new EagleErrors.EagleOutOfMemoryError(
         'malloc failed: Cannot allocate memory'
@@ -837,7 +933,7 @@ export class EagleProfiler extends EagleBase {
 
       pv_eagle_profiler_enroll: pv_eagle_profiler_enroll,
       pv_eagle_profiler_reset: pv_eagle_profiler_reset,
-      pv_eagle_profiler_delete: pv_eagle_profiler_delete
+      pv_eagle_profiler_delete: pv_eagle_profiler_delete,
     };
   }
 }
@@ -890,7 +986,8 @@ export class Eagle extends EagleBase {
    * @param model.forceWrite Flag to overwrite the model in storage even if it exists.
    * @param model.version Version of the model file. Increment to update the model file in storage.
    * @param speakerProfiles One or more Eagle speaker profiles. These can be constructed using `EagleProfiler`.
-   * @param device (Optional) String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
+   * @param options Optional configuration arguments.
+   * @param options.device String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
    * suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU device. To select a specific
    * GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the target GPU. If set to
    * `cpu`, the engine will run on the CPU with the default number of threads. To specify the number of threads, set this
@@ -902,7 +999,7 @@ export class Eagle extends EagleBase {
     accessKey: string,
     model: EagleModel,
     speakerProfiles: EagleProfile[] | EagleProfile,
-    device?: string
+    options: EagleOptions = {}
   ): Promise<Eagle> {
     const customWritePath = model.customWritePath
       ? model.customWritePath
@@ -913,7 +1010,7 @@ export class Eagle extends EagleBase {
       accessKey,
       modelPath,
       !Array.isArray(speakerProfiles) ? [speakerProfiles] : speakerProfiles,
-      device
+      options
     );
   }
 
@@ -921,22 +1018,39 @@ export class Eagle extends EagleBase {
     accessKey: string,
     modelPath: string,
     speakerProfiles: EagleProfile[],
-    device?: string
+    options: EagleOptions = {}
   ): Promise<Eagle> {
     if (!isAccessKeyValid(accessKey)) {
       throw new EagleErrors.EagleInvalidArgumentError('Invalid AccessKey');
     }
 
     if (!speakerProfiles || speakerProfiles.length === 0) {
-      throw new EagleErrors.EagleInvalidArgumentError('No speaker profiles provided');
+      throw new EagleErrors.EagleInvalidArgumentError(
+        'No speaker profiles provided'
+      );
     }
+
+    let { device = "best" } = options;
 
     const isSimd = await simd();
     if (!isSimd) {
       throw new EagleErrors.EagleRuntimeError('Browser not supported.');
     }
 
-    const sabDefined = typeof SharedArrayBuffer !== 'undefined';
+    const isWorkerScope =
+      typeof WorkerGlobalScope !== 'undefined' &&
+      self instanceof WorkerGlobalScope;
+    if (
+      !isWorkerScope &&
+      (device === 'best' || (device.startsWith('cpu') && device !== 'cpu:1'))
+    ) {
+      // eslint-disable-next-line no-console
+      console.warn('Multi-threading is not supported on main thread.');
+      device = 'cpu:1';
+    }
+
+    const sabDefined = typeof SharedArrayBuffer !== 'undefined'
+      && (device !== "cpu:1");
 
     return new Promise<Eagle>((resolve, reject) => {
       Eagle._eagleMutex
@@ -944,11 +1058,11 @@ export class Eagle extends EagleBase {
           const wasmOutput = await Eagle._initWasm(
             accessKey.trim(),
             modelPath.trim(),
-            (device) ? device : "best",
+            device,
             speakerProfiles,
-            (sabDefined) ? this._wasmPThread : this._wasmSimd,
-            (sabDefined) ? this._wasmPThreadLib : this._wasmSimdLib,
-            (sabDefined) ? createModulePThread : createModuleSimd,
+            sabDefined ? this._wasmPThread : this._wasmSimd,
+            sabDefined ? this._wasmPThreadLib : this._wasmSimdLib,
+            sabDefined ? createModulePThread : createModuleSimd
           );
           return new Eagle(wasmOutput);
         })
@@ -973,7 +1087,9 @@ export class Eagle extends EagleBase {
    */
   public async process(pcm: Int16Array): Promise<number[]> {
     if (!(pcm instanceof Int16Array)) {
-      throw new EagleErrors.EagleInvalidArgumentError("The argument 'pcm' must be provided as an Int16Array");
+      throw new EagleErrors.EagleInvalidArgumentError(
+        "The argument 'pcm' must be provided as an Int16Array"
+      );
     }
 
     if (pcm.length !== this._frameLength) {
@@ -986,7 +1102,9 @@ export class Eagle extends EagleBase {
       this._functionMutex
         .runExclusive(async () => {
           if (this._module === undefined) {
-            throw new EagleErrors.EagleInvalidStateError('Attempted to call `.process` after release');
+            throw new EagleErrors.EagleInvalidStateError(
+              'Attempted to call `.process` after release'
+            );
           }
 
           const pcmAddress = this._module._malloc(
@@ -1015,14 +1133,18 @@ export class Eagle extends EagleBase {
               this._module.HEAPU8
             );
 
-            throw pvStatusToException(status, "Eagle process failed", messageStack);
+            throw pvStatusToException(
+              status,
+              'Eagle process failed',
+              messageStack
+            );
           }
 
           const scores: number[] = [];
           for (let i = 0; i < this._numSpeakers; i++) {
             scores.push(
               this._module.HEAPF32[
-                (this._scoresAddress / Float32Array.BYTES_PER_ELEMENT) + i
+                this._scoresAddress / Float32Array.BYTES_PER_ELEMENT + i
               ]
             );
           }
@@ -1048,7 +1170,9 @@ export class Eagle extends EagleBase {
       this._functionMutex
         .runExclusive(async () => {
           if (this._module === undefined) {
-            throw new EagleErrors.EagleInvalidStateError('Attempted to call `.reset` after release');
+            throw new EagleErrors.EagleInvalidStateError(
+              'Attempted to call `.reset` after release'
+            );
           }
 
           const status = await this._pv_eagle_reset(this._objectAddress);
@@ -1062,7 +1186,11 @@ export class Eagle extends EagleBase {
               this._module.HEAPU8
             );
 
-            throw pvStatusToException(status, "Eagle reset failed", messageStack);
+            throw pvStatusToException(
+              status,
+              'Eagle reset failed',
+              messageStack
+            );
           }
         })
         .then(() => {
@@ -1102,23 +1230,26 @@ export class Eagle extends EagleBase {
             throw new EagleErrors.EagleRuntimeError('Unsupported Browser');
           }
 
-          const blob = new Blob(
-            [base64ToUint8Array(this._wasmSimdLib)],
-            { type: 'application/javascript' }
-          );
+          const blob = new Blob([base64ToUint8Array(this._wasmSimdLib)], {
+            type: 'application/javascript',
+          });
           const module: EagleModule = await createModuleSimd({
             mainScriptUrlOrBlob: blob,
             wasmBinary: base64ToUint8Array(this._wasmSimd),
           });
 
-          const hardwareDevicesAddressAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
+          const hardwareDevicesAddressAddress = module._malloc(
+            Int32Array.BYTES_PER_ELEMENT
+          );
           if (hardwareDevicesAddressAddress === 0) {
             throw new EagleErrors.EagleOutOfMemoryError(
               'malloc failed: Cannot allocate memory for hardwareDevices'
             );
           }
 
-          const numHardwareDevicesAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
+          const numHardwareDevicesAddress = module._malloc(
+            Int32Array.BYTES_PER_ELEMENT
+          );
           if (numHardwareDevicesAddress === 0) {
             throw new EagleErrors.EagleOutOfMemoryError(
               'malloc failed: Cannot allocate memory for numHardwareDevices'
@@ -1130,14 +1261,18 @@ export class Eagle extends EagleBase {
             numHardwareDevicesAddress
           );
 
-          const messageStackDepthAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
+          const messageStackDepthAddress = module._malloc(
+            Int32Array.BYTES_PER_ELEMENT
+          );
           if (!messageStackDepthAddress) {
             throw new EagleErrors.EagleOutOfMemoryError(
               'malloc failed: Cannot allocate memory for messageStackDepth'
             );
           }
 
-          const messageStackAddressAddressAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
+          const messageStackAddressAddressAddress = module._malloc(
+            Int32Array.BYTES_PER_ELEMENT
+          );
           if (!messageStackAddressAddressAddress) {
             throw new EagleErrors.EagleOutOfMemoryError(
               'malloc failed: Cannot allocate memory messageStack'
@@ -1151,7 +1286,7 @@ export class Eagle extends EagleBase {
               messageStackAddressAddressAddress,
               messageStackDepthAddress,
               module.HEAP32,
-              module.HEAPU8,
+              module.HEAPU8
             );
             module._pv_free(messageStackAddressAddressAddress);
             module._pv_free(messageStackDepthAddress);
@@ -1165,15 +1300,26 @@ export class Eagle extends EagleBase {
           module._pv_free(messageStackAddressAddressAddress);
           module._pv_free(messageStackDepthAddress);
 
-          const numHardwareDevices: number = module.HEAP32[numHardwareDevicesAddress / Int32Array.BYTES_PER_ELEMENT];
+          const numHardwareDevices: number =
+            module.HEAP32[
+              numHardwareDevicesAddress / Int32Array.BYTES_PER_ELEMENT
+            ];
           module._pv_free(numHardwareDevicesAddress);
 
-          const hardwareDevicesAddress = module.HEAP32[hardwareDevicesAddressAddress / Int32Array.BYTES_PER_ELEMENT];
+          const hardwareDevicesAddress =
+            module.HEAP32[
+              hardwareDevicesAddressAddress / Int32Array.BYTES_PER_ELEMENT
+            ];
 
           const hardwareDevices: string[] = [];
           for (let i = 0; i < numHardwareDevices; i++) {
-            const deviceAddress = module.HEAP32[hardwareDevicesAddress / Int32Array.BYTES_PER_ELEMENT + i];
-            hardwareDevices.push(arrayBufferToStringAtIndex(module.HEAPU8, deviceAddress));
+            const deviceAddress =
+              module.HEAP32[
+                hardwareDevicesAddress / Int32Array.BYTES_PER_ELEMENT + i
+              ];
+            hardwareDevices.push(
+              arrayBufferToStringAtIndex(module.HEAPU8, deviceAddress)
+            );
           }
           module._pv_eagle_free_hardware_devices(
             hardwareDevicesAddress,
@@ -1204,52 +1350,70 @@ export class Eagle extends EagleBase {
     const baseWasmOutput = await super._initBaseWasm(
       wasmBase64,
       wasmLibBase64,
-      createModuleFunc);
+      createModuleFunc
+    );
 
     const pv_eagle_init: pv_eagle_init_type = this.wrapAsyncFunction(
       baseWasmOutput.module,
-      "pv_eagle_init",
-      6);
+      'pv_eagle_init',
+      6
+    );
     const pv_eagle_process: pv_eagle_process_type = this.wrapAsyncFunction(
       baseWasmOutput.module,
-      "pv_eagle_process",
-      3);
+      'pv_eagle_process',
+      3
+    );
     const pv_eagle_reset: pv_eagle_reset_type = this.wrapAsyncFunction(
       baseWasmOutput.module,
-      "pv_eagle_reset",
-      1);
+      'pv_eagle_reset',
+      1
+    );
     const pv_eagle_delete: pv_eagle_delete_type = this.wrapAsyncFunction(
       baseWasmOutput.module,
-      "pv_eagle_delete",
-      1);
+      'pv_eagle_delete',
+      1
+    );
 
-    const objectAddressAddress = baseWasmOutput.module._malloc(Int32Array.BYTES_PER_ELEMENT);
+    const objectAddressAddress = baseWasmOutput.module._malloc(
+      Int32Array.BYTES_PER_ELEMENT
+    );
     if (objectAddressAddress === 0) {
       throw new EagleErrors.EagleOutOfMemoryError(
         'malloc failed: Cannot allocate memory'
       );
     }
 
-    const accessKeyAddress = baseWasmOutput.module._malloc((accessKey.length + 1) * Uint8Array.BYTES_PER_ELEMENT);
+    const accessKeyAddress = baseWasmOutput.module._malloc(
+      (accessKey.length + 1) * Uint8Array.BYTES_PER_ELEMENT
+    );
     if (accessKeyAddress === 0) {
       throw new EagleErrors.EagleOutOfMemoryError(
         'malloc failed: Cannot allocate memory'
       );
     }
     for (let i = 0; i < accessKey.length; i++) {
-      baseWasmOutput.module.HEAPU8[accessKeyAddress + i] = accessKey.charCodeAt(i);
+      baseWasmOutput.module.HEAPU8[accessKeyAddress + i] =
+        accessKey.charCodeAt(i);
     }
     baseWasmOutput.module.HEAPU8[accessKeyAddress + accessKey.length] = 0;
 
     const modelPathEncoded = new TextEncoder().encode(modelPath);
-    const modelPathAddress = baseWasmOutput.module._malloc((modelPathEncoded.length + 1) * Uint8Array.BYTES_PER_ELEMENT);
+    const modelPathAddress = baseWasmOutput.module._malloc(
+      (modelPathEncoded.length + 1) * Uint8Array.BYTES_PER_ELEMENT
+    );
     if (modelPathAddress === 0) {
-      throw new EagleErrors.EagleOutOfMemoryError('malloc failed: Cannot allocate memory');
+      throw new EagleErrors.EagleOutOfMemoryError(
+        'malloc failed: Cannot allocate memory'
+      );
     }
     baseWasmOutput.module.HEAPU8.set(modelPathEncoded, modelPathAddress);
-    baseWasmOutput.module.HEAPU8[modelPathAddress + modelPathEncoded.length] = 0;
+    baseWasmOutput.module.HEAPU8[
+      modelPathAddress + modelPathEncoded.length
+    ] = 0;
 
-    const deviceAddress = baseWasmOutput.module._malloc((device.length + 1) * Uint8Array.BYTES_PER_ELEMENT);
+    const deviceAddress = baseWasmOutput.module._malloc(
+      (device.length + 1) * Uint8Array.BYTES_PER_ELEMENT
+    );
     if (deviceAddress === 0) {
       throw new EagleErrors.EagleOutOfMemoryError(
         'malloc failed: Cannot allocate memory'
@@ -1265,7 +1429,9 @@ export class Eagle extends EagleBase {
       numSpeakers * Int32Array.BYTES_PER_ELEMENT
     );
     if (profilesAddressAddress === 0) {
-      throw new EagleErrors.EagleOutOfMemoryError('malloc failed: Cannot allocate memory');
+      throw new EagleErrors.EagleOutOfMemoryError(
+        'malloc failed: Cannot allocate memory'
+      );
     }
     const profilesAddressList: number[] = [];
     for (const profile of speakerProfiles) {
@@ -1273,7 +1439,9 @@ export class Eagle extends EagleBase {
         profile.bytes.length * Uint8Array.BYTES_PER_ELEMENT
       );
       if (profileAddress === 0) {
-        throw new EagleErrors.EagleOutOfMemoryError('malloc failed: Cannot allocate memory');
+        throw new EagleErrors.EagleOutOfMemoryError(
+          'malloc failed: Cannot allocate memory'
+        );
       }
       baseWasmOutput.module.HEAPU8.set(profile.bytes, profileAddress);
       profilesAddressList.push(profileAddress);
@@ -1302,16 +1470,21 @@ export class Eagle extends EagleBase {
         baseWasmOutput.messageStackAddressAddressAddress,
         baseWasmOutput.messageStackDepthAddress,
         baseWasmOutput.module.HEAP32,
-        baseWasmOutput.module.HEAPU8,
+        baseWasmOutput.module.HEAPU8
       );
 
-      throw pvStatusToException(status, "Eagle init failed", messageStack);
+      throw pvStatusToException(status, 'Eagle init failed', messageStack);
     }
 
-    const objectAddress = baseWasmOutput.module.HEAP32[objectAddressAddress / Int32Array.BYTES_PER_ELEMENT];
+    const objectAddress =
+      baseWasmOutput.module.HEAP32[
+        objectAddressAddress / Int32Array.BYTES_PER_ELEMENT
+      ];
     baseWasmOutput.module._pv_free(objectAddressAddress);
 
-    const scoresAddress = baseWasmOutput.module._malloc(Float32Array.BYTES_PER_ELEMENT * numSpeakers);
+    const scoresAddress = baseWasmOutput.module._malloc(
+      Float32Array.BYTES_PER_ELEMENT * numSpeakers
+    );
     if (scoresAddress === 0) {
       throw new EagleErrors.EagleOutOfMemoryError(
         'malloc failed: Cannot allocate memory'
