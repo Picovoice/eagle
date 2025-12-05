@@ -1,5 +1,5 @@
 /*
-    Copyright 2023 Picovoice Inc.
+    Copyright 2023-2025 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is
     located in the "LICENSE" file accompanying this source.
@@ -49,6 +49,7 @@ public class EagleTest {
             eagleProfiler = new EagleProfiler.Builder()
                     .setAccessKey(accessKey)
                     .setModelPath(defaultModelPath)
+                    .setDevice(device)
                     .build(appContext);
 
             for (String path : enrollPaths) {
@@ -74,6 +75,7 @@ public class EagleTest {
                 new EagleProfiler.Builder()
                         .setAccessKey("")
                         .setModelPath(defaultModelPath)
+                        .setDevice(device)
                         .build(appContext);
             } catch (EagleException e) {
                 didFail = true;
@@ -88,6 +90,7 @@ public class EagleTest {
             try {
                 new EagleProfiler.Builder()
                         .setModelPath(defaultModelPath)
+                        .setDevice(device)
                         .build(appContext);
             } catch (EagleException e) {
                 didFail = true;
@@ -104,6 +107,23 @@ public class EagleTest {
                 new EagleProfiler.Builder()
                         .setAccessKey(accessKey)
                         .setModelPath(modelPath.getAbsolutePath())
+                        .setDevice(device)
+                        .build(appContext);
+            } catch (EagleException e) {
+                didFail = true;
+            }
+
+            assertTrue(didFail);
+        }
+
+        @Test
+        public void testInitProfilerFailWithInvalidDevice() {
+            boolean didFail = false;
+            try {
+                new EagleProfiler.Builder()
+                        .setAccessKey(accessKey)
+                        .setModelPath(defaultModelPath)
+                        .setDevice("cloud:9")
                         .build(appContext);
             } catch (EagleException e) {
                 didFail = true;
@@ -119,6 +139,7 @@ public class EagleTest {
                 new Eagle.Builder()
                         .setAccessKey("")
                         .setModelPath(defaultModelPath)
+                        .setDevice(device)
                         .setSpeakerProfile(profile)
                         .build(appContext);
             } catch (EagleException e) {
@@ -134,6 +155,7 @@ public class EagleTest {
             try {
                 new Eagle.Builder()
                         .setModelPath(defaultModelPath)
+                        .setDevice(device)
                         .setSpeakerProfile(profile)
                         .build(appContext);
             } catch (EagleException e) {
@@ -151,6 +173,24 @@ public class EagleTest {
                 new Eagle.Builder()
                         .setAccessKey(accessKey)
                         .setModelPath(modelPath.getAbsolutePath())
+                        .setDevice(device)
+                        .setSpeakerProfile(profile)
+                        .build(appContext);
+            } catch (EagleException e) {
+                didFail = true;
+            }
+
+            assertTrue(didFail);
+        }
+
+        @Test
+        public void testInitFailWithInvalidDevice() {
+            boolean didFail = false;
+            try {
+                new Eagle.Builder()
+                        .setAccessKey(accessKey)
+                        .setModelPath(defaultModelPath)
+                        .setDevice("cloud:9")
                         .setSpeakerProfile(profile)
                         .build(appContext);
             } catch (EagleException e) {
@@ -166,6 +206,7 @@ public class EagleTest {
             try {
                 new Eagle.Builder()
                         .setAccessKey(accessKey)
+                        .setDevice(device)
                         .build(appContext);
             } catch (EagleException e) {
                 didFail = true;
@@ -178,6 +219,7 @@ public class EagleTest {
         public void getVersion() throws EagleException {
             Eagle eagle = new Eagle.Builder()
                     .setAccessKey(accessKey)
+                    .setDevice(device)
                     .setSpeakerProfile(profile)
                     .build(appContext);
 
@@ -190,6 +232,7 @@ public class EagleTest {
         public void getSampleRate() throws EagleException {
             Eagle eagle = new Eagle.Builder()
                     .setAccessKey(accessKey)
+                    .setDevice(device)
                     .setSpeakerProfile(profile)
                     .build(appContext);
 
@@ -202,6 +245,7 @@ public class EagleTest {
         public void testEagleProcess() throws Exception {
             Eagle eagle = new Eagle.Builder()
                     .setAccessKey(accessKey)
+                    .setDevice(device)
                     .setSpeakerProfile(profile)
                     .build(appContext);
 
@@ -225,6 +269,7 @@ public class EagleTest {
         public void testEagleProcessImposter() throws Exception {
             Eagle eagle = new Eagle.Builder()
                     .setAccessKey(accessKey)
+                    .setDevice(device)
                     .setSpeakerProfile(profile)
                     .build(appContext);
 
@@ -250,6 +295,7 @@ public class EagleTest {
             try {
                 new Eagle.Builder()
                         .setAccessKey("invalid")
+                        .setDevice(device)
                         .setSpeakerProfile(profile)
                         .build(appContext);
             } catch (EagleException e) {
@@ -262,12 +308,22 @@ public class EagleTest {
             try {
                 new Eagle.Builder()
                         .setAccessKey("invalid")
+                        .setDevice(device)
                         .setSpeakerProfile(profile)
                         .build(appContext);
             } catch (EagleException e) {
                 for (int i = 0; i < error.length; i++) {
                     assertEquals(e.getMessageStack()[i], error[i]);
                 }
+            }
+        }
+
+        @Test
+        public void testGetAvailableDevices() throws EagleException {
+            String[] availableDevices = Eagle.getAvailableDevices();
+            assertTrue(availableDevices.length > 0);
+            for (String d : availableDevices) {
+                assertTrue(d != null && d.length() > 0);
             }
         }
     }
