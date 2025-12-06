@@ -306,10 +306,7 @@ function micTestStopUI() {
 async function startEagleProfiler(accessKey) {
   writeMessage("Eagle is loading. Please wait...");
   try {
-    profiler = await EagleWeb.EagleProfilerWorker.create(accessKey, {
-      base64: modelParams,
-      forceWrite: true,
-    });
+    profiler = await EagleWeb.EagleProfilerWorker.create(accessKey, eagleModel);
     writeMessage("");
 
     document.getElementById("enrollContainer").style.display = "block";
@@ -347,10 +344,7 @@ async function startEagle(accessKey) {
   try {
     eagle = await EagleWeb.EagleWorker.create(
       accessKey,
-      {
-        base64: modelParams,
-        forceWrite: true,
-      },
+      eagleModel,
       speakerProfiles,
     );
   } catch (e) {

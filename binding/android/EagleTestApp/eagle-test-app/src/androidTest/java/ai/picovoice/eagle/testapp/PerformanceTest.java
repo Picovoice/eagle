@@ -1,5 +1,5 @@
 /*
-    Copyright 2023 Picovoice Inc.
+    Copyright 2023-2025 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is
     located in the "LICENSE" file accompanying this source.
@@ -54,6 +54,7 @@ public class PerformanceTest extends BaseTest {
 
         EagleProfiler eagleProfiler = new EagleProfiler.Builder()
                 .setAccessKey(accessKey)
+                .setDevice(device)
                 .build(appContext);
 
         File audioFile = new File(getAudioFilepath(testPath));
@@ -94,6 +95,7 @@ public class PerformanceTest extends BaseTest {
 
         EagleProfiler eagleProfiler = new EagleProfiler.Builder()
                 .setAccessKey(accessKey)
+                .setDevice(device)
                 .build(appContext);
 
         for (String path : enrollPaths) {
@@ -106,6 +108,7 @@ public class PerformanceTest extends BaseTest {
 
         Eagle eagle = new Eagle.Builder()
                 .setAccessKey(accessKey)
+                .setDevice(device)
                 .setSpeakerProfile(profile)
                 .build(appContext);
 

@@ -83,4 +83,5 @@ def default_model_path(relative: str = "") -> str:
 
 __all__ = [
     "default_library_path",
-    "default_model_path"]
+    "default_model_path"
+]

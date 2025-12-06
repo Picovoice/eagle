@@ -1,5 +1,5 @@
 //
-//  Copyright 2023-2024 Picovoice Inc.
+//  Copyright 2023-2025 Picovoice Inc.
 //  You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 //  file accompanying this source.
 //  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
@@ -32,8 +32,18 @@ public class EagleProfiler: EagleBase {
     /// - Parameters:
     ///   - accessKey: AccessKey obtained from the Picovoice Console (https://console.picovoice.ai/)
     ///   - modelPath: Absolute path to file containing model parameters.
+    ///   - device: String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
+    ///     suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU
+    ///     device. To select a specific GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}`
+    ///     is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the default
+    ///     number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
+    ///     where `${NUM_THREADS}` is the desired number of threads.
     /// - Throws: EagleError
-    public init(accessKey: String, modelPath: String? = nil) throws {
+    public init(
+        accessKey: String,
+        modelPath: String? = nil,
+        device: String? = nil
+    ) throws {
         super.init()
 
         var modelPathArg = modelPath
@@ -49,15 +59,21 @@ public class EagleProfiler: EagleBase {
             modelPathArg = try getResourcePath(modelPathArg!)
         }
 
+        var deviceArg = device
+        if device == nil {
+            deviceArg = "best"
+        }
+
         pv_set_sdk(EagleProfiler.sdk)
 
         var status = pv_eagle_profiler_init(
             accessKey,
             modelPathArg,
+            deviceArg,
             &handle)
         if status != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToEagleError(status, "EagleProfiler init failed", messageStack)
+            let messageStack = try EagleProfiler.getMessageStack()
+            throw EagleProfiler.pvStatusToEagleError(status, "EagleProfiler init failed", messageStack)
         }
 
         var cSpeakerProfileSizeBytes: Int32 = 0
@@ -65,8 +81,8 @@ public class EagleProfiler: EagleBase {
             handle,
             &cSpeakerProfileSizeBytes)
         if status != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToEagleError(status, "EagleProfiler speaker_profile_size failed", messageStack)
+            let messageStack = try EagleProfiler.getMessageStack()
+            throw EagleProfiler.pvStatusToEagleError(status, "EagleProfiler speaker_profile_size failed", messageStack)
         }
         speakerProfileSize = Int(cSpeakerProfileSizeBytes)
 
@@ -75,8 +91,11 @@ public class EagleProfiler: EagleBase {
             handle,
             &cMinAudioLengthSamples)
         if status != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToEagleError(status, "EagleProfiler enrollment_min_audio_length_sample failed", messageStack)
+            let messageStack = try EagleProfiler.getMessageStack()
+            throw EagleProfiler.pvStatusToEagleError(
+                status,
+                "EagleProfiler enrollment_min_audio_length_sample failed",
+                messageStack)
         }
         minEnrollAudioLength = Int(cMinAudioLengthSamples)
     }
@@ -117,8 +136,8 @@ public class EagleProfiler: EagleBase {
             &cPercentage)
 
         if status != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToEagleError(status, "EagleProfiler enroll failed", messageStack)
+            let messageStack = try EagleProfiler.getMessageStack()
+            throw EagleProfiler.pvStatusToEagleError(status, "EagleProfiler enroll failed", messageStack)
         }
 
         let enrollFeedback = pvProfilerEnrollmentErrorToEnrollFeedback(cEnrollError)
@@ -141,8 +160,8 @@ public class EagleProfiler: EagleBase {
             &cProfile)
 
         if status != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToEagleError(status, "EagleProfiler export failed", messageStack)
+            let messageStack = try EagleProfiler.getMessageStack()
+            throw EagleProfiler.pvStatusToEagleError(status, "EagleProfiler export failed", messageStack)
         }
 
         return EagleProfile(profileBytes: cProfile)
@@ -158,8 +177,8 @@ public class EagleProfiler: EagleBase {
         let status = pv_eagle_profiler_reset(handle)
 
         if status != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToEagleError(status, "EagleProfiler reset failed", messageStack)
+            let messageStack = try EagleProfiler.getMessageStack()
+            throw EagleProfiler.pvStatusToEagleError(status, "EagleProfiler reset failed", messageStack)
         }
     }
 

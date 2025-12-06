@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 //
-// Copyright 2024 Picovoice Inc.
+// Copyright 2024-2025 Picovoice Inc.
 //
 // You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 // file accompanying this source.
@@ -37,12 +37,14 @@ program
   .option('-a, --access_key <string>', 'AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)')
   .option('-l, --library_path [value]', 'Absolute path to dynamic library. Default: using the library provided by `pveagle`')
   .option('-m, --model_path [value]', 'Absolute path to Eagle model. Default: using the model provided by `pveagle`')
+  .option('-y, --device [value]', 'Device to run inference on (`best`, `cpu:{num_threads}` or `gpu:{gpu_index}`). Default: selects best device for Eagle inference')
   .option('--enroll', 'Enroll a new speaker profile')
   .option('--test', "Evaluate Eagle's performance using the provided speaker profiles.")
   .option('--enroll_audio_paths <strings...>', 'Absolute path(s) to enrollment audio files')
   .option('--test_audio_path <string>', 'Absolute path to test audio file')
   .option('--output_profile_path <string>', 'Absolute path to output file for the created profile')
   .option('--input_profile_paths <strings...>', 'Absolute path(s) to speaker profile(s)')
+  .option("-i, --show_inference_devices", "Print the list of devices available to run Eagle inference.", false)
 
 if (process.argv.length < 1) {
   program.help();
@@ -68,12 +70,19 @@ async function fileDemo() {
   const accessKey = program["access_key"];
   const libraryFilePath = program["library_file_path"];
   const modelFilePath = program["model_file_path"];
+  const device = program["device"];
   const enroll = program["enroll"];
   const test = program["test"];
   const enrollAudioPaths = program["enroll_audio_paths"];
   const testAudioPath = program["test_audio_path"];
   const outputProfilePath = program["output_profile_path"];
   const inputProfilePaths = program["input_profile_paths"];
+  const showInferenceDevices = program["show_inference_devices"];
+
+  if (showInferenceDevices) {
+    console.log(Eagle.listAvailableDevices().join('\n'));
+    process.exit();
+  }
 
   if (accessKey === undefined) {
     console.log("No AccessKey provided");
@@ -110,6 +119,7 @@ async function fileDemo() {
     try {
       eagleProfiler = new EagleProfiler(accessKey, {
         modelPath: modelFilePath,
+        device: device,
         libraryPath: libraryFilePath
       });
       console.log(`Eagle version: ${eagleProfiler.version}`);
@@ -205,6 +215,7 @@ async function fileDemo() {
     try {
       eagle = new Eagle(accessKey, profiles, {
         modelPath: modelFilePath,
+        device: device,
         libraryPath: libraryFilePath
       });
 

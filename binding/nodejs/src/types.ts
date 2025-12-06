@@ -1,5 +1,5 @@
 /*
-  Copyright 2024 Picovoice Inc.
+  Copyright 2024-2025 Picovoice Inc.
   You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
   file accompanying this source.
   Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
@@ -20,7 +20,13 @@ export type EnrollProgress = {
   feedback: EagleProfilerEnrollFeedback;
 };
 
-export type EagleOptions = {
+export type EagleInitOptions = {
   modelPath?: string;
+  device?: string;
+};
+
+export type EagleInputOptions = {
   libraryPath?: string;
 };
+
+export type EagleOptions = EagleInitOptions & EagleInputOptions;

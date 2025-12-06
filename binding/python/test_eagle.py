@@ -1,5 +1,5 @@
 #
-#    Copyright 2023 Picovoice Inc.
+#    Copyright 2023-2025 Picovoice Inc.
 #
 #    You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 #    file accompanying this source.
@@ -17,8 +17,18 @@ import unittest
 import wave
 from typing import Sequence
 
-from _eagle import Eagle, EagleError, EagleProfiler, EagleProfilerEnrollFeedback
-from _util import default_library_path, default_model_path
+from _eagle import (
+    Eagle,
+    EagleError,
+    EagleProfiler,
+    EagleProfilerEnrollFeedback,
+    list_hardware_devices
+)
+
+from _util import (
+    default_library_path,
+    default_model_path
+)
 
 
 class EagleTestCase(unittest.TestCase):
@@ -29,6 +39,7 @@ class EagleTestCase(unittest.TestCase):
     TEST_PATH = os.path.join(os.path.dirname(__file__), "../../resources/audio_samples/speaker_1_test_utt.wav")
     IMPOSTER_PATH = os.path.join(os.path.dirname(__file__), "../../resources/audio_samples/speaker_2_test_utt.wav")
     access_key: str
+    device: str
     eagle: Eagle
     eagle_profiler: EagleProfiler
 
@@ -43,6 +54,7 @@ class EagleTestCase(unittest.TestCase):
         cls.eagle_profiler = EagleProfiler(
             access_key=cls.access_key,
             model_path=default_model_path("../.."),
+            device=cls.device,
             library_path=default_library_path("../.."),
         )
 
@@ -55,6 +67,7 @@ class EagleTestCase(unittest.TestCase):
         cls.eagle = Eagle(
             access_key=cls.access_key,
             model_path=default_model_path("../.."),
+            device=cls.device,
             library_path=default_library_path("../.."),
             speaker_profiles=[profile],
         )
@@ -118,6 +131,7 @@ class EagleTestCase(unittest.TestCase):
             eagle = Eagle(
                 access_key="invalid",
                 model_path=default_model_path(relative_path),
+                device=self.device,
                 library_path=default_library_path(relative_path),
                 speaker_profiles=[profile],
             )
@@ -132,6 +146,7 @@ class EagleTestCase(unittest.TestCase):
             eagle = Eagle(
                 access_key="invalid",
                 model_path=default_model_path(relative_path),
+                device=self.device,
                 library_path=default_library_path(relative_path),
                 speaker_profiles=[profile],
             )
@@ -146,6 +161,7 @@ class EagleTestCase(unittest.TestCase):
         profiler = EagleProfiler(
             access_key=self.access_key,
             model_path=default_model_path(relative_path),
+            device=self.device,
             library_path=default_library_path(relative_path),
         )
         test_pcm = [0] * 512
@@ -176,6 +192,7 @@ class EagleTestCase(unittest.TestCase):
         eagle = Eagle(
             access_key=self.access_key,
             model_path=default_model_path(relative_path),
+            device=self.device,
             library_path=default_library_path(relative_path),
             speaker_profiles=[profile],
         )
@@ -193,11 +210,20 @@ class EagleTestCase(unittest.TestCase):
 
         eagle._eagle = address
 
+    def test_available_devices(self) -> None:
+        res = list_hardware_devices(library_path=default_library_path("../.."))
+        self.assertGreater(len(res), 0)
+        for x in res:
+            self.assertIsInstance(x, str)
+            self.assertGreater(len(x), 0)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--access-key", required=True)
+    parser.add_argument("--device", required=True)
     args = parser.parse_args()
 
     EagleTestCase.access_key = args.access_key
+    EagleTestCase.device = args.device
     unittest.main(argv=sys.argv[:1])

@@ -1,12 +1,11 @@
 {
   "name": "eagle-web-demo",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A basic demo to show how to use Eagle for web browsers, using the IIFE version of the library",
   "main": "index.js",
   "private": true,
   "scripts": {
-    "postinstall": "npx pvbase64 -i ../../lib/common/eagle_params.pv -o ./eagle_params.js",
-    "start": "http-server -a localhost -p 5000"
+    "start": "node scripts/run_demo.js"
   },
   "keywords": [
     "Picovoice",
@@ -18,8 +17,9 @@
   "author": "Picovoice Inc",
   "license": "Apache-2.0",
   "dependencies": {
-    "@picovoice/eagle-web": "=1.0.0",
-    "@picovoice/web-voice-processor": "~4.0.8"
+    "@picovoice/eagle-web": "2.0.0",
+    "@picovoice/web-voice-processor": "~4.0.8",
+    "mime-types": "^2.1.35"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",

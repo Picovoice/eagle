@@ -12,6 +12,8 @@ import eagleParams from './eagle_params';
 import { EagleError } from "../src/eagle_errors";
 
 const ACCESS_KEY = Cypress.env('ACCESS_KEY');
+const DEVICE = Cypress.env('DEVICE');
+
 let testProfile: EagleProfile;
 
 const getProfile = async (
@@ -50,10 +52,14 @@ before(() => {
     async inputPcm1 => {
       cy.getFramesFromFile('audio_samples/speaker_1_utt_2.wav').then(
         async inputPcm2 => {
-          const profiler = await EagleProfiler.create(ACCESS_KEY, {
-            publicPath: '/test/eagle_params.pv',
-            forceWrite: true,
-          });
+          const profiler = await EagleProfiler.create(
+            ACCESS_KEY,
+            {
+              publicPath: '/test/eagle_params.pv',
+              forceWrite: true,
+            },
+            { device: DEVICE }
+          );
           testProfile = await getProfile(
             profiler,
             [inputPcm1, inputPcm2],
@@ -70,218 +76,149 @@ before(() => {
 });
 
 describe('Eagle Profiler', async function () {
-  it('should be able to init with public path', async () => {
-    try {
-      const profiler = await EagleProfiler.create(ACCESS_KEY, {
-        publicPath: '/test/eagle_params.pv',
-        forceWrite: true,
-      });
-
-      expect(profiler.sampleRate).to.be.gt(0);
-      expect(profiler.minEnrollSamples).to.be.gt(0);
-      expect(typeof profiler.version).to.eq('string');
-      expect(profiler.version).length.to.be.gt(0);
-      await profiler.release();
-    } catch (e) {
-      expect(e).to.be.undefined;
-    }
-  });
-
-  it('should be able to init with public path (worker)', async () => {
-    try {
-      const profiler = await EagleProfilerWorker.create(ACCESS_KEY, {
-        publicPath: '/test/eagle_params.pv',
-        forceWrite: true,
-      });
-      expect(profiler.sampleRate).to.be.gt(0);
-      expect(profiler.minEnrollSamples).to.be.gt(0);
-      expect(typeof profiler.version).to.eq('string');
-      expect(profiler.version).length.to.be.gt(0);
-      await profiler.release();
-      await profiler.terminate();
-    } catch (e) {
-      expect(e).to.be.undefined;
-    }
-  });
-
-  it('should be able to init with base64', async () => {
-    try {
-      const profiler = await EagleProfiler.create(ACCESS_KEY, {
-        base64: eagleParams,
-        forceWrite: true,
-      });
-
-      expect(profiler.sampleRate).to.be.gt(0);
-      expect(profiler.minEnrollSamples).to.be.gt(0);
-      expect(typeof profiler.version).to.eq('string');
-      expect(profiler.version).length.to.be.gt(0);
-      await profiler.release();
-    } catch (e) {
-      expect(e).to.be.undefined;
-    }
-  });
-
-  it('should be able to init with base64 (worker)', async () => {
-    try {
-      const profiler = await EagleProfilerWorker.create(ACCESS_KEY, {
-        base64: eagleParams,
-        forceWrite: true,
-      });
-      expect(profiler.sampleRate).to.be.gt(0);
-      expect(profiler.minEnrollSamples).to.be.gt(0);
-      expect(typeof profiler.version).to.eq('string');
-      expect(profiler.version).length.to.be.gt(0);
-      await profiler.release();
-      await profiler.terminate();
-    } catch (e) {
-      expect(e).to.be.undefined;
-    }
-  });
-
-  it('should be able to enroll speakers with reset', () => {
-    cy.getFramesFromFile('audio_samples/speaker_1_utt_1.wav').then(
-      async inputPcm1 => {
-        cy.getFramesFromFile('audio_samples/speaker_1_utt_2.wav').then(
-          async inputPcm2 => {
-            try {
-              const profiler = await EagleProfiler.create(ACCESS_KEY, {
-                publicPath: '/test/eagle_params.pv',
-                forceWrite: true,
-              });
-
-              const profile = await getProfile(
-                profiler,
-                [inputPcm1, inputPcm2],
-                [
-                  EagleProfilerEnrollFeedback.AUDIO_OK,
-                  EagleProfilerEnrollFeedback.AUDIO_OK,
-                ]
-              );
-              expect(profile.bytes.length).to.be.gt(0);
-
-              await profiler.reset();
-              const profile2 = await getProfile(
-                profiler,
-                [inputPcm1, inputPcm2],
-                [
-                  EagleProfilerEnrollFeedback.AUDIO_OK,
-                  EagleProfilerEnrollFeedback.AUDIO_OK,
-                ]
-              );
-              expect(profile2.bytes.length).to.be.eq(profile.bytes.length);
-              await profiler.release();
-            } catch (e) {
-              expect(e).to.be.undefined;
-            }
-          }
+  for (const instance of [EagleProfiler, EagleProfilerWorker]) {
+    const instanceString = instance === EagleProfilerWorker ? 'worker' : 'main';
+    it(`should be able to init with public path (${instanceString})`, async () => {
+      try {
+        const profiler = await instance.create(
+          ACCESS_KEY,
+          {
+            publicPath: '/test/eagle_params.pv',
+            forceWrite: true,
+          },
+          { device: DEVICE }
         );
+        expect(profiler.sampleRate).to.be.gt(0);
+        expect(profiler.minEnrollSamples).to.be.gt(0);
+        expect(typeof profiler.version).to.eq('string');
+        expect(profiler.version).length.to.be.gt(0);
+        await profiler.release();
+      } catch (e) {
+        expect(e).to.be.undefined;
       }
-    );
-  });
+    });
 
-  it('should be able to enroll speakers with reset (worker)', () => {
-    cy.getFramesFromFile('audio_samples/speaker_1_utt_1.wav').then(
-      async inputPcm1 => {
-        cy.getFramesFromFile('audio_samples/speaker_1_utt_2.wav').then(
-          async inputPcm2 => {
-            try {
-              const profiler = await EagleProfilerWorker.create(ACCESS_KEY, {
-                publicPath: '/test/eagle_params.pv',
-                forceWrite: true,
-              });
-
-              const profile = await getProfile(
-                profiler,
-                [inputPcm1, inputPcm2],
-                [
-                  EagleProfilerEnrollFeedback.AUDIO_OK,
-                  EagleProfilerEnrollFeedback.AUDIO_OK,
-                ]
-              );
-              expect(profile.bytes.length).to.be.gt(0);
-
-              await profiler.reset();
-              const profile2 = await getProfile(
-                profiler,
-                [inputPcm1, inputPcm2],
-                [
-                  EagleProfilerEnrollFeedback.AUDIO_OK,
-                  EagleProfilerEnrollFeedback.AUDIO_OK,
-                ]
-              );
-              expect(profile2.bytes.length).to.be.eq(profile.bytes.length);
-              await profiler.release();
-            } catch (e) {
-              expect(e).to.be.undefined;
-            }
-          }
+    it(`should be able to init with base64 (${instanceString})`, async () => {
+      try {
+        const profiler = await instance.create(
+          ACCESS_KEY,
+          {
+            base64: eagleParams,
+            forceWrite: true,
+          },
+          { device: DEVICE }
         );
+
+        expect(profiler.sampleRate).to.be.gt(0);
+        expect(profiler.minEnrollSamples).to.be.gt(0);
+        expect(typeof profiler.version).to.eq('string');
+        expect(profiler.version).length.to.be.gt(0);
+        await profiler.release();
+      } catch (e) {
+        expect(e).to.be.undefined;
       }
-    );
-  });
+    });
 
-  it(`should return correct error message stack`, async () => {
-    let messageStack = [];
-    try {
-      const eagle = await EagleProfiler.create(
-        "invalidAccessKey",
-        { base64: eagleParams, forceWrite: true }
+    it(`should be able to enroll speakers with reset (${instanceString})`, () => {
+      cy.getFramesFromFile('audio_samples/speaker_1_utt_1.wav').then(
+        async inputPcm1 => {
+          cy.getFramesFromFile('audio_samples/speaker_1_utt_2.wav').then(
+            async inputPcm2 => {
+              try {
+                const profiler = await instance.create(
+                  ACCESS_KEY,
+                  {
+                    publicPath: '/test/eagle_params.pv',
+                    forceWrite: true,
+                  },
+                  { device: DEVICE }
+                );
+
+                const profile = await getProfile(
+                  profiler,
+                  [inputPcm1, inputPcm2],
+                  [
+                    EagleProfilerEnrollFeedback.AUDIO_OK,
+                    EagleProfilerEnrollFeedback.AUDIO_OK,
+                  ]
+                );
+                expect(profile.bytes.length).to.be.gt(0);
+
+                await profiler.reset();
+                const profile2 = await getProfile(
+                  profiler,
+                  [inputPcm1, inputPcm2],
+                  [
+                    EagleProfilerEnrollFeedback.AUDIO_OK,
+                    EagleProfilerEnrollFeedback.AUDIO_OK,
+                  ]
+                );
+                expect(profile2.bytes.length).to.be.eq(profile.bytes.length);
+                await profiler.release();
+              } catch (e) {
+                expect(e).to.be.undefined;
+              }
+            }
+          );
+        }
       );
-      await eagle.release();
-      expect(eagle).to.be.undefined;
-    } catch (e: any) {
-      messageStack = e.messageStack;
-    }
+    });
 
-    expect(messageStack.length).to.be.gt(0);
-    expect(messageStack.length).to.be.lte(8);
+    it(`should return correct error message stack (${instanceString})`, async () => {
+      let messageStack = [];
+      try {
+        const eagle = await instance.create(
+          "invalidAccessKey",
+          { base64: eagleParams, forceWrite: true },
+          { device: DEVICE }
+        );
+        await eagle.release();
+        expect(eagle).to.be.undefined;
+      } catch (e: any) {
+        messageStack = e.messageStack;
+      }
 
-    try {
-      const eagle = await EagleProfiler.create(
-        "invalidAccessKey",
-        { base64: eagleParams, forceWrite: true }
-      );
-      await eagle.release();
-      expect(eagle).to.be.undefined;
-    } catch (e: any) {
-      expect(messageStack.length).to.be.eq(e.messageStack.length);
-    }
-  });
+      expect(messageStack.length).to.be.gt(0);
+      expect(messageStack.length).to.be.lte(8);
 
-  it(`should return correct error message stack (worker)`, async () => {
-    let messageStack = [];
-    try {
-      const eagle = await EagleProfilerWorker.create(
-        "invalidAccessKey",
-        { base64: eagleParams, forceWrite: true }
-      );
-      eagle.terminate();
-      expect(eagle).to.be.undefined;
-    } catch (e: any) {
-      messageStack = e.messageStack;
-    }
+      try {
+        const eagle = await instance.create(
+          "invalidAccessKey",
+          { base64: eagleParams, forceWrite: true },
+          { device: DEVICE }
+        );
+        await eagle.release();
+        expect(eagle).to.be.undefined;
+      } catch (e: any) {
+        expect(messageStack.length).to.be.eq(e.messageStack.length);
+      }
+    });
 
-    expect(messageStack.length).to.be.gt(0);
-    expect(messageStack.length).to.be.lte(8);
+    it(`should handle invalid device (${instanceString})`, async () => {
+      let messageStack = [];
+      try {
+        const eagle = await instance.create(
+          ACCESS_KEY,
+          { base64: eagleParams, forceWrite: true },
+          { device: "cloud:9" }
+        );
+        expect(eagle).to.be.undefined;
+      } catch (e: any) {
+        messageStack = e.messageStack;
+      }
 
-    try {
-      const eagle = await EagleProfilerWorker.create(
-        "invalidAccessKey",
-        { base64: eagleParams, forceWrite: true }
-      );
-      eagle.terminate();
-      expect(eagle).to.be.undefined;
-    } catch (e: any) {
-      expect(messageStack.length).to.be.eq(e.messageStack.length);
-    }
-  });
+      expect(messageStack.length).to.be.gt(0);
+      expect(messageStack.length).to.be.lte(8);
+    });
+  }
 
-  it(`should return enroll/export error message stack`, async () => {
+  it(`should return enroll/export error message stack (main)`, async () => {
     let error: EagleError | null = null;
 
     const eagle = await EagleProfiler.create(
       ACCESS_KEY,
-      { base64: eagleParams, forceWrite: true }
+      { base64: eagleParams, forceWrite: true },
+      { device: DEVICE }
     );
 
     const testPcm = new Int16Array(eagle.minEnrollSamples);
@@ -321,140 +258,162 @@ describe('Eagle Profiler', async function () {
   });
 });
 
+/* eslint-disable no-loop-func */
 describe('Eagle', function () {
-  it('eagle init', async () => {
-    const eagle = await Eagle.create(
-      ACCESS_KEY,
-      {
-        publicPath: '/test/eagle_params.pv',
-        forceWrite: true,
-      },
-      testProfile
-    );
-    expect(eagle.sampleRate).to.be.gt(0);
-    expect(eagle.frameLength).to.be.gt(0);
-    expect(typeof eagle.version).to.eq('string');
-    expect(eagle.version).length.to.be.gt(0);
-    await eagle.release();
-  });
-
-  it('eagle init (worker)', async () => {
-    const eagle = await EagleWorker.create(
-      ACCESS_KEY,
-      {
-        publicPath: '/test/eagle_params.pv',
-        forceWrite: true,
-      },
-      testProfile
-    );
-    expect(eagle.sampleRate).to.be.gt(0);
-    expect(eagle.frameLength).to.be.gt(0);
-    expect(typeof eagle.version).to.eq('string');
-    expect(eagle.version).length.to.be.gt(0);
-    await eagle.release();
-    await eagle.terminate();
-  });
-
-  it('eagle init with base64', async () => {
-    const eagle = await Eagle.create(
-      ACCESS_KEY,
-      {
-        base64: eagleParams,
-        forceWrite: true,
-      },
-      testProfile
-    );
-    expect(eagle.sampleRate).to.be.gt(0);
-    expect(eagle.frameLength).to.be.gt(0);
-    expect(typeof eagle.version).to.eq('string');
-    expect(eagle.version).length.to.be.gt(0);
-    await eagle.release();
-  });
-
-  it('eagle init with base64 (worker)', async () => {
-    const eagle = await EagleWorker.create(
-      ACCESS_KEY,
-      {
-        base64: eagleParams,
-        forceWrite: true,
-      },
-      testProfile
-    );
-    expect(eagle.sampleRate).to.be.gt(0);
-    expect(eagle.frameLength).to.be.gt(0);
-    expect(typeof eagle.version).to.eq('string');
-    expect(eagle.version).length.to.be.gt(0);
-    await eagle.release();
-    await eagle.terminate();
-  });
-
-  it(`should return correct error message stack`, async () => {
-    let messageStack = [];
-    try {
-      const eagle = await Eagle.create(
-        "invalidAccessKey",
-        { base64: eagleParams, forceWrite: true },
-        testProfile
+  for (const instance of [Eagle, EagleWorker]) {
+    const instanceString = instance === EagleWorker ? 'worker' : 'main';
+    it(`eagle init (${instanceString})`, async () => {
+      const eagle = await instance.create(
+        ACCESS_KEY,
+        {
+          publicPath: '/test/eagle_params.pv',
+          forceWrite: true,
+        },
+        testProfile,
+        { device: DEVICE }
       );
+      expect(eagle.sampleRate).to.be.gt(0);
+      expect(eagle.frameLength).to.be.gt(0);
+      expect(typeof eagle.version).to.eq('string');
+      expect(eagle.version).length.to.be.gt(0);
       await eagle.release();
-      expect(eagle).to.be.undefined;
-    } catch (e: any) {
-      messageStack = e.messageStack;
-    }
+    });
 
-    expect(messageStack.length).to.be.gt(0);
-    expect(messageStack.length).to.be.lte(8);
-
-    try {
-      const eagle = await Eagle.create(
-        "invalidAccessKey",
-        { base64: eagleParams, forceWrite: true },
-        testProfile
+    it(`eagle init with base64 (${instanceString})`, async () => {
+      const eagle = await instance.create(
+        ACCESS_KEY,
+        {
+          base64: eagleParams,
+          forceWrite: true,
+        },
+        testProfile,
+        { device: DEVICE }
       );
+      expect(eagle.sampleRate).to.be.gt(0);
+      expect(eagle.frameLength).to.be.gt(0);
+      expect(typeof eagle.version).to.eq('string');
+      expect(eagle.version).length.to.be.gt(0);
       await eagle.release();
-      expect(eagle).to.be.undefined;
-    } catch (e: any) {
-      expect(messageStack.length).to.be.eq(e.messageStack.length);
-    }
+    });
+
+    it(`should return correct error message stack (${instanceString})`, async () => {
+      let messageStack = [];
+      try {
+        const eagle = await instance.create(
+          "invalidAccessKey",
+          { base64: eagleParams, forceWrite: true },
+          testProfile,
+          { device: DEVICE }
+        );
+        await eagle.release();
+        expect(eagle).to.be.undefined;
+      } catch (e: any) {
+        messageStack = e.messageStack;
+      }
+
+      expect(messageStack.length).to.be.gt(0);
+      expect(messageStack.length).to.be.lte(8);
+
+      try {
+        const eagle = await instance.create(
+          "invalidAccessKey",
+          { base64: eagleParams, forceWrite: true },
+          testProfile,
+          { device: DEVICE }
+        );
+        await eagle.release();
+        expect(eagle).to.be.undefined;
+      } catch (e: any) {
+        expect(messageStack.length).to.be.eq(e.messageStack.length);
+      }
+    });
+
+    it(`should be able to handle invalid device (${instanceString})`, async () => {
+      let messageStack = [];
+      try {
+        const eagle = await instance.create(
+          ACCESS_KEY,
+          { base64: eagleParams, forceWrite: true },
+          testProfile,
+          { device: "cloud:9" }
+        );
+        expect(eagle).to.be.undefined;
+      } catch (e: any) {
+        messageStack = e.messageStack;
+      }
+
+      expect(messageStack.length).to.be.gt(0);
+      expect(messageStack.length).to.be.lte(8);
+    });
+
+    it(`eagle process with reset (${instanceString})`, () => {
+      cy.getFramesFromFile('audio_samples/speaker_1_test_utt.wav').then(
+        async testPcm => {
+          try {
+            const eagle = await instance.create(
+              ACCESS_KEY,
+              {
+                publicPath: '/test/eagle_params.pv',
+                forceWrite: true,
+              },
+              testProfile,
+              { device: DEVICE }
+            );
+            const scores = await getScores(eagle, testPcm);
+
+            expect(Math.max(...scores)).to.be.gt(0.5);
+            await eagle.reset();
+
+            const scores2 = await getScores(eagle, testPcm);
+
+            expect(scores2).to.be.deep.eq(scores);
+            await eagle.release();
+          } catch (e) {
+            expect(e).to.be.undefined;
+          }
+        }
+      );
+    });
+
+    it(`eagle process imposter (${instanceString})`, () => {
+      cy.getFramesFromFile('audio_samples/speaker_2_test_utt.wav').then(
+        async testPcm => {
+          try {
+            const eagle = await instance.create(
+              ACCESS_KEY,
+              {
+                publicPath: '/test/eagle_params.pv',
+                forceWrite: true,
+              },
+              testProfile,
+              { device: DEVICE }
+            );
+            const scores = await getScores(eagle, testPcm);
+
+            expect(Math.max(...scores)).to.be.lt(0.5);
+            await eagle.release();
+          } catch (e) {
+            expect(e).to.be.undefined;
+          }
+        }
+      );
+    });
+  }
+
+  it('List hardware devices', async () => {
+    const hardwareDevices: string[] = await Eagle.listAvailableDevices();
+    expect(Array.isArray(hardwareDevices)).to.be.true;
+    expect(hardwareDevices).length.to.be.greaterThan(0);
   });
 
-  it(`should return correct error message stack (worker)`, async () => {
-    let messageStack = [];
-    try {
-      const eagle = await EagleWorker.create(
-        "invalidAccessKey",
-        { base64: eagleParams, forceWrite: true },
-        testProfile
-      );
-      eagle.terminate();
-      expect(eagle).to.be.undefined;
-    } catch (e: any) {
-      messageStack = e.messageStack;
-    }
-
-    expect(messageStack.length).to.be.gt(0);
-    expect(messageStack.length).to.be.lte(8);
-
-    try {
-      const eagle = await EagleWorker.create(
-        "invalidAccessKey",
-        { base64: eagleParams, forceWrite: true },
-        testProfile
-      );
-      eagle.terminate();
-      expect(eagle).to.be.undefined;
-    } catch (e: any) {
-      expect(messageStack.length).to.be.eq(e.messageStack.length);
-    }
-  });
-
-  it(`should return process error message stack`, async () => {
+  it(`should return process error message stack (main)`, async () => {
     let error: EagleError | null = null;
 
     const eagle = await Eagle.create(
       ACCESS_KEY,
       { base64: eagleParams, forceWrite: true },
-      testProfile
+      testProfile,
+      { device: DEVICE }
     );
     const testPcm = new Int16Array(eagle.frameLength);
     // @ts-ignore
@@ -478,85 +437,5 @@ describe('Eagle', function () {
       expect((error as EagleError).messageStack.length).to.be.gt(0);
       expect((error as EagleError).messageStack.length).to.be.lte(8);
     }
-  });
-
-  it('eagle process with reset', () => {
-    cy.getFramesFromFile('audio_samples/speaker_1_test_utt.wav').then(
-      async testPcm => {
-        try {
-          const eagle = await Eagle.create(
-            ACCESS_KEY,
-            {
-              publicPath: '/test/eagle_params.pv',
-              forceWrite: true,
-            },
-            testProfile
-          );
-          const scores = await getScores(eagle, testPcm);
-
-          expect(Math.max(...scores)).to.be.gt(0.5);
-          await eagle.reset();
-
-          const scores2 = await getScores(eagle, testPcm);
-
-          expect(scores2).to.be.deep.eq(scores);
-          await eagle.release();
-        } catch (e) {
-          expect(e).to.be.undefined;
-        }
-      }
-    );
-  });
-
-  it('eagle process with reset (worker)', () => {
-    cy.getFramesFromFile('audio_samples/speaker_1_test_utt.wav').then(
-      async testPcm => {
-        try {
-          const eagle = await EagleWorker.create(
-            ACCESS_KEY,
-            {
-              publicPath: '/test/eagle_params.pv',
-              forceWrite: true,
-            },
-            testProfile
-          );
-          const scores = await getScores(eagle, testPcm);
-
-          expect(Math.max(...scores)).to.be.gt(0.5);
-          await eagle.reset();
-
-          const scores2 = await getScores(eagle, testPcm);
-
-          expect(scores2).to.be.deep.eq(scores);
-          await eagle.release();
-          await eagle.terminate();
-        } catch (e) {
-          expect(e).to.be.undefined;
-        }
-      }
-    );
-  });
-
-  it('eagle process imposter', () => {
-    cy.getFramesFromFile('audio_samples/speaker_2_test_utt.wav').then(
-      async testPcm => {
-        try {
-          const eagle = await Eagle.create(
-            ACCESS_KEY,
-            {
-              publicPath: '/test/eagle_params.pv',
-              forceWrite: true,
-            },
-            testProfile
-          );
-          const scores = await getScores(eagle, testPcm);
-
-          expect(Math.max(...scores)).to.be.lt(0.5);
-          await eagle.release();
-        } catch (e) {
-          expect(e).to.be.undefined;
-        }
-      }
-    );
   });
 });

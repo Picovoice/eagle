@@ -42,7 +42,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
         include:
         - os: ubuntu-latest
           profiler_performance_threshold_sec: 0.5
@@ -70,8 +70,9 @@ jobs:
 
     - name: Test
       run: >
-        python3 test_eagle_perf.py 
-        --access-key ${{secrets.PV_VALID_ACCESS_KEY}} 
+        python3 test_eagle_perf.py
+        --access-key ${{secrets.PV_VALID_ACCESS_KEY}}
+        --device cpu:1
         --num-test-iterations 20
         --profiler-performance-threshold-sec ${{matrix.profiler_performance_threshold_sec}}
         --recognizer-performance-threshold-sec ${{matrix.recognizer_performance_threshold_sec}}
@@ -115,8 +116,9 @@ jobs:
 
     - name: Test
       run: >
-        python3 test_eagle_perf.py 
-        --access-key ${{secrets.PV_VALID_ACCESS_KEY}} 
+        python3 test_eagle_perf.py
+        --access-key ${{secrets.PV_VALID_ACCESS_KEY}}
+        --device cpu:1
         --num-test-iterations 20
         --profiler-performance-threshold-sec ${{matrix.profiler_performance_threshold_sec}}
         --recognizer-performance-threshold-sec ${{matrix.recognizer_performance_threshold_sec}}
@@ -148,8 +150,9 @@ jobs:
 
     - name: Test
       run: >
-        python3 test_eagle_perf.py 
-        --access-key ${{secrets.PV_VALID_ACCESS_KEY}} 
+        python3 test_eagle_perf.py
+        --access-key ${{secrets.PV_VALID_ACCESS_KEY}}
+        --device cpu:1
         --num-test-iterations 20
         --profiler-performance-threshold-sec ${{matrix.profiler_performance_threshold_sec}}
         --recognizer-performance-threshold-sec ${{matrix.recognizer_performance_threshold_sec}}

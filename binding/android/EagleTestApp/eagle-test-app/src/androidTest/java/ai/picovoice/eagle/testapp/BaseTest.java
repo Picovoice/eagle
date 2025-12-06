@@ -1,5 +1,5 @@
 /*
-    Copyright 2023 Picovoice Inc.
+    Copyright 2023-2025 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is
     located in the "LICENSE" file accompanying this source.
@@ -50,6 +50,7 @@ public class BaseTest {
     String defaultModelPath;
 
     String accessKey;
+    String device;
 
     @Before
     public void Setup() throws IOException {
@@ -60,6 +61,7 @@ public class BaseTest {
         defaultModelPath = getModelFilepath("eagle_params.pv");
 
         accessKey = appContext.getString(R.string.pvTestingAccessKey);
+        device = appContext.getString(R.string.pvTestingDevice);
     }
 
     protected static short[] readAudioFile(String audioFile) throws Exception {

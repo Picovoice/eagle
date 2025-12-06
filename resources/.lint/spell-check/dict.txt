@@ -42,3 +42,9 @@ eagledemo
 gradlew
 testapp
 Readables
+emscripten
+Embedder
+ccall
+cwrap
+HEAPU
+HEAPF
