@@ -17,7 +17,7 @@
   "author": "Picovoice Inc",
   "license": "Apache-2.0",
   "dependencies": {
-    "@picovoice/eagle-web": "../../binding/web",
+    "@picovoice/eagle-web": "2.0.0",
     "@picovoice/web-voice-processor": "~4.0.8",
     "mime-types": "^2.1.35"
   },
