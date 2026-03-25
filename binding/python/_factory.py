@@ -11,13 +11,11 @@
 
 from typing import (
     Optional,
-    Sequence,
-    Union
+    Sequence
 )
 
 from ._eagle import (
     Eagle,
-    EagleProfile,
     EagleProfiler,
     list_hardware_devices
 )
@@ -29,9 +27,9 @@ from ._util import (
 
 def create_recognizer(
         access_key: str,
-        speaker_profiles: Union[Sequence[EagleProfile], EagleProfile],
         model_path: Optional[str] = None,
         device: Optional[str] = None,
+        voice_threshold: float = 0.3,
         library_path: Optional[str] = None) -> Eagle:
     """
     Factory method for the recognizer component of the Eagle speaker recognition engine.
@@ -61,14 +59,11 @@ def create_recognizer(
     if library_path is None:
         library_path = default_library_path()
 
-    if isinstance(speaker_profiles, EagleProfile):
-        speaker_profiles = [speaker_profiles]
-
     return Eagle(
         access_key=access_key,
-        speaker_profiles=speaker_profiles,
         model_path=model_path,
         device=device,
+        voice_threshold=voice_threshold,
         library_path=library_path)
 
 
@@ -76,6 +71,8 @@ def create_profiler(
         access_key: str,
         model_path: Optional[str] = None,
         device: Optional[str] = None,
+        min_enrollment_chunks: int = 1,
+        voice_threshold: float = 0.3,
         library_path: Optional[str] = None) -> EagleProfiler:
     """
     Factory method for the profiler component of the Eagle speaker recognition engine.
@@ -107,6 +104,8 @@ def create_profiler(
         access_key=access_key,
         model_path=model_path,
         device=device,
+        min_enrollment_chunks=min_enrollment_chunks,
+        voice_threshold=voice_threshold,
         library_path=library_path,
     )
 

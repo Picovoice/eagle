@@ -22,14 +22,6 @@ from pvrecorder import PvRecorder
 
 PV_RECORDER_FRAME_LENGTH = 512
 
-FEEDBACK_TO_DESCRIPTIVE_MSG = {
-    pveagle.EagleProfilerEnrollFeedback.AUDIO_OK: 'Good audio',
-    pveagle.EagleProfilerEnrollFeedback.AUDIO_TOO_SHORT: 'Insufficient audio length',
-    pveagle.EagleProfilerEnrollFeedback.UNKNOWN_SPEAKER: 'Different speaker in audio',
-    pveagle.EagleProfilerEnrollFeedback.NO_VOICE_FOUND: 'No voice found in audio',
-    pveagle.EagleProfilerEnrollFeedback.QUALITY_ISSUE: 'Low audio quality due to bad microphone or environment'
-}
-
 
 class EnrollmentAnimation(threading.Thread):
     def __init__(self, sleep_time_sec=0.1):
@@ -116,6 +108,11 @@ def main():
     common_parser.add_argument(
         '--output_audio_path',
         help='If provided, all recorded audio data will be saved to the given .wav file')
+    common_parser.add_argument(
+        '--voice_threshold',
+        help="Sensitivity threshold for detecting voice.",
+        type=float,
+        default=0.3)
 
     subparsers = parser.add_subparsers(dest='command')
 
@@ -124,6 +121,11 @@ def main():
         '--output_profile_path',
         required=True,
         help='Absolute path to output file for the created profile')
+    enroll.add_argument(
+        '--min_enrollment_chunks',
+        help='Minimum number of chunks to be processed before enroll returns 100%',
+        type=int,
+        default=1)
 
     test = subparsers.add_parser(
         'test',
@@ -152,6 +154,8 @@ def main():
                 access_key=args.access_key,
                 model_path=args.model_path,
                 device=args.device,
+                min_enrollment_chunks=args.min_enrollment_chunks,
+                voice_threshold=args.voice_threshold,
                 library_path=args.library_path)
         except pveagle.EagleError as e:
             print("Failed to initialize Eagle: %s" % e)
@@ -160,7 +164,6 @@ def main():
         print('Eagle version: %s' % eagle_profiler.version)
         recorder = PvRecorder(frame_length=PV_RECORDER_FRAME_LENGTH, device_index=args.audio_device_index)
         print("Recording audio from '%s'" % recorder.selected_device)
-        num_enroll_frames = eagle_profiler.min_enroll_samples // PV_RECORDER_FRAME_LENGTH
         sample_rate = eagle_profiler.sample_rate
         enrollment_animation = EnrollmentAnimation()
         print('Please keep speaking until the enrollment percentage reaches 100%')
@@ -174,19 +177,17 @@ def main():
 
                 enroll_percentage = 0.0
                 enrollment_animation.start()
+                recorder.start()
                 while enroll_percentage < 100.0:
-                    enroll_pcm = list()
-                    recorder.start()
-                    for _ in range(num_enroll_frames):
-                        input_frame = recorder.read()
-                        if args.output_audio_path is not None:
-                            enroll_audio_file.writeframes(struct.pack('%dh' % len(input_frame), *input_frame))
-                        enroll_pcm.extend(input_frame)
-                    recorder.stop()
-
-                    enroll_percentage, feedback = eagle_profiler.enroll(enroll_pcm)
+                    input_frame = recorder.read()
+                    if args.output_audio_path is not None:
+                        enroll_audio_file.writeframes(struct.pack('%dh' % len(input_frame), *input_frame))
+                    enroll_percentage = eagle_profiler.enroll(input_frame)
                     enrollment_animation.percentage = enroll_percentage
-                    enrollment_animation.feedback = ' - %s' % FEEDBACK_TO_DESCRIPTIVE_MSG[feedback]
+                enroll_percentage = eagle_profiler.flush()
+                enrollment_animation.percentage = enroll_percentage
+                recorder.stop()
+
 
             speaker_profile = eagle_profiler.export()
             enrollment_animation.stop()
@@ -222,12 +223,13 @@ def main():
                 access_key=args.access_key,
                 model_path=args.model_path,
                 device=args.device,
-                library_path=args.library_path,
-                speaker_profiles=profiles)
+                voice_threshold=args.voice_threshold,
+                library_path=args.library_path)
 
-            recorder = PvRecorder(device_index=args.audio_device_index, frame_length=eagle.frame_length)
+            recorder = PvRecorder(device_index=args.audio_device_index, frame_length=PV_RECORDER_FRAME_LENGTH)
             recorder.start()
 
+            num_process_frames = eagle.min_process_samples // PV_RECORDER_FRAME_LENGTH
             with contextlib.ExitStack() as file_stack:
                 if args.output_audio_path is not None:
                     test_audio_file = file_stack.enter_context(wave.open(args.output_audio_path, 'wb'))
@@ -237,11 +239,18 @@ def main():
 
                 print('Listening for audio... (press Ctrl+C to stop)')
                 while True:
-                    pcm = recorder.read()
-                    if args.output_audio_path is not None:
-                        test_audio_file.writeframes(struct.pack('%dh' % len(pcm), *pcm))
-                    scores = eagle.process(pcm)
-                    print_result(scores, speaker_labels)
+                    process_pcm = list()
+                    recorder.start()
+                    for _ in range(num_process_frames):
+                        input_frame = recorder.read()
+                        if args.output_audio_path is not None:
+                            enroll_audio_file.writeframes(struct.pack('%dh' % len(input_frame), *input_frame))
+                        process_pcm.extend(input_frame)
+                    recorder.stop()
+
+                    scores = eagle.process(process_pcm, speaker_profiles=profiles)
+                    if scores:
+                        print_result(scores, speaker_labels)
 
         except KeyboardInterrupt:
             print('\nStopping...')
