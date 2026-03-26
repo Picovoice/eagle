@@ -10,9 +10,25 @@
 #
 
 import os
-from ctypes import *
+from ctypes import (
+    POINTER,
+    Structure,
+    byref,
+    c_byte,
+    c_char_p,
+    c_float,
+    c_int,
+    c_int16,
+    c_int32,
+    c_void_p,
+    cast,
+    cdll
+)
 from enum import Enum
-from typing import Sequence
+from typing import (
+    Optional,
+    Sequence
+)
 
 
 class EagleError(Exception):
@@ -582,15 +598,16 @@ class Eagle(object):
         version_func.restype = c_char_p
         self._version = version_func().decode("utf-8")
 
-    def process(self, pcm: Sequence[int], speaker_profiles: Sequence[EagleProfile]) -> Sequence[float]:
+    def process(self, pcm: Sequence[int], speaker_profiles: Sequence[EagleProfile]) -> Optional[Sequence[float]]:
         """
         Processes a frame of audio and returns a list of similarity scores for each speaker profile.
 
         :param pcm: A frame of audio samples. The number of samples per frame can be attained by calling
         `.frame_length`. The incoming audio needs to have a sample rate equal to `.sample_rate` and be 16-bit
         linearly-encoded. Eagle operates on single-channel audio.
-        :return: A list of similarity scores for each speaker profile. A higher score indicates that the voice
-        belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match.
+        :return: A list of similarity scores for each speaker profile or None. A higher score indicates that the voice
+        belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match. A result of None
+        indicates that there was not enough speech in the audio to recognize any speakers.
         """
 
         if len(speaker_profiles) == 0:
@@ -617,7 +634,7 @@ class Eagle(object):
                 message_stack=self._get_error_stack(),
             )
 
-        if not scores:
+        if scores is None:
             return None
 
         result = [float(scores[i]) for i in range(len(speaker_profiles))]
