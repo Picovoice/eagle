@@ -188,7 +188,6 @@ def main():
                 enrollment_animation.percentage = enroll_percentage
                 recorder.stop()
 
-
             speaker_profile = eagle_profiler.export()
             enrollment_animation.stop()
             with open(args.output_profile_path, 'wb') as f:

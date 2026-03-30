@@ -606,8 +606,8 @@ class Eagle(object):
         `.frame_length`. The incoming audio needs to have a sample rate equal to `.sample_rate` and be 16-bit
         linearly-encoded. Eagle operates on single-channel audio.
         :return: A list of similarity scores for each speaker profile or None. A higher score indicates that the voice
-        belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match. A result of None
-        indicates that there was not enough speech in the audio to recognize any speakers.
+        belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match. A result of
+        None indicates that there was not enough speech in the audio to recognize any speakers.
         """
 
         if len(speaker_profiles) == 0:

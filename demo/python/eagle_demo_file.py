@@ -18,6 +18,7 @@ import wave
 
 import pveagle
 
+
 def read_file(file_name, sample_rate):
     with wave.open(file_name, mode="rb") as wav_file:
         channels = wav_file.getnchannels()
@@ -135,7 +136,8 @@ def main():
             for audio_path in args.enroll_audio_paths:
                 audio = read_file(audio_path, eagle_profiler.sample_rate)
                 for frame in range(len(audio) // eagle_profiler.frame_length):
-                    _ = eagle_profiler.enroll(audio[frame * eagle_profiler.frame_length:(frame + 1) * eagle_profiler.frame_length])
+                    frame = audio[frame * eagle_profiler.frame_length:(frame + 1) * eagle_profiler.frame_length]
+                    _ = eagle_profiler.enroll(frame)
                 enroll_percentage = eagle_profiler.flush()
             if enroll_percentage < 100.0:
                 print('Failed to create speaker profile. Insufficient enrollment percentage: %.2f%%. '
