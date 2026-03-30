@@ -17,7 +17,6 @@ import { getInt16Frames, checkWaveFile } from './wave_util';
 import {
   EagleInputOptions,
   EagleOptions,
-  EagleProfilerEnrollFeedback,
   EnrollProgress
 } from './types';
 
@@ -28,7 +27,6 @@ export {
   Eagle,
   EagleInputOptions,
   EagleOptions,
-  EagleProfilerEnrollFeedback,
   EnrollProgress,
   EagleErrors,
   checkWaveFile,

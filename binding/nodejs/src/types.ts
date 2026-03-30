@@ -7,22 +7,21 @@
   specific language governing permissions and limitations under the License.
 */
 
-export enum EagleProfilerEnrollFeedback {
-  NONE = "NONE",
-  AUDIO_TOO_SHORT = "AUDIO_TOO_SHORT",
-  UNKNOWN_SPEAKER = "UNKNOWN_SPEAKER",
-  NO_VOICE_FOUND = "NO_VOICE_FOUND",
-  QUALITY_ISSUE = "QUALITY_ISSUE",
-}
-
 export type EnrollProgress = {
   percentage: number;
-  feedback: EagleProfilerEnrollFeedback;
 };
 
 export type EagleInitOptions = {
   modelPath?: string;
   device?: string;
+  voice_threshold?: number;
+};
+
+export type EagleProfilerInitOptions = {
+  modelPath?: string;
+  device?: string;
+  min_enrollment_chunks?: number;
+  voice_threshold?: number;
 };
 
 export type EagleInputOptions = {
@@ -30,3 +29,4 @@ export type EagleInputOptions = {
 };
 
 export type EagleOptions = EagleInitOptions & EagleInputOptions;
+export type EagleProfilerOptions = EagleProfilerInitOptions & EagleInputOptions;

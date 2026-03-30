@@ -34,36 +34,24 @@ const DEVICE = process.argv
 
 const getProfile = (
   profiler: EagleProfiler,
-  audioChunks: Int16Array[],
-  expectedFeedback: string[]
+  audioChunks: Int16Array[]
 ): Uint8Array => {
   let percentage = 0;
   for (let i = 0; i < audioChunks.length; i++) {
-    const result = profiler.enroll(audioChunks[i]);
-    expect(result.feedback).toEqual(expectedFeedback[i]);
-    expect(result.percentage).toBeGreaterThan(0);
-    percentage = result.percentage;
+    for (
+      let j = 0;
+      j < audioChunks[i].length - profiler.frameLength;
+      j += profiler.frameLength
+    ) {
+      percentage = profiler.enroll(audioChunks[i].slice(j, j + profiler.frameLength));
+      expect(percentage).toBeGreaterThanOrEqual(0);
+    }
+
+    percentage = profiler.flush();
+    expect(percentage).toBeGreaterThan(0);
   }
   expect(percentage).toEqual(100);
   return profiler.export();
-};
-
-const getScores = (
-  eagle: Eagle,
-  pcm: Int16Array
-): number[] => {
-  const allScores = [];
-  for (
-    let i = 0;
-    i < pcm.length - eagle.frameLength;
-    i += eagle.frameLength
-  ) {
-    const score = eagle.process(
-      pcm.slice(i, i + eagle.frameLength)
-    );
-    allScores.push(score[0]);
-  }
-  return allScores;
 };
 
 let testProfile: Uint8Array;
@@ -76,8 +64,7 @@ beforeAll(() => {
   const inputPcm2 = loadPcm(WAV_PATH_SPEAKER_1_UTT_2);
   testProfile = getProfile(
     profiler,
-    [inputPcm1, inputPcm2],
-    ["NONE", "NONE"]);
+    [inputPcm1, inputPcm2]);
   profiler.release();
 });
 
@@ -90,53 +77,49 @@ describe('successful processes', () => {
     expect(profiler.frameLength).toBeGreaterThan(0);
     expect(typeof profiler.version).toEqual('string');
     expect(profiler.version.length).toBeGreaterThan(0);
-    expect(profiler.minEnrollSamples).toBeGreaterThan(0);
 
     const inputPcm1 = loadPcm(WAV_PATH_SPEAKER_1_UTT_1);
     const inputPcm2 = loadPcm(WAV_PATH_SPEAKER_1_UTT_2);
     const profile = getProfile(
       profiler,
-      [inputPcm1, inputPcm2],
-      ["NONE", "NONE"]);
+      [inputPcm1, inputPcm2]);
     expect(profile.byteLength).toBeGreaterThan(0);
     profiler.reset();
 
     const profile2 = getProfile(
       profiler,
-      [inputPcm1, inputPcm2],
-      ["NONE", "NONE"]);
+      [inputPcm1, inputPcm2]);
     expect(profile2.byteLength).toEqual(profile.byteLength);
     profiler.release();
   });
 });
 
 describe('Eagle', () => {
-  test('eagle process with reset', () => {
-    const eagle = new Eagle(ACCESS_KEY, testProfile, {
+  test('eagle process', () => {
+    const eagle = new Eagle(ACCESS_KEY, {
       device: DEVICE
     });
     expect(eagle.sampleRate).toBeGreaterThan(0);
-    expect(eagle.frameLength).toBeGreaterThan(0);
+    expect(eagle.minProcessSamples).toBeGreaterThan(0);
     expect(typeof eagle.version).toEqual('string');
     expect(eagle.version.length).toBeGreaterThan(0);
 
     const testPcm = loadPcm(WAV_PATH_SPEAKER_1_TEST_UTT);
 
-    const scores = getScores(eagle, testPcm);
-    expect(Math.max(...scores)).toBeGreaterThan(0.5);
-    eagle.reset();
+    const scores = eagle.process(testPcm, testProfile);
+    expect(scores[0]).toBeGreaterThan(0.5);
 
-    const scores2 = getScores(eagle, testPcm);
+    const scores2 = eagle.process(testPcm, [testProfile]);
     expect(scores).toEqual(scores2);
     eagle.release();
   });
 
   test('eagle process imposter', () => {
-    const eagle = new Eagle(ACCESS_KEY, testProfile, {
+    const eagle = new Eagle(ACCESS_KEY, {
       device: DEVICE
     });
     const imposterPcm = loadPcm(WAV_PATH_SPEAKER_2_TEST_UTT);
-    const imposterScores = getScores(eagle, imposterPcm);
+    const imposterScores = eagle.process(imposterPcm, testProfile);
     expect(Math.max(...imposterScores)).toBeLessThan(0.5);
     eagle.release();
   });
@@ -153,7 +136,7 @@ describe('Defaults', () => {
       new EagleProfiler('');
     }).toThrow(EagleErrors.EagleInvalidArgumentError);
     expect(() => {
-      new Eagle('', testProfile);
+      new Eagle('');
     }).toThrow(EagleErrors.EagleInvalidArgumentError);
   });
   test('Invalid device', () => {
@@ -161,7 +144,7 @@ describe('Defaults', () => {
       new EagleProfiler(ACCESS_KEY, { device: "cloud:9" });
     }).toThrow(EagleErrors.EagleInvalidArgumentError);
     expect(() => {
-      new Eagle(ACCESS_KEY, testProfile, { device: "cloud:9" });
+      new Eagle(ACCESS_KEY, { device: "cloud:9" });
     }).toThrow(EagleErrors.EagleInvalidArgumentError);
   });
 });
@@ -181,13 +164,11 @@ describe('manual paths', () => {
     const inputPcm2 = loadPcm(WAV_PATH_SPEAKER_1_UTT_2);
     const profile = getProfile(
       profiler,
-      [inputPcm1, inputPcm2],
-      ["NONE", "NONE"]
+      [inputPcm1, inputPcm2]
     );
 
     const eagle = new Eagle(
       ACCESS_KEY,
-      profile,
       {
         modelPath: MODEL_PATH,
         device: DEVICE,
@@ -196,8 +177,8 @@ describe('manual paths', () => {
     );
 
     const testPcm = loadPcm(WAV_PATH_SPEAKER_1_TEST_UTT);
-    const scores = getScores(eagle, testPcm);
-    expect(Math.max(...scores)).toBeGreaterThan(0.5);
+    const scores = eagle.process(testPcm, testProfile);
+    expect(scores[0]).toBeGreaterThan(0.5);
     profiler.release();
     eagle.release();
   });
@@ -227,7 +208,7 @@ describe('error message stack', () => {
   test('message stack cleared after read', () => {
     let error: string[] = [];
     try {
-      new Eagle('invalid', testProfile);
+      new Eagle('invalid');
     } catch (e: any) {
       error = e.messageStack;
     }
@@ -236,7 +217,7 @@ describe('error message stack', () => {
     expect(error.length).toBeLessThanOrEqual(8);
 
     try {
-      new Eagle('invalid', testProfile);
+      new Eagle('invalid');
     } catch (e: any) {
       for (let i = 0; i < error.length; i++) {
         expect(error[i]).toEqual(e.messageStack[i]);
@@ -250,7 +231,7 @@ describe('error message stack', () => {
     let profiler = new EagleProfiler(ACCESS_KEY, {
       device: DEVICE
     });
-    const testPcm = new Int16Array(profiler.minEnrollSamples);
+    const testPcm = new Int16Array(profiler.frameLength);
     const profilerBytes = profiler;
     // @ts-ignore
     profiler._profiler = 0;
@@ -278,16 +259,16 @@ describe('error message stack', () => {
   test('process error message', () => {
     let error: string[] = [];
 
-    let eagle = new Eagle(ACCESS_KEY, testProfile, {
+    let eagle = new Eagle(ACCESS_KEY, {
       device: DEVICE
     });
-    const testPcm = new Int16Array(eagle.frameLength);
+    const testPcm = new Int16Array(eagle.minProcessSamples);
     const eagleBytes = eagle;
     // @ts-ignore
     eagle._handle = 0;
 
     try {
-      eagle!.process(testPcm);
+      eagle!.process(testPcm, testProfile);
     } catch (e: any) {
       error = e.message;
     }

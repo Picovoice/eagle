@@ -24,6 +24,7 @@ import {
 import {
   EagleInputOptions,
   EagleOptions,
+  EagleProfilerOptions,
   EnrollProgress
 } from './types';
 
@@ -62,7 +63,6 @@ export class EagleProfiler {
   private readonly _version: string;
   private readonly _sampleRate: number;
   private readonly _frameLength: number;
-  private readonly _minEnrollSamples: number;
 
   /**
    * Creates an instance of Eagle Profiler.
@@ -75,9 +75,14 @@ export class EagleProfiler {
    * `${GPU_INDEX}` is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the
    * default number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
    * where `${NUM_THREADS}` is the desired number of threads.
+   * @param {number} options.min_enrollment_chunks Minimum number of chunks to be processed before enroll returns 100%. The value should be
+   * a number greater than or equal to 1. A higher number results in more accurate profiles at the cost of needing more
+   * data to create the profile.
+   * @param {number} options.voice_threshold Sensitivity threshold for detecting voice. The value should be a number within [0, 1]. A
+   * higher threshold increases detection confidence values at the cost of potentially missing frames of voice.
    * @param {string} options.libraryPath Path to the Eagle library (.node extension)
    */
-  constructor(accessKey: string, options: EagleOptions = {}) {
+  constructor(accessKey: string, options: EagleProfilerOptions = {}) {
     assert(typeof accessKey === 'string');
     if (
       accessKey === null ||
@@ -90,6 +95,8 @@ export class EagleProfiler {
     const {
       modelPath = path.resolve(__dirname, DEFAULT_MODEL_PATH),
       device = 'best',
+      min_enrollment_chunks = 1,
+      voice_threshold = 0.3,
       libraryPath = getSystemLibraryPath(),
     } = options;
 
@@ -115,7 +122,9 @@ export class EagleProfiler {
       eagleProfilerAndStatus = pvEagle.profiler_init(
         accessKey,
         modelPath,
-        device);
+        device,
+        min_enrollment_chunks,
+        voice_threshold);
     } catch (err: any) {
       pvStatusToException(PvStatus[err.code as keyof typeof PvStatus], err);
     }
@@ -128,8 +137,7 @@ export class EagleProfiler {
     this._profiler = eagleProfilerAndStatus!.profiler;
     this._version = pvEagle.version();
     this._sampleRate = pvEagle.sample_rate();
-    this._frameLength = pvEagle.frame_length();
-    this._minEnrollSamples = pvEagle.profiler_enroll_min_audio_length_samples(this._profiler).num_samples;
+    this._frameLength = pvEagle.profiler_frame_length();
   }
 
   /**
@@ -149,18 +157,10 @@ export class EagleProfiler {
 
   /**
    * @returns number of audio samples per frame (i.e. the length of the array provided to the enroll function)
-   * @see {@link process}
+   * @see {@link enroll}
    */
   get frameLength(): number {
     return this._frameLength;
-  }
-
-  /**
-   * @returns the minimum number of samples required by the enroll function
-   * @see {@link enroll}
-   */
-  get minEnrollSamples(): number {
-    return this._minEnrollSamples;
   }
 
   /**
@@ -175,19 +175,9 @@ export class EagleProfiler {
    *    - it should be captured in a quiet environment with no background noise
    * @param {Int16Array} pcm Audio data for enrollment. The audio needs to have a sample rate equal to `.sampleRate` and be
    * 16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
-   * @return {EnrollProgress} The percentage of completeness of the speaker enrollment process along with the feedback code
-   * corresponding to the last enrollment attempt:
-   *    - `NONE`: The audio is good for enrollment.
-   *    - `AUDIO_TOO_SHORT`: Audio length is insufficient for enrollment,
-   *       i.e. it is shorter than`.min_enroll_samples`.
-   *    - `UNKNOWN_SPEAKER`: There is another speaker in the audio that is different from the speaker
-   *       being enrolled. Too much background noise may cause this error as well.
-   *    - `NO_VOICE_FOUND`: The audio does not contain any voice, i.e. it is silent or
-   *       has a low signal-to-noise ratio.
-   *    - `QUALITY_ISSUE`: The audio quality is too low for enrollment due to a bad microphone
-   *       or recording environment.
+   * @return {number} The percentage of completeness of the speaker enrollment process
    */
-  enroll(pcm: Int16Array): EnrollProgress {
+  enroll(pcm: Int16Array): number {
     assert(pcm instanceof Int16Array);
 
     if (
@@ -202,9 +192,9 @@ export class EagleProfiler {
       throw new EagleInvalidArgumentError(
         `PCM array provided to 'Eagle.enroll()' is undefined or null`
       );
-    } else if (pcm.length < this._minEnrollSamples) {
+    } else if (pcm.length != this.frameLength) {
       throw new EagleInvalidArgumentError(
-        `PCM size (${pcm.length}) must be greater than 'Eagle.minEnrollSamples' (${this.minEnrollSamples})`
+        `PCM size (${pcm.length}) must be equal to 'EagleProfiler.frameLength' (${this.frameLength})`
       );
     }
 
@@ -220,10 +210,36 @@ export class EagleProfiler {
       this.handlePvStatus(status, 'Eagle Profiler failed to process the audio frame');
     }
 
-    return {
-      percentage: enrollStatus!.percentage,
-      feedback: enrollStatus!.feedback,
-    };
+    return enrollStatus!.percentage;
+  }
+
+  /**
+   * Marks the end of the audio stream, flushes internal state of the object, and returns the percentage of enrollment
+   * completed.
+   * @return {number} The percentage of completeness of the speaker enrollment process
+   */
+  flush(): number {
+    if (
+      this._profiler === 0 ||
+      this._profiler === null ||
+      this._profiler === undefined
+    ) {
+      throw new EagleInvalidStateError('Eagle Profiler is not initialized');
+    }
+
+    let enrollStatus: EnrollStatus | null = null;
+    try {
+      enrollStatus = this._pvEagle.profiler_flush(this._profiler);
+    } catch (err: any) {
+      pvStatusToException(PvStatus[err.code as keyof typeof PvStatus], err);
+    }
+
+    const status = enrollStatus!.status;
+    if (status !== PvStatus.SUCCESS) {
+      this.handlePvStatus(status, 'Eagle Profiler failed to process the audio frame');
+    }
+
+    return enrollStatus!.percentage;
   }
 
   /**
@@ -314,14 +330,11 @@ export class Eagle {
 
   private readonly _version: string;
   private readonly _sampleRate: number;
-  private readonly _frameLength: number;
-
-  private readonly _numSpeakers: number;
+  private readonly _minProcessSamples: number;
 
   /**
    * Creates an instance of Eagle.
    * @param {string} accessKey AccessKey obtained from Picovoice Console (https://console.picovoice.ai/).
-   * @param speakerProfiles One or more Eagle speaker profiles. These can be constructed using `EagleProfiler`.
    * @param options Optional configuration arguments.
    * @param {string} options.modelPath The path to the Eagle model (.pv extension)
    * @param {string} options.device String representation of the device (e.g., CPU or GPU) to use for inference.
@@ -330,11 +343,12 @@ export class Eagle {
    * `${GPU_INDEX}` is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the
    * default number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
    * where `${NUM_THREADS}` is the desired number of threads.
+   * @param {number} options.voice_threshold Sensitivity threshold for detecting voice. The value should be a number within [0, 1]. A
+   * higher threshold increases detection confidence values at the cost of potentially missing frames of voice.
    * @param {string} options.libraryPath The path to the Eagle library (.node extension)
    */
   constructor(
     accessKey: string,
-    speakerProfiles: Uint8Array[] | Uint8Array,
     options: EagleOptions = {}) {
     assert(typeof accessKey === 'string');
     if (
@@ -348,6 +362,7 @@ export class Eagle {
     const {
       modelPath = path.resolve(__dirname, DEFAULT_MODEL_PATH),
       device = 'best',
+      voice_threshold = 0.3,
       libraryPath = getSystemLibraryPath(),
     } = options;
 
@@ -367,7 +382,6 @@ export class Eagle {
     this._pvEagle = pvEagle;
 
     let eagleHandleAndStatus: EagleHandleAndStatus | null = null;
-    const numSpeakers = !Array.isArray(speakerProfiles) ? 1 : speakerProfiles.length;
     try {
       pvEagle.set_sdk('nodejs');
 
@@ -375,8 +389,7 @@ export class Eagle {
         accessKey,
         modelPath,
         device,
-        numSpeakers,
-        !Array.isArray(speakerProfiles) ? [speakerProfiles] : speakerProfiles
+        voice_threshold
       );
     } catch (err: any) {
       pvStatusToException(PvStatus[err.code as keyof typeof PvStatus], err);
@@ -390,8 +403,7 @@ export class Eagle {
     this._handle = eagleHandleAndStatus!.handle;
     this._version = pvEagle.version();
     this._sampleRate = pvEagle.sample_rate();
-    this._frameLength = pvEagle.frame_length();
-    this._numSpeakers = numSpeakers;
+    this._minProcessSamples = pvEagle.process_min_audio_length_samples(this._handle).num_samples;
   }
 
   /**
@@ -410,24 +422,26 @@ export class Eagle {
   }
 
   /**
-   * @returns number of audio samples per frame (i.e. the length of the array provided to the process function)
+   * @returns the minimum number of samples required by the process function
    * @see {@link process}
    */
-  get frameLength(): number {
-    return this._frameLength;
+  get minProcessSamples(): number {
+    return this._minProcessSamples;
   }
 
   /**
-   * Processes a frame of audio and returns a list of similarity scores for each speaker profile.
+   * Processes a chunk of audio and returns a list of similarity scores for each speaker profile or null.
    *
-   * @param {Int16Array} pcm A frame of audio samples. The number of samples per frame can be attained by calling
-   * `.frameLength`. The incoming audio needs to have a sample rate equal to `.sampleRate` and be 16-bit
+   * @param {Int16Array} pcm An array of audio samples. The minimum number of samples can be attained by calling
+   * `.minProcessSamples`. The incoming audio needs to have a sample rate equal to `.sampleRate` and be 16-bit
    * linearly-encoded. Eagle operates on single-channel audio.
+   * @param speakerProfiles One or more Eagle speaker profiles. These can be constructed using `EagleProfiler`.
    *
-   * @return {number[]} A list of similarity scores for each speaker profile. A higher score indicates that the voice
-   * belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match.
+   * @return {number[] | null} A list of similarity scores for each speaker profile. A higher score indicates that the
+   * voice belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match. A result of
+   * null indicated that there was not enough voice in the audio to detect a speaker.
    */
-  process(pcm: Int16Array): number[] {
+  process(pcm: Int16Array, speakerProfiles: Uint8Array[] | Uint8Array): number[] {
     assert(pcm instanceof Int16Array);
 
     if (
@@ -442,15 +456,18 @@ export class Eagle {
       throw new EagleInvalidArgumentError(
         `PCM array provided to 'Eagle.process()' is undefined or null`
       );
-    } else if (pcm.length !== this.frameLength) {
+    } else if (pcm.length < this.minProcessSamples) {
       throw new EagleInvalidArgumentError(
-        `Size of frame array provided to 'Eagle.process()' (${pcm.length}) does not match the engine 'Eagle.frameLength' (${this.frameLength})`
+        `PCM size (${pcm.length}) must be greater than 'Eagle.minProcessSamples' (${this.minProcessSamples})`
       );
     }
 
     let processStatus: ProcessStatus | null = null;
     try {
-      processStatus = this._pvEagle.process(this._handle, pcm, this._numSpeakers);
+      processStatus = this._pvEagle.process(
+        this._handle,
+        pcm,
+        !Array.isArray(speakerProfiles) ? [speakerProfiles] : speakerProfiles);
     } catch (err: any) {
       pvStatusToException(PvStatus[err.code as keyof typeof PvStatus], err);
     }
@@ -461,32 +478,6 @@ export class Eagle {
     }
 
     return processStatus!.scores;
-  }
-
-  /**
-   * Resets the internal state of the engine.
-   * It is best to call before processing a new sequence of audio (e.g. a new voice interaction).
-   * This ensures that the accuracy of the engine is not affected by a change in audio context.
-   */
-  reset(): void {
-    if (
-      this._handle === 0 ||
-      this._handle === null ||
-      this._handle === undefined
-    ) {
-      throw new EagleInvalidStateError('Eagle is not initialized');
-    }
-
-    let status: number | null = null;
-    try {
-      status = this._pvEagle.reset(this._handle);
-    } catch (err: any) {
-      pvStatusToException(<PvStatus>err.code, err);
-    }
-
-    if (status && status !== PvStatus.SUCCESS) {
-      this.handlePvStatus(status, "Eagle failed to reset");
-    }
   }
 
   /**
