@@ -497,12 +497,16 @@ Build an instance of the profiler:
 const char *access_key = "${ACCESS_KEY}";
 const char *model_path = "${MODEL_PATH}";
 const char *device = "best";
+const int32_t min_enrollment_chunks = 1;
+const float voice_threshold = 0.3f;
 
 pv_eagle_profiler_t *eagle_profiler = NULL;
 pv_status_t status = pv_eagle_profiler_init(
             access_key,
             model_path,
             device,
+            min_enrollment_chunks,
+            voice_threshold,
             &eagle_profiler);
 if (status != PV_STATUS_SUCCESS) {
     // error handling logic
@@ -516,21 +520,26 @@ Use `eagle_profiler` to create a new speaker profile:
 
 ```c
 extern const int16_t *get_next_enroll_audio_frame(void);
-extern const int32_t get_next_enroll_audio_num_samples(void);
+extern const bool has_next_enroll_audio_frame(void);
+const int32_t frame_length = pv_eagle_profiler_frame_length();
 
 float enroll_percentage = 0.0f;
-pv_eagle_profiler_enroll_feedback_t feedback = PV_EAGLE_PROFILER_ENROLLMENT_ERROR_AUDIO_OK;
 
-while (enroll_percentage < 100.0f) {
+while (enroll_percentage < 100.0f && has_next_enroll_audio_frame()) {
   status = pv_eagle_profiler_enroll(
           eagle_profiler,
           get_next_enroll_audio_frame(),
-          get_next_enroll_audio_num_samples(),
-          &feedback,
           &enroll_percentage);
   if (status != PV_STATUS_SUCCESS) {
       // error handling logic
   }
+}
+
+status = pv_eagle_profiler_flush(
+        eagle_profiler,
+        &enroll_percentage);
+if (status != PV_STATUS_SUCCESS) {
+    // error handling logic
 }
 
 int32_t profile_size_bytes = 0;
@@ -552,7 +561,7 @@ pv_eagle_profiler_delete(eagle_profiler);
 
 #### Speaker Recognition
 
-Create an instance of the engine using the speaker profile exported before:
+Create an instance of the engine:
 
 ```c
 pv_eagle_t *eagle = NULL;
@@ -560,24 +569,29 @@ pv_status_t status = pv_eagle_init(
         access_key,
         model_path,
         device,
-        1,
-        (const void *const *) &speaker_profile,
+        voice_threshold,
         &eagle);
 if (status != PV_STATUS_SUCCESS) {
     // error handling logic
 }
 ```
 
-Now the `eagle` can be used to process incoming audio frames:
+Now the `eagle` can be used to process incoming audio frames using the speaker profile exported before:
 
 ```c
 extern const int16_t *get_next_audio_frame(void);
-const int32_t frame_length = pv_eagle_frame_length();
+extern const int32_t get_next_audio_num_samples(void);
 
-float score = 0.f;
+float *scores = NULL;
 while (true) {
-    const int16_t *pcm = get_next_audio_frame();
-    const pv_status_t status = pv_eagle_process(eagle, pcm, &score);
+    const int16_t *pcm = ;
+    const pv_status_t status = pv_eagle_process(
+            eagle,
+            get_next_audio_frame(),
+            get_next_audio_num_samples(),
+            &speaker_profile,
+            1,
+            &scores);
     if (status != PV_STATUS_SUCCESS) {
         // error handling logic
     }
@@ -587,6 +601,7 @@ while (true) {
 Finally, when done be sure to release the acquired resources:
 
 ```c
+pv_eagle_scores_delete(scores);
 pv_eagle_delete(handle);
 ```
 

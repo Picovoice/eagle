@@ -684,7 +684,7 @@ void speaker_recognition(
         size_t num_process_samples = wav_audio_file.totalPCMFrameCount;
         int16_t *process_pcm = calloc(num_process_samples, sizeof(int16_t));
         if (!process_pcm) {
-            fprintf(stderr, "Failed to allocate memory for enrollment audio.\n");
+            fprintf(stderr, "Failed to allocate memory for process audio.\n");
             exit(EXIT_FAILURE);
         }
 
