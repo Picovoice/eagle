@@ -91,6 +91,15 @@ jobs:
       - name: Pre-build dependencies
         run: python3 -m pip install --upgrade pip
 
+      # ************** REMOVE AFTER RELEASE ********************
+      - name: Build binding
+        run: |
+          python3 -m pip install wheel setuptools
+          python3 setup.py sdist bdist_wheel
+          python3 -m pip install --force-reinstall dist/pveagle-3.0.0-py3-none-any.whl
+        working-directory: binding/python
+      # ********************************************************
+
       - name: Install dependencies
         run: pip3 install -r requirements.txt
 
