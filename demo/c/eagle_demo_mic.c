@@ -91,6 +91,8 @@ static struct option long_options[] = {
         {"library_path",            required_argument, NULL, 'l'},
         {"model_path",              required_argument, NULL, 'm'},
         {"device",                  required_argument, NULL, 'y'},
+        {"voice_threshold",         required_argument, NULL, 'v'},
+        {"min_enrollment_chunks",   required_argument, NULL, 'c'},
         {"enroll",                  required_argument, NULL, 'e'},
         {"test",                    required_argument, NULL, 't'},
         {"show_audio_devices",      no_argument,       NULL, 's'},
@@ -103,7 +105,8 @@ void (*pv_free_error_stack_func)(char **) = NULL;
 static void print_usage(const char *program_name) {
     fprintf(stdout,
             "Usage: %s [-e OUTPUT_PROFILE_PATH | -t INPUT_PROFILE_PATH] "
-            "[-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY -d AUDIO_DEVICE_INDEX -y DEVICE]\n"
+            "[-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY -v VOICE_THRESHOLD "
+            "-c MIN_ENROLLMENT_CHUNKS -d AUDIO_DEVICE_INDEX -y DEVICE]\n"
             "        %s [-s, --show_audio_devices]\n"
             "        %s [-i, --show_inference_devices] -l LIBRARY_PATH\n",
             program_name,
@@ -221,6 +224,8 @@ void speaker_enrollment(
         const char *access_key,
         const char *model_path,
         const char *device,
+        int32_t min_enrollment_chunks,
+        float voice_threshold,
         const char *output_profile_path,
         void *eagle_library,
         pv_recorder_t *recorder) {
@@ -241,6 +246,8 @@ void speaker_enrollment(
             const char *,
             const char *,
             const char *,
+            int32_t,
+            float,
             pv_eagle_profiler_t **) = load_symbol(eagle_library, "pv_eagle_profiler_init");
     if (!pv_eagle_profiler_init_func) {
         print_dl_error("Failed to load 'pv_eagle_profiler_init'");
@@ -254,30 +261,26 @@ void speaker_enrollment(
         exit(EXIT_FAILURE);
     }
 
-    const char *(*pv_eagle_profiler_enroll_feedback_to_string_func)(
-            pv_eagle_profiler_enroll_feedback_t) = load_symbol(eagle_library,
-                                                                   "pv_eagle_profiler_enroll_feedback_to_string");
-    if (!pv_eagle_profiler_enroll_feedback_to_string_func) {
-        print_dl_error("Failed to load 'pv_eagle_profiler_enroll_feedback_to_string'");
-        exit(EXIT_FAILURE);
-    }
-
     pv_status_t (*pv_eagle_profiler_enroll_func)(
             pv_eagle_profiler_t *,
             const int16_t *,
-            int32_t,
-            pv_eagle_profiler_enroll_feedback_t *,
             float *) = load_symbol(eagle_library, "pv_eagle_profiler_enroll");
     if (!pv_eagle_profiler_enroll_func) {
         print_dl_error("Failed to load 'pv_eagle_profiler_enroll'");
         exit(EXIT_FAILURE);
     }
 
-    pv_status_t (*pv_eagle_profiler_enroll_min_audio_length_samples_func)(
-            const pv_eagle_profiler_t *,
-            int32_t *) = load_symbol(eagle_library, "pv_eagle_profiler_enroll_min_audio_length_samples");
-    if (!pv_eagle_profiler_enroll_min_audio_length_samples_func) {
-        print_dl_error("Failed to load 'pv_eagle_profiler_enroll_min_audio_length_samples'");
+    pv_status_t (*pv_eagle_profiler_flush_func)(
+            pv_eagle_profiler_t *,
+            float *) = load_symbol(eagle_library, "pv_eagle_profiler_flush");
+    if (!pv_eagle_profiler_enroll_func) {
+        print_dl_error("Failed to load 'pv_eagle_profiler_flush'");
+        exit(EXIT_FAILURE);
+    }
+
+    int32_t (*pv_eagle_profiler_frame_length_func)() = load_symbol(eagle_library, "pv_eagle_profiler_frame_length");
+    if (!pv_eagle_profiler_frame_length_func) {
+        print_dl_error("Failed to load 'pv_eagle_profiler_frame_length'");
         exit(EXIT_FAILURE);
     }
 
@@ -304,12 +307,6 @@ void speaker_enrollment(
         exit(EXIT_FAILURE);
     }
 
-    int32_t (*pv_eagle_frame_length_func)() = load_symbol(eagle_library, "pv_eagle_frame_length");
-    if (!pv_eagle_frame_length_func) {
-        print_dl_error("Failed to load 'pv_eagle_frame_length'");
-        exit(EXIT_FAILURE);
-    }
-
     char **message_stack = NULL;
     int32_t message_stack_depth = 0;
     pv_status_t error_status = PV_STATUS_RUNTIME_ERROR;
@@ -319,6 +316,8 @@ void speaker_enrollment(
             access_key,
             model_path,
             device,
+            min_enrollment_chunks,
+            voice_threshold,
             &eagle_profiler);
     if (eagle_profiler_status != PV_STATUS_SUCCESS) {
         fprintf(stderr, "Failed to create an instance of eagle profiler");
@@ -339,30 +338,8 @@ void speaker_enrollment(
         exit(EXIT_FAILURE);
     }
 
-    int32_t num_enroll_samples = 0;
-    eagle_profiler_status = pv_eagle_profiler_enroll_min_audio_length_samples_func(
-            eagle_profiler, &num_enroll_samples);
-    if (eagle_profiler_status != PV_STATUS_SUCCESS) {
-        fprintf(stderr, "Failed to get minimum number of enrollment samples");
-        error_status = pv_get_error_stack_func(&message_stack, &message_stack_depth);
-        if (error_status != PV_STATUS_SUCCESS) {
-            fprintf(
-                    stderr,
-                    ".\nUnable to get Eagle error state with '%s'.\n",
-                    pv_status_to_string_func(error_status));
-            exit(EXIT_FAILURE);
-        }
-
-        if (message_stack_depth > 0) {
-            fprintf(stderr, ":\n");
-            print_error_message(message_stack, message_stack_depth);
-            pv_free_error_stack_func(message_stack);
-        }
-        exit(EXIT_FAILURE);
-    }
-
-
-    int16_t *enroll_pcm = (int16_t *) malloc(num_enroll_samples * sizeof(int16_t));
+    const int32_t frame_length = pv_eagle_profiler_frame_length_func();
+    int16_t *enroll_pcm = (int16_t *) malloc(frame_length * sizeof(int16_t));
     if (!enroll_pcm) {
         fprintf(stderr, "Failed to allocate pcm memory.\n");
         exit(EXIT_FAILURE);
@@ -371,34 +348,23 @@ void speaker_enrollment(
     fprintf(stdout, "Starting enrollment. Keep talking to the device until the progress reaches 100%%.\n");
 
     float enroll_percentage = 0.0f;
-    pv_eagle_profiler_enroll_feedback_t feedback = PV_EAGLE_PROFILER_ENROLL_FEEDBACK_AUDIO_OK;
-    const int32_t frame_length = pv_eagle_frame_length_func();
+
+    pv_recorder_status_t recorder_status = pv_recorder_start(recorder);
+    if (recorder_status != PV_RECORDER_STATUS_SUCCESS) {
+        fprintf(stderr, "Failed to start device with %s.\n", pv_recorder_status_to_string(recorder_status));
+        exit(EXIT_FAILURE);
+    }
 
     while ((enroll_percentage < 100.0f) && (!is_interrupted)) {
-        pv_recorder_status_t recorder_status = pv_recorder_start(recorder);
+        recorder_status = pv_recorder_read(recorder, enroll_pcm);
         if (recorder_status != PV_RECORDER_STATUS_SUCCESS) {
-            fprintf(stderr, "Failed to start device with %s.\n", pv_recorder_status_to_string(recorder_status));
-            exit(EXIT_FAILURE);
-        }
-        for (int32_t i = 0; i < num_enroll_samples; i += frame_length) {
-            int16_t *pcm = &enroll_pcm[i];
-            recorder_status = pv_recorder_read(recorder, pcm);
-            if (recorder_status != PV_RECORDER_STATUS_SUCCESS) {
-                fprintf(stderr, "Failed to read audio with %s.\n", pv_recorder_status_to_string(recorder_status));
-                exit(EXIT_FAILURE);
-            }
-        }
-        recorder_status = pv_recorder_stop(recorder);
-        if (recorder_status != PV_RECORDER_STATUS_SUCCESS) {
-            fprintf(stderr, "Failed to stop device with %s.\n", pv_recorder_status_to_string(recorder_status));
+            fprintf(stderr, "Failed to read audio with %s.\n", pv_recorder_status_to_string(recorder_status));
             exit(EXIT_FAILURE);
         }
 
         eagle_profiler_status = pv_eagle_profiler_enroll_func(
                 eagle_profiler,
                 enroll_pcm,
-                num_enroll_samples,
-                &feedback,
                 &enroll_percentage);
         if (eagle_profiler_status != PV_STATUS_SUCCESS) {
             fprintf(stderr, "Failed to enroll audio");
@@ -418,14 +384,39 @@ void speaker_enrollment(
             }
             exit(EXIT_FAILURE);
         }
-        if (feedback != PV_EAGLE_PROFILER_ENROLL_FEEDBACK_AUDIO_OK) {
-            fprintf(stdout, "\nEnrollment audio feedback: %s\n",
-                    pv_eagle_profiler_enroll_feedback_to_string_func(feedback));
-        }
         fprintf(stdout, "\rEnrollment progress: %.2f%%", enroll_percentage);
         fflush(stdout);
     }
-    fprintf(stdout, "\n");
+
+    recorder_status = pv_recorder_stop(recorder);
+    if (recorder_status != PV_RECORDER_STATUS_SUCCESS) {
+        fprintf(stderr, "Failed to stop device with %s.\n", pv_recorder_status_to_string(recorder_status));
+        exit(EXIT_FAILURE);
+    }
+
+    eagle_profiler_status = pv_eagle_profiler_flush_func(
+            eagle_profiler,
+            &enroll_percentage);
+    if (eagle_profiler_status != PV_STATUS_SUCCESS) {
+        fprintf(stderr, "Failed to flush audio");
+        error_status = pv_get_error_stack_func(&message_stack, &message_stack_depth);
+        if (error_status != PV_STATUS_SUCCESS) {
+            fprintf(
+                    stderr,
+                    ".\nUnable to get Eagle error state with '%s'.\n",
+                    pv_status_to_string_func(error_status));
+            exit(EXIT_FAILURE);
+        }
+
+        if (message_stack_depth > 0) {
+            fprintf(stderr, ":\n");
+            print_error_message(message_stack, message_stack_depth);
+            pv_free_error_stack_func(message_stack);
+        }
+        exit(EXIT_FAILURE);
+    }
+    fprintf(stdout, "\rEnrollment progress: %.2f%%\n", enroll_percentage);
+    fflush(stdout);
 
     if (is_interrupted) {
         fprintf(stdout, "Enrollment interrupted.\n");
@@ -504,6 +495,7 @@ void speaker_recognition(
         const char *access_key,
         const char *model_path,
         const char *device,
+        float voice_threshold,
         const char *input_profile_path,
         void *eagle_library,
         pv_recorder_t *recorder) {
@@ -524,8 +516,7 @@ void speaker_recognition(
             const char *,
             const char *,
             const char *,
-            int32_t,
-            const void *const *,
+            float,
             pv_eagle_t **) = load_symbol(eagle_library, "pv_eagle_init");
     if (!pv_eagle_init_func) {
         print_dl_error("Failed to load 'pv_eagle_init'");
@@ -541,25 +532,35 @@ void speaker_recognition(
     pv_status_t (*pv_eagle_process_func)(
             pv_eagle_t *,
             const int16_t *,
-            float *) = load_symbol(eagle_library, "pv_eagle_process");
+            int32_t,
+            void **,
+            int32_t,
+            float **) = load_symbol(eagle_library, "pv_eagle_process");
     if (!pv_eagle_process_func) {
         print_dl_error("Failed to load 'pv_eagle_process'");
         exit(EXIT_FAILURE);
     }
 
-    int32_t (*pv_eagle_reset_func)(
-            pv_eagle_t *) = load_symbol(eagle_library, "pv_eagle_reset");
-    if (!pv_eagle_reset_func) {
-        print_dl_error("Failed to load 'pv_eagle_reset'");
+    void (*pv_eagle_scores_delete_func)(
+            float *) = load_symbol(eagle_library, "pv_eagle_scores_delete");
+    if (!pv_eagle_process_func) {
+        print_dl_error("Failed to load 'pv_eagle_scores_delete'");
         exit(EXIT_FAILURE);
     }
 
-    pv_status_t (*pv_eagle_frame_length_func)() = load_symbol(eagle_library, "pv_eagle_frame_length");
-    if (!pv_eagle_frame_length_func) {
-        print_dl_error("Failed to load 'pv_eagle_frame_length'");
+    pv_status_t (*pv_eagle_process_min_audio_length_samples_func)(
+            const pv_eagle_t *,
+            int32_t *) = load_symbol(eagle_library, "pv_eagle_process_min_audio_length_samples");
+    if (!pv_eagle_process_min_audio_length_samples_func) {
+        print_dl_error("Failed to load 'pv_eagle_process_min_audio_length_samples'");
         exit(EXIT_FAILURE);
     }
 
+    int32_t (*pv_eagle_profiler_frame_length_func)() = load_symbol(eagle_library, "pv_eagle_profiler_frame_length");
+    if (!pv_eagle_profiler_frame_length_func) {
+        print_dl_error("Failed to load 'pv_eagle_profiler_frame_length'");
+        exit(EXIT_FAILURE);
+    }
 
     FILE *input_profile_file = NULL;
 
@@ -602,8 +603,7 @@ void speaker_recognition(
             access_key,
             model_path,
             device,
-            1,
-            (const void *const *) &speaker_profile,
+            voice_threshold,
             &eagle);
     if (eagle_status != PV_STATUS_SUCCESS) {
         fprintf(stderr, "Failed to create an instance of eagle with '%s'", pv_status_to_string_func(eagle_status));
@@ -630,23 +630,48 @@ void speaker_recognition(
         exit(EXIT_FAILURE);
     }
 
-    float score = 0.0f;
-    const int32_t frame_length = pv_eagle_frame_length_func();
-    int16_t *pcm = (int16_t *) calloc(frame_length, sizeof(int16_t));
-    if (!pcm) {
+    int32_t num_process_samples = 0;
+    eagle_status = pv_eagle_process_min_audio_length_samples_func(
+            eagle, &num_process_samples);
+    if (eagle_status != PV_STATUS_SUCCESS) {
+        fprintf(stderr, "Failed to get minimum number of process samples");
+        error_status = pv_get_error_stack_func(&message_stack, &message_stack_depth);
+        if (error_status != PV_STATUS_SUCCESS) {
+            fprintf(
+                    stderr,
+                    ".\nUnable to get Eagle error state with '%s'.\n",
+                    pv_status_to_string_func(error_status));
+            exit(EXIT_FAILURE);
+        }
+
+        if (message_stack_depth > 0) {
+            fprintf(stderr, ":\n");
+            print_error_message(message_stack, message_stack_depth);
+            pv_free_error_stack_func(message_stack);
+        }
+        exit(EXIT_FAILURE);
+    }
+
+    const int32_t frame_length = pv_eagle_profiler_frame_length_func();
+    int16_t *process_pcm = (int16_t *) malloc(num_process_samples * sizeof(int16_t));
+    if (!process_pcm) {
         fprintf(stderr, "Failed to allocate pcm memory.\n");
         exit(EXIT_FAILURE);
     }
 
     fprintf(stdout, "Listening... (press Ctrl+C to stop)\n");
     while (!is_interrupted) {
-        recorder_status = pv_recorder_read(recorder, pcm);
-        if (recorder_status != PV_RECORDER_STATUS_SUCCESS) {
-            fprintf(stderr, "Failed to read with %s.\n", pv_recorder_status_to_string(recorder_status));
-            exit(EXIT_FAILURE);
+        for (int32_t i = 0; i < num_process_samples; i += frame_length) {
+            int16_t *pcm = &process_pcm[i];
+            recorder_status = pv_recorder_read(recorder, pcm);
+            if (recorder_status != PV_RECORDER_STATUS_SUCCESS) {
+                fprintf(stderr, "Failed to read audio with %s.\n", pv_recorder_status_to_string(recorder_status));
+                exit(EXIT_FAILURE);
+            }
         }
 
-        eagle_status = pv_eagle_process_func(eagle, pcm, &score);
+        float *score = NULL;
+        eagle_status = pv_eagle_process_func(eagle, process_pcm, num_process_samples, &speaker_profile, 1, &score);
         if (eagle_status != PV_STATUS_SUCCESS) {
             fprintf(stderr, "Failed to process audio with %s", pv_status_to_string_func(eagle_status));
             error_status = pv_get_error_stack_func(&message_stack, &message_stack_depth);
@@ -666,8 +691,14 @@ void speaker_recognition(
             exit(EXIT_FAILURE);
         }
 
-        fprintf(stdout, "\r[score: %.2f]", score);
-        fflush(stdout);
+        if (score != NULL) {
+            fprintf(stdout, "\r[score: %.2f]    ", *score);
+            fflush(stdout);
+            pv_eagle_scores_delete_func(score);
+        } else {
+            fprintf(stdout, "\rNo Voice Detected");
+            fflush(stdout);
+        }
     }
     fprintf(stdout, "\n");
 
@@ -677,7 +708,7 @@ void speaker_recognition(
         exit(1);
     }
 
-    free(pcm);
+    free(process_pcm);
     free(speaker_profile);
     pv_eagle_delete_func(eagle);
 }
@@ -693,6 +724,8 @@ int picovoice_main(int argc, char *argv[]) {
     const char *input_profile_path = NULL;
     const char *output_profile_path = NULL;
     int32_t device_index = -1;
+    float voice_threshold = 0.3f;
+    int32_t min_enrollment_chunks = 1;
 
     int c;
     while ((c = getopt_long(argc, argv, "sa:d:l:m:y:ie:t:", long_options, NULL)) != -1) {
@@ -717,6 +750,12 @@ int picovoice_main(int argc, char *argv[]) {
                 break;
             case 'y':
                 device = optarg;
+                break;
+            case 'v':
+                voice_threshold = atof(optarg);
+                break;
+            case 'c':
+                min_enrollment_chunks = atoi(optarg);
                 break;
             case 'i':
                 show_inference_devices = true;
@@ -763,9 +802,9 @@ int picovoice_main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    int32_t (*pv_eagle_frame_length_func)() = load_symbol(eagle_library, "pv_eagle_frame_length");
-    if (!pv_eagle_frame_length_func) {
-        print_dl_error("Failed to load 'pv_eagle_frame_length'");
+    int32_t (*pv_eagle_profiler_frame_length_func)() = load_symbol(eagle_library, "pv_eagle_profiler_frame_length");
+    if (!pv_eagle_profiler_frame_length_func) {
+        print_dl_error("Failed to load 'pv_eagle_profiler_frame_length'");
         exit(EXIT_FAILURE);
     }
 
@@ -789,7 +828,7 @@ int picovoice_main(int argc, char *argv[]) {
 
     fprintf(stdout, "v%s\n\n", pv_eagle_version_func());
 
-    const int32_t frame_length = pv_eagle_frame_length_func();
+    const int32_t frame_length = pv_eagle_profiler_frame_length_func();
     pv_recorder_t *recorder = NULL;
     pv_recorder_status_t recorder_status = pv_recorder_init(frame_length, device_index, 100, &recorder);
     if (recorder_status != PV_RECORDER_STATUS_SUCCESS) {
@@ -804,6 +843,8 @@ int picovoice_main(int argc, char *argv[]) {
                 access_key,
                 model_path,
                 device,
+                min_enrollment_chunks,
+                voice_threshold,
                 output_profile_path,
                 eagle_library,
                 recorder);
@@ -812,6 +853,7 @@ int picovoice_main(int argc, char *argv[]) {
                 access_key,
                 model_path,
                 device,
+                voice_threshold,
                 input_profile_path,
                 eagle_library,
                 recorder);
