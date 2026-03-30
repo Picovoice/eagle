@@ -35,8 +35,8 @@ Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get you
 
 Eagle has two distinct steps: Enrollment and Recognition. In the enrollment step, Eagle analyzes a series of
 utterances from a particular speaker to learn their unique voiceprint. This step produces an `EagleProfile` object,
-which can be stored and utilized during inference. During the Recognition step, Eagle compares the incoming frames of
-audio to the voiceprints of all enrolled speakers in real-time to determine the similarity between them.
+which can be stored and utilized during inference. During the Recognition step, Eagle compares the incoming audio to the
+voiceprints of all enrolled speakers in real-time to determine the similarity between them.
 
 ### Speaker Enrollment
 
@@ -59,20 +59,20 @@ obtained from this process indicates the progress of enrollment, while the feedb
 the status of the enrollment process.
 
 ```python
-def get_next_enroll_audio_data(num_samples):
+def get_next_enroll_audio_frame(frame_length):
     pass
 
 
 percentage = 0.0
 while percentage < 100.0:
-    percentage, feedback = eagle_profiler.enroll(get_next_enroll_audio_data(eagle_profiler.min_enroll_samples))
-    print(feedback.name)
+    percentage = eagle_profiler.enroll(get_next_enroll_audio_frame(eagle_profiler.frame_length))
+percentage = eagle_profiler.flush()
 ```
 
 After the percentage reaches 100%, the enrollment process is considered complete. While it is possible to continue
 providing additional audio data to the profiler to improve the accuracy of the voiceprint, it is not necessary to do so.
-Moreover, if the audio data submitted is unsuitable for enrollment, the feedback value will indicate the reason, and the
-enrollment progress will remain unchanged.
+Once all the audio from a single source has been submitted it is necessary to call `flush` before submitting any audio
+from another source.
 
 ```python
 speaker_profile = eagle_profiler.export()
@@ -93,30 +93,33 @@ eagle_profiler.delete()
 
 ### Speaker Recognition
 
-Create an instance of the engine with one or more speaker profiles from the `EagleProfiler`:
+Create an instance of the engine:
 
 ```python
-eagle = pveagle.create_recognizer(access_key, speaker_profile)
+eagle = pveagle.create_recognizer(access_key)
 ```
 
-When initialized, `eagle.sample_rate` specifies the valid sample rate for Eagle. The expected length of a frame, or the
-number of audio samples in an input array, is defined by `eagle.frame_length`.
+When initialized, `eagle.sample_rate` specifies the valid sample rate for Eagle. The minimum number of audio samples in
+an input array, is defined by `eagle.min_process_samples`.
 
 Like the profiler, Eagle is designed to work with single-channel audio that is encoded using 16-bit linear PCM.
 
+Process audio with one or more speaker profiles from the `EagleProfiler`.
+
 ```python
-def get_next_audio_frame():
+def get_next_audio_chunk(num_samples):
     pass
 
 
 while True:
-    scores = eagle.process(get_next_audio_frame())
+    scores = eagle.process(get_next_audio_chunk(eagle.min_process_samples), speaker_profiles)
 ```
 
 The `scores` array contains floating-point numbers that indicate the similarity between the input audio frame and the
 enrolled speakers. Each value in the array corresponds to a specific enrolled speaker, maintaining the same order as the
 speaker profiles provided during initialization. The values in the array range from 0.0 to 1.0, where higher values
-indicate a stronger degree of similarity.
+indicate a stronger degree of similarity. If there was no voice detected in the audio sample a value of None is returned
+instead of the scores.
 
 Finally, when done be sure to explicitly release the resources:
 

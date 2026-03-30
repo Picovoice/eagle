@@ -87,7 +87,7 @@ def main():
         help='Absolute path to save the speaker profile')
     enroll.add_argument(
         '--min_enrollment_chunks',
-        help='Minimum number of chunks to be processed before enroll returns 100%',
+        help='Minimum number of chunks to be processed before enroll returns 100',
         type=int,
         default=1)
 
