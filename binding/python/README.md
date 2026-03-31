@@ -62,9 +62,12 @@ the status of the enrollment process.
 def get_next_enroll_audio_frame(frame_length):
     pass
 
+def has_next_enroll_audio_frame(frame_length):
+    pass
+
 
 percentage = 0.0
-while percentage < 100.0:
+while percentage < 100.0 and has_next_enroll_audio_frame(eagle_profiler.frame_length):
     percentage = eagle_profiler.enroll(get_next_enroll_audio_frame(eagle_profiler.frame_length))
 percentage = eagle_profiler.flush()
 ```
@@ -115,11 +118,11 @@ while True:
     scores = eagle.process(get_next_audio_chunk(eagle.min_process_samples), speaker_profiles)
 ```
 
-The `scores` array contains floating-point numbers that indicate the similarity between the input audio frame and the
-enrolled speakers. Each value in the array corresponds to a specific enrolled speaker, maintaining the same order as the
-speaker profiles provided during initialization. The values in the array range from 0.0 to 1.0, where higher values
-indicate a stronger degree of similarity. If there was no voice detected in the audio sample a value of None is returned
-instead of the scores.
+The `scores` will be None or be an array that contains floating-point numbers that indicate the similarity between the
+input audio frame and the enrolled speakers. Each value in the array corresponds to a specific enrolled speaker,
+maintaining the same order as the speaker profiles provided during initialization. The values in the array range from
+0.0 to 1.0, where higher values indicate a stronger degree of similarity. If there was no voice detected in the audio
+sample a value of None is returned instead of the scores.
 
 Finally, when done be sure to explicitly release the resources:
 

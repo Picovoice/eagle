@@ -174,7 +174,6 @@ class EagleProfile(object):
 
     @staticmethod
     def _to_bytes(ptr: c_void_p, size: int) -> bytes:
-        # noinspection PyTypeChecker
         return bytes(cast(ptr, POINTER(c_byte * size)).contents)
 
 
@@ -640,7 +639,6 @@ class Eagle(object):
         result = [float(scores[i]) for i in range(len(speaker_profiles))]
         self._scores_delete_func(scores)
 
-        # noinspection PyTypeChecker
         return result
 
     def delete(self) -> None:
