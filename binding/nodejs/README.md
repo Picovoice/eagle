@@ -80,7 +80,6 @@ while (percentage < 100 && hasAudioData(eagleProfiler.frameLength)) {
 }
 
 percentage = eagleProfiler.flush();
-
 ```
 
 After the percentage reaches 100%, the enrollment process is considered complete. While it is possible to continue

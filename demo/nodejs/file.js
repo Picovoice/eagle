@@ -69,7 +69,7 @@ async function fileDemo() {
   const modelFilePath = program["model_file_path"];
   const device = program["device"];
   const voice_threshold = Number(program["voice_threshold"])
-  const min_enrollment_chunks = Number(program["min_enrollment_chunks"])
+  const minEnrollmentChunks = Number(program["min_enrollment_chunks"])
   const enroll = program["enroll"];
   const test = program["test"];
   const enrollAudioPaths = program["enroll_audio_paths"];
@@ -119,7 +119,7 @@ async function fileDemo() {
       eagleProfiler = new EagleProfiler(accessKey, {
         modelPath: modelFilePath,
         device: device,
-        min_enrollment_chunks: min_enrollment_chunks,
+        minEnrollmentChunks: minEnrollmentChunks,
         voice_threshold: voice_threshold,
         libraryPath: libraryFilePath
       });

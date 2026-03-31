@@ -75,10 +75,10 @@ export class EagleProfiler {
    * `${GPU_INDEX}` is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the
    * default number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
    * where `${NUM_THREADS}` is the desired number of threads.
-   * @param {number} options.min_enrollment_chunks Minimum number of chunks to be processed before enroll returns 100%. The value should be
+   * @param {number} options.minEnrollmentChunks Minimum number of chunks to be processed before enroll returns 100%. The value should be
    * a number greater than or equal to 1. A higher number results in more accurate profiles at the cost of needing more
    * data to create the profile.
-   * @param {number} options.voice_threshold Sensitivity threshold for detecting voice. The value should be a number within [0, 1]. A
+   * @param {number} options.voiceThreshold Sensitivity threshold for detecting voice. The value should be a number within [0, 1]. A
    * higher threshold increases detection confidence values at the cost of potentially missing frames of voice.
    * @param {string} options.libraryPath Path to the Eagle library (.node extension)
    */
@@ -95,8 +95,8 @@ export class EagleProfiler {
     const {
       modelPath = path.resolve(__dirname, DEFAULT_MODEL_PATH),
       device = 'best',
-      min_enrollment_chunks = 1,
-      voice_threshold = 0.3,
+      minEnrollmentChunks = 1,
+      voiceThreshold = 0.3,
       libraryPath = getSystemLibraryPath(),
     } = options;
 
@@ -123,8 +123,8 @@ export class EagleProfiler {
         accessKey,
         modelPath,
         device,
-        min_enrollment_chunks,
-        voice_threshold);
+        minEnrollmentChunks,
+        voiceThreshold);
     } catch (err: any) {
       pvStatusToException(PvStatus[err.code as keyof typeof PvStatus], err);
     }
@@ -343,7 +343,7 @@ export class Eagle {
    * `${GPU_INDEX}` is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the
    * default number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
    * where `${NUM_THREADS}` is the desired number of threads.
-   * @param {number} options.voice_threshold Sensitivity threshold for detecting voice. The value should be a number within [0, 1]. A
+   * @param {number} options.voiceThreshold Sensitivity threshold for detecting voice. The value should be a number within [0, 1]. A
    * higher threshold increases detection confidence values at the cost of potentially missing frames of voice.
    * @param {string} options.libraryPath The path to the Eagle library (.node extension)
    */
@@ -362,7 +362,7 @@ export class Eagle {
     const {
       modelPath = path.resolve(__dirname, DEFAULT_MODEL_PATH),
       device = 'best',
-      voice_threshold = 0.3,
+      voiceThreshold = 0.3,
       libraryPath = getSystemLibraryPath(),
     } = options;
 
@@ -389,7 +389,7 @@ export class Eagle {
         accessKey,
         modelPath,
         device,
-        voice_threshold
+        voiceThreshold
       );
     } catch (err: any) {
       pvStatusToException(PvStatus[err.code as keyof typeof PvStatus], err);

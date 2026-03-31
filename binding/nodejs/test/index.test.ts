@@ -177,7 +177,7 @@ describe('manual paths', () => {
     );
 
     const testPcm = loadPcm(WAV_PATH_SPEAKER_1_TEST_UTT);
-    const scores = eagle.process(testPcm, testProfile);
+    const scores = eagle.process(testPcm, profile);
     expect(scores[0]).toBeGreaterThan(0.5);
     profiler.release();
     eagle.release();

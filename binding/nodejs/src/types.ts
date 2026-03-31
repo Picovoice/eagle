@@ -14,14 +14,14 @@ export type EnrollProgress = {
 export type EagleInitOptions = {
   modelPath?: string;
   device?: string;
-  voice_threshold?: number;
+  voiceThreshold?: number;
 };
 
 export type EagleProfilerInitOptions = {
   modelPath?: string;
   device?: string;
-  min_enrollment_chunks?: number;
-  voice_threshold?: number;
+  minEnrollmentChunks?: number;
+  voiceThreshold?: number;
 };
 
 export type EagleInputOptions = {
