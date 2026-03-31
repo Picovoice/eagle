@@ -192,7 +192,7 @@ export class EagleProfiler {
       throw new EagleInvalidArgumentError(
         `PCM array provided to 'Eagle.enroll()' is undefined or null`
       );
-    } else if (pcm.length != this.frameLength) {
+    } else if (pcm.length !== this.frameLength) {
       throw new EagleInvalidArgumentError(
         `PCM size (${pcm.length}) must be equal to 'EagleProfiler.frameLength' (${this.frameLength})`
       );
