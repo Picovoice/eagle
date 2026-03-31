@@ -1,5 +1,5 @@
 /*
-  Copyright 2023-2025 Picovoice Inc.
+  Copyright 2023-2026 Picovoice Inc.
 
   You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
   file accompanying this source.
@@ -125,13 +125,13 @@ export class EagleWorker {
    * Set to a different name to use multiple models across `eagle` instances.
    * @param model.forceWrite Flag to overwrite the model in storage even if it exists.
    * @param model.version Version of the model file. Increment to update the model file in storage.
-   * @param speakerProfiles One or more Eagle speaker profiles. These can be constructed using `EagleProfiler`.
    * @param options Optional configuration arguments.
    * @param options.device String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
    * suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU device. To select a specific
    * GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the target GPU. If set to
    * `cpu`, the engine will run on the CPU with the default number of threads. To specify the number of threads, set this
    * argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the desired number of threads.
+   * @param options.voiceThreshold Sensitivity threshold for detecting voice.
    *
    * @return An instance of the Eagle engine.
    */
@@ -208,6 +208,7 @@ export class EagleWorker {
    * @param pcm A frame of audio samples. The number of samples per frame can be attained by calling
    * `.frameLength`. The incoming audio needs to have a sample rate equal to `.sampleRate` and be 16-bit
    * linearly-encoded. Eagle operates on single-channel audio.
+   * @param speakerProfiles One or more Eagle speaker profiles. These can be constructed using `EagleProfiler`.
    *
    * @return A list of similarity scores for each speaker profile. A higher score indicates that the voice
    * belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match.

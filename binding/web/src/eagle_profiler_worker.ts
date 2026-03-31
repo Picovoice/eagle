@@ -1,5 +1,5 @@
 /*
-  Copyright 2023-2025 Picovoice Inc.
+  Copyright 2023-2026 Picovoice Inc.
 
   You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
   file accompanying this source.
@@ -52,7 +52,7 @@ export class EagleProfilerWorker {
   }
 
   /**
-   * The minimum length of the input pcm required by `.enroll()`.
+   * The length of the input pcm required by `.enroll()`.
    */
   get frameLength(): number {
     return this._frameLength;
@@ -133,6 +133,8 @@ export class EagleProfilerWorker {
    * GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the target GPU. If set to
    * `cpu`, the engine will run on the CPU with the default number of threads. To specify the number of threads, set this
    * argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the desired number of threads.
+   * @param options.minEnrollmentChunks Minimum number of chunks to be processed before enroll returns 100%
+   * @param options.voiceThreshold Sensitivity threshold for detecting voice.
    *
    * @return An instance of the Eagle Profiler.
    */
@@ -216,17 +218,7 @@ export class EagleProfilerWorker {
    * @param pcm Audio data for enrollment. The audio needs to have a sample rate equal to `.sampleRate` and be
    * 16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
    *
-   * @return The percentage of completeness of the speaker enrollment process along with the feedback code
-   * corresponding to the last enrollment attempt:
-   *    - `AUDIO_OK`: The audio is good for enrollment.
-   *    - `AUDIO_TOO_SHORT`: Audio length is insufficient for enrollment,
-   *       i.e. it is shorter than`.min_enroll_samples`.
-   *    - `UNKNOWN_SPEAKER`: There is another speaker in the audio that is different from the speaker
-   *       being enrolled. Too much background noise may cause this error as well.
-   *    - `NO_VOICE_FOUND`: The audio does not contain any voice, i.e. it is silent or
-   *       has a low signal-to-noise ratio.
-   *    - `QUALITY_ISSUE`: The audio quality is too low for enrollment due to a bad microphone
-   *       or recording environment.
+   * @return The percentage of completeness of the speaker enrollment process.
    */
   public enroll(pcm: Int16Array): Promise<number> {
     const returnPromise: Promise<number> = new Promise(
@@ -270,29 +262,10 @@ export class EagleProfilerWorker {
   }
 
   /**
-   * Enrolls a speaker. This function should be called multiple times with different utterances of the same speaker
-   * until `percentage` reaches `100.0`, at which point a speaker voice profile can be exported using `.export()`.
-   * Any further enrollment can be used to improve the speaker profile. The minimum length of the input pcm to
-   * `.enroll()` can be obtained by calling `.minEnrollSamples`.
-   * The audio data used for enrollment should satisfy the following requirements:
-   *    - only one speaker should be present in the audio
-   *    - the speaker should be speaking in a normal voice
-   *    - the audio should contain no speech from other speakers and no other sounds (e.g. music)
-   *    - it should be captured in a quiet environment with no background noise
-   * @param pcm Audio data for enrollment. The audio needs to have a sample rate equal to `.sampleRate` and be
-   * 16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
+   * Marks the end of the audio stream, flushes internal state of the object, and returns the percentage of enrollment
+   * completed.
    *
-   * @return The percentage of completeness of the speaker enrollment process along with the feedback code
-   * corresponding to the last enrollment attempt:
-   *    - `AUDIO_OK`: The audio is good for enrollment.
-   *    - `AUDIO_TOO_SHORT`: Audio length is insufficient for enrollment,
-   *       i.e. it is shorter than`.min_enroll_samples`.
-   *    - `UNKNOWN_SPEAKER`: There is another speaker in the audio that is different from the speaker
-   *       being enrolled. Too much background noise may cause this error as well.
-   *    - `NO_VOICE_FOUND`: The audio does not contain any voice, i.e. it is silent or
-   *       has a low signal-to-noise ratio.
-   *    - `QUALITY_ISSUE`: The audio quality is too low for enrollment due to a bad microphone
-   *       or recording environment.
+   * @return The percentage of completeness of the speaker enrollment process.
    */
   public flush(): Promise<number> {
     const returnPromise: Promise<number> = new Promise(

@@ -1,5 +1,5 @@
 /*
-  Copyright 2023-2025 Picovoice Inc.
+  Copyright 2023-2026 Picovoice Inc.
 
   You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
   file accompanying this source.
@@ -39,13 +39,16 @@ export type EagleProfile = {
 export type EagleOptions = {
   /** @defaultValue `best` */
   device?: string;
+  /** @defaultValue `0.3` */
   voiceThreshold?: number;
 };
 
 export type EagleProfilerOptions = {
   /** @defaultValue `best` */
   device?: string;
+  /** @defaultValue `1` */
   minEnrollmentChunks?: number;
+  /** @defaultValue `0.3` */
   voiceThreshold?: number;
 };
 

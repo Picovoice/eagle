@@ -1,5 +1,5 @@
 /*
-  Copyright 2023-2025 Picovoice Inc.
+  Copyright 2023-2026 Picovoice Inc.
 
   You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
   file accompanying this source.
@@ -397,7 +397,7 @@ export class EagleProfiler extends EagleBase {
   }
 
   /**
-   * The minimum length of the input pcm required by `.enroll()`.
+   * The length of the input pcm required by `.enroll()`.
    */
   get frameLength(): number {
     return this._frameLength;
@@ -420,6 +420,8 @@ export class EagleProfiler extends EagleBase {
    * GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the target GPU. If set to
    * `cpu`, the engine will run on the CPU with the default number of threads. To specify the number of threads, set this
    * argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the desired number of threads.
+   * @param options.minEnrollmentChunks Minimum number of chunks to be processed before enroll returns 100%
+   * @param options.voiceThreshold Sensitivity threshold for detecting voice.
    *
    * @return An instance of the Eagle Profiler.
    */
@@ -581,17 +583,8 @@ export class EagleProfiler extends EagleBase {
   }
 
   /**
-   * Enrolls a speaker. This function should be called multiple times with different utterances of the same speaker
-   * until `percentage` reaches `100.0`, at which point a speaker voice profile can be exported using `.export()`.
-   * Any further enrollment can be used to improve the speaker profile. The minimum length of the input pcm to
-   * `.enroll()` can be obtained by calling `.minEnrollSamples`.
-   * The audio data used for enrollment should satisfy the following requirements:
-   *    - only one speaker should be present in the audio
-   *    - the speaker should be speaking in a normal voice
-   *    - the audio should contain no speech from other speakers and no other sounds (e.g. music)
-   *    - it should be captured in a quiet environment with no background noise
-   * @param pcm Audio data for enrollment. The audio needs to have a sample rate equal to `.sampleRate` and be
-   * 16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
+   * Marks the end of the audio stream, flushes internal state of the object, and returns the percentage of enrollment
+   * completed.
    *
    * @return The percentage of completeness of the speaker enrollment process.
    */
@@ -1023,13 +1016,13 @@ export class Eagle extends EagleBase {
    * Set to a different name to use multiple models across `eagle` instances.
    * @param model.forceWrite Flag to overwrite the model in storage even if it exists.
    * @param model.version Version of the model file. Increment to update the model file in storage.
-   * @param speakerProfiles One or more Eagle speaker profiles. These can be constructed using `EagleProfiler`.
    * @param options Optional configuration arguments.
    * @param options.device String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
    * suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU device. To select a specific
    * GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the target GPU. If set to
    * `cpu`, the engine will run on the CPU with the default number of threads. To specify the number of threads, set this
    * argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the desired number of threads.
+   * @param options.voiceThreshold Sensitivity threshold for detecting voice.
    *
    * @return An instance of the Eagle engine.
    */
@@ -1108,11 +1101,12 @@ export class Eagle extends EagleBase {
   }
 
   /**
-   * Processes a frame of audio and returns a list of similarity scores for each speaker profile.
+   * Processes audio and returns a list of similarity scores for each speaker profile.
    *
-   * @param pcm A frame of audio samples. The number of samples per frame can be attained by calling
-   * `.frameLength`. The incoming audio needs to have a sample rate equal to `.sampleRate` and be 16-bit
+   * @param pcm Array of audio samples. The minimum number of samples per frame can be attained by calling
+   * `.minProcessSamples`. The incoming audio needs to have a sample rate equal to `.sampleRate` and be 16-bit
    * linearly-encoded. Eagle operates on single-channel audio.
+   * @param speakerProfiles One or more Eagle speaker profiles. These can be constructed using `EagleProfiler`.
    *
    * @return A list of similarity scores for each speaker profile. A higher score indicates that the voice
    * belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match.

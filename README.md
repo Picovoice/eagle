@@ -684,23 +684,15 @@ const eagleProfiler = new EagleProfiler(accessKey);
 Create a new speaker profile:
 
 ```typescript
-const { EnrollProgress } = require("@picovoice/eagle-node");
-
 function getAudioData(numSamples): Int16Array {
   // get audio frame of size `numSamples`
 }
 
 let percentage = 0;
 while (percentage < 100) {
-  const audioData = getAudioData(eagleProfiler.minEnrollSamples);
+  const audioData = getAudioData(eagleProfiler.frameLength);
 
-  const result: EnrollProgress = await eagleProfiler.enroll(audioData);
-  if (result.feedback === EagleProfilerEnrollFeedback.NONE) {
-      // audio is good!
-  } else {
-      // feedback code will tell you why audio was not used in enrollment
-  }
-  percentage = result.percentage;
+  percentage = EagleProfilerEnrollResult = await eagleProfiler.enroll(audioData);
 }
 ```
 
@@ -718,16 +710,16 @@ eagleProfiler.release();
 
 #### Speaker Recognition
 
-Create an instance of the engine using the speaker profile exported before:
+Create an instance of the engine:
 
 ```typescript
 const { Eagle } = require("@picovoice/eagle-node");
 
 const accessKey = "${ACCESS_KEY}"; // Obtained from the Picovoice Console (https://console.picovoice.ai/)
-const eagle = new Eagle(accessKey, speakerProfile);
+const eagle = new Eagle(accessKey);
 ```
 
-Process incoming audio frames:
+Process incoming audio frames using the speaker profile exported before:
 
 ```typescript
 function getAudioData(numSamples): Int16Array {
@@ -735,8 +727,14 @@ function getAudioData(numSamples): Int16Array {
 }
 
 while (true) {
-  const audioData = getAudioData(eagle.frameLength);
-  const scores: number[] = eagle.process(audioData);
+  const audioData = getAudioData(eagle.minProcessSamples);
+  const scores: number[] | null = await eagle.process(
+    audioData.
+    speakerProfile
+  );
+  if (scores) {
+    // do something with the scores
+  }
 }
 ```
 
