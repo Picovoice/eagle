@@ -19,25 +19,18 @@ const WaveFile = require("wavefile").WaveFile;
 const {
   Eagle,
   EagleProfiler,
-  EagleProfilerEnrollFeedback,
   EagleErrors,
   getInt16Frames,
   checkWaveFile
 } = require("@picovoice/eagle-node");
-
-const FEEDBACK_TO_DESCRIPTIVE_MSG = {
-  [EagleProfilerEnrollFeedback.NONE]: 'Good audio',
-  [EagleProfilerEnrollFeedback.AUDIO_TOO_SHORT]: 'Insufficient audio length',
-  [EagleProfilerEnrollFeedback.UNKNOWN_SPEAKER]: 'Different speaker in audio',
-  [EagleProfilerEnrollFeedback.NO_VOICE_FOUND]: 'No voice found in audio',
-  [EagleProfilerEnrollFeedback.QUALITY_ISSUE]: 'Low audio quality due to bad microphone or environment'
-};
 
 program
   .option('-a, --access_key <string>', 'AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)')
   .option('-l, --library_path [value]', 'Absolute path to dynamic library. Default: using the library provided by `pveagle`')
   .option('-m, --model_path [value]', 'Absolute path to Eagle model. Default: using the model provided by `pveagle`')
   .option('-y, --device [value]', 'Device to run inference on (`best`, `cpu:{num_threads}` or `gpu:{gpu_index}`). Default: selects best device for Eagle inference')
+  .option('-v, --voice_threshold [value]', 'Sensitivity threshold for detecting voice.', 0.3)
+  .option('-c, --min_enrollment_chunks [value]', 'Minimum number of chunks to be processed before enroll returns 100', 1)
   .option('--enroll', 'Enroll a new speaker profile')
   .option('--test', "Evaluate Eagle's performance using the provided speaker profiles.")
   .option('--enroll_audio_paths <strings...>', 'Absolute path(s) to enrollment audio files')
@@ -53,15 +46,19 @@ if (process.argv.length < 1) {
 program.parse(process.argv);
 
 function printResults(scores, labels) {
-  let result = '\rscores -> ';
+  if (scores) {
+    let result = '\rscores -> ';
 
-  let formattedResults = [];
-  for (let i = 0; i < labels.length; i++) {
-    formattedResults.push(`\`${labels[i]}\`: ${scores[i].toFixed(2)}`);
+    let formattedResults = [];
+    for (let i = 0; i < labels.length; i++) {
+      formattedResults.push(`\`${labels[i]}\`: ${scores[i].toFixed(2)}`);
+    }
+    result += formattedResults.join(', ');
+
+    process.stdout.write(`${result}\n`);
+  } else {
+    process.stdout.write("No Voice Detected\n");
   }
-  result += formattedResults.join(', ');
-
-  process.stdout.write(`${result}\n`);
 }
 
 let isInterrupted = false;
@@ -71,6 +68,8 @@ async function fileDemo() {
   const libraryFilePath = program["library_file_path"];
   const modelFilePath = program["model_file_path"];
   const device = program["device"];
+  const voice_threshold = Number(program["voice_threshold"])
+  const min_enrollment_chunks = Number(program["min_enrollment_chunks"])
   const enroll = program["enroll"];
   const test = program["test"];
   const enrollAudioPaths = program["enroll_audio_paths"];
@@ -120,6 +119,8 @@ async function fileDemo() {
       eagleProfiler = new EagleProfiler(accessKey, {
         modelPath: modelFilePath,
         device: device,
+        min_enrollment_chunks: min_enrollment_chunks,
+        voice_threshold: voice_threshold,
         libraryPath: libraryFilePath
       });
       console.log(`Eagle version: ${eagleProfiler.version}`);
@@ -148,21 +149,14 @@ async function fileDemo() {
         let frames = getInt16Frames(inputWaveFile, eagleProfiler.frameLength);
         for (let frame of frames) {
           audioData.push(frame);
-          if (audioData.length * eagleProfiler.frameLength >= eagleProfiler.minEnrollSamples) {
-            const enrollFrames = new Int16Array(audioData.length * eagleProfiler.frameLength);
-            for (let i = 0; i < audioData.length; i++) {
-              enrollFrames.set(audioData[i], i * eagleProfiler.frameLength);
-            }
-            audioData = [];
-            const { percentage, feedback } = eagleProfiler.enroll(enrollFrames);
-            feedbackMessage = FEEDBACK_TO_DESCRIPTIVE_MSG[feedback];
-            enrollPercentage = percentage;
-          }
+          enrollPercentage = eagleProfiler.enroll(frame);
         }
+
+        enrollPercentage = eagleProfiler.flush();
 
         readline.clearLine(process.stdout, 0)
         readline.cursorTo(process.stdout, 0, null)
-        console.log(`Enrolled audio file ${audioPath} [Enrollment percentage: ${enrollPercentage}% - Enrollment feedback: ${feedbackMessage}]`);
+        console.log(`Enrolled audio file ${audioPath} [Enrollment percentage: ${enrollPercentage}%]`);
       }
 
       process.stdout.write(`\n`);
@@ -213,9 +207,10 @@ async function fileDemo() {
 
     let eagle;
     try {
-      eagle = new Eagle(accessKey, profiles, {
+      eagle = new Eagle(accessKey, {
         modelPath: modelFilePath,
         device: device,
+        voice_threshold: voice_threshold,
         libraryPath: libraryFilePath
       });
 
@@ -238,11 +233,9 @@ async function fileDemo() {
         process.exit();
       }
 
-      let frames = getInt16Frames(inputWaveFile, eagle.frameLength);
-      for (let frame of frames) {
-        const scores = eagle.process(frame);
-        printResults(scores, speakerLabels);
-      }
+      let samples = inputWaveFile.getSamples(false, Int16Array);
+      const scores = eagle.process(samples, profiles);
+      printResults(scores, speakerLabels);
 
       process.stdout.write("\nStopping...");
     } catch (e) {
