@@ -519,16 +519,16 @@ model file available under [lib/common](./lib/common).
 Use `eagle_profiler` to create a new speaker profile:
 
 ```c
-extern const int16_t *get_next_enroll_audio_frame(void);
-extern const bool has_next_enroll_audio_frame(void);
+extern const int16_t *get_next_enroll_audio_frame(int32_t frame_length);
+extern const bool has_next_enroll_audio_frame(int32_t frame_length);
 const int32_t frame_length = pv_eagle_profiler_frame_length();
 
 float enroll_percentage = 0.0f;
 
-while (enroll_percentage < 100.0f && has_next_enroll_audio_frame()) {
+while (enroll_percentage < 100.0f && has_next_enroll_audio_frame(frame_length)) {
   status = pv_eagle_profiler_enroll(
           eagle_profiler,
-          get_next_enroll_audio_frame(),
+          get_next_enroll_audio_frame(frame_length),
           &enroll_percentage);
   if (status != PV_STATUS_SUCCESS) {
       // error handling logic
