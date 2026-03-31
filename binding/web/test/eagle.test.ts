@@ -2,7 +2,6 @@ import {
   Eagle,
   EagleProfile,
   EagleProfiler,
-  EagleProfilerEnrollFeedback,
   EagleProfilerWorker,
   EagleWorker,
 } from '../';
@@ -18,33 +17,36 @@ let testProfile: EagleProfile;
 
 const getProfile = async (
   profiler,
-  audioChunks,
-  expectedFeedback
+  audioChunks
 ): Promise<EagleProfile> => {
   let percentage = 0;
   for (let i = 0; i < audioChunks.length; i++) {
-    const result = await profiler.enroll(audioChunks[i]);
-    expect(result.feedback).to.eq(expectedFeedback[i]);
-    expect(result.percentage).to.be.gt(0);
-    percentage = result.percentage;
+    for (
+      let j = 0;
+      j < audioChunks[i].length - profiler.frameLength + 1;
+      j += profiler.frameLength
+    ) {
+      percentage = await profiler.enroll(
+        audioChunks[i].slice(j, j + profiler.frameLength),
+      );
+    }
+    percentage = await profiler.flush();
   }
+
   expect(percentage).to.be.eq(100);
 
   return await profiler.export();
 };
 
-const getScores = async (eagle, pcm): Promise<number[]> => {
-  const allScores: number[] = [];
-  for (
-    let i = 0;
-    i < pcm.length - eagle.frameLength + 1;
-    i += eagle.frameLength
-  ) {
-    const scores = await eagle.process(pcm.slice(i, i + eagle.frameLength));
-    allScores.push(scores[0]);
-  }
-
-  return allScores;
+const getScores = async (
+  eagle,
+  pcm,
+  speakerProfiles
+): Promise<number[]> => {
+  return await eagle.process(
+    pcm,
+    speakerProfiles
+  );
 };
 
 before(() => {
@@ -62,11 +64,7 @@ before(() => {
           );
           testProfile = await getProfile(
             profiler,
-            [inputPcm1, inputPcm2],
-            [
-              EagleProfilerEnrollFeedback.AUDIO_OK,
-              EagleProfilerEnrollFeedback.AUDIO_OK,
-            ]
+            [inputPcm1, inputPcm2]
           );
           profiler.release();
         }
@@ -89,7 +87,7 @@ describe('Eagle Profiler', async function () {
           { device: DEVICE }
         );
         expect(profiler.sampleRate).to.be.gt(0);
-        expect(profiler.minEnrollSamples).to.be.gt(0);
+        expect(profiler.frameLength).to.be.gt(0);
         expect(typeof profiler.version).to.eq('string');
         expect(profiler.version).length.to.be.gt(0);
         await profiler.release();
@@ -110,7 +108,7 @@ describe('Eagle Profiler', async function () {
         );
 
         expect(profiler.sampleRate).to.be.gt(0);
-        expect(profiler.minEnrollSamples).to.be.gt(0);
+        expect(profiler.frameLength).to.be.gt(0);
         expect(typeof profiler.version).to.eq('string');
         expect(profiler.version).length.to.be.gt(0);
         await profiler.release();
@@ -136,22 +134,14 @@ describe('Eagle Profiler', async function () {
 
                 const profile = await getProfile(
                   profiler,
-                  [inputPcm1, inputPcm2],
-                  [
-                    EagleProfilerEnrollFeedback.AUDIO_OK,
-                    EagleProfilerEnrollFeedback.AUDIO_OK,
-                  ]
+                  [inputPcm1, inputPcm2]
                 );
                 expect(profile.bytes.length).to.be.gt(0);
 
                 await profiler.reset();
                 const profile2 = await getProfile(
                   profiler,
-                  [inputPcm1, inputPcm2],
-                  [
-                    EagleProfilerEnrollFeedback.AUDIO_OK,
-                    EagleProfilerEnrollFeedback.AUDIO_OK,
-                  ]
+                  [inputPcm1, inputPcm2]
                 );
                 expect(profile2.bytes.length).to.be.eq(profile.bytes.length);
                 await profiler.release();
@@ -221,7 +211,7 @@ describe('Eagle Profiler', async function () {
       { device: DEVICE }
     );
 
-    const testPcm = new Int16Array(eagle.minEnrollSamples);
+    const testPcm = new Int16Array(eagle.frameLength);
     // @ts-ignore
     const objectAddress = eagle._objectAddress;
 
@@ -269,11 +259,10 @@ describe('Eagle', function () {
           publicPath: '/test/eagle_params.pv',
           forceWrite: true,
         },
-        testProfile,
         { device: DEVICE }
       );
       expect(eagle.sampleRate).to.be.gt(0);
-      expect(eagle.frameLength).to.be.gt(0);
+      expect(eagle.minProcessSamples).to.be.gt(0);
       expect(typeof eagle.version).to.eq('string');
       expect(eagle.version).length.to.be.gt(0);
       await eagle.release();
@@ -286,11 +275,10 @@ describe('Eagle', function () {
           base64: eagleParams,
           forceWrite: true,
         },
-        testProfile,
         { device: DEVICE }
       );
       expect(eagle.sampleRate).to.be.gt(0);
-      expect(eagle.frameLength).to.be.gt(0);
+      expect(eagle.minProcessSamples).to.be.gt(0);
       expect(typeof eagle.version).to.eq('string');
       expect(eagle.version).length.to.be.gt(0);
       await eagle.release();
@@ -302,7 +290,6 @@ describe('Eagle', function () {
         const eagle = await instance.create(
           "invalidAccessKey",
           { base64: eagleParams, forceWrite: true },
-          testProfile,
           { device: DEVICE }
         );
         await eagle.release();
@@ -318,7 +305,6 @@ describe('Eagle', function () {
         const eagle = await instance.create(
           "invalidAccessKey",
           { base64: eagleParams, forceWrite: true },
-          testProfile,
           { device: DEVICE }
         );
         await eagle.release();
@@ -334,7 +320,6 @@ describe('Eagle', function () {
         const eagle = await instance.create(
           ACCESS_KEY,
           { base64: eagleParams, forceWrite: true },
-          testProfile,
           { device: "cloud:9" }
         );
         expect(eagle).to.be.undefined;
@@ -346,7 +331,7 @@ describe('Eagle', function () {
       expect(messageStack.length).to.be.lte(8);
     });
 
-    it(`eagle process with reset (${instanceString})`, () => {
+    it(`eagle process (${instanceString})`, () => {
       cy.getFramesFromFile('audio_samples/speaker_1_test_utt.wav').then(
         async testPcm => {
           try {
@@ -356,15 +341,13 @@ describe('Eagle', function () {
                 publicPath: '/test/eagle_params.pv',
                 forceWrite: true,
               },
-              testProfile,
               { device: DEVICE }
             );
-            const scores = await getScores(eagle, testPcm);
+            const scores = await getScores(eagle, testPcm, testProfile);
 
-            expect(Math.max(...scores)).to.be.gt(0.5);
-            await eagle.reset();
+            expect(scores[0]).to.be.gt(0.5);
 
-            const scores2 = await getScores(eagle, testPcm);
+            const scores2 = await getScores(eagle, testPcm, testProfile);
 
             expect(scores2).to.be.deep.eq(scores);
             await eagle.release();
@@ -385,12 +368,11 @@ describe('Eagle', function () {
                 publicPath: '/test/eagle_params.pv',
                 forceWrite: true,
               },
-              testProfile,
               { device: DEVICE }
             );
-            const scores = await getScores(eagle, testPcm);
+            const scores = await getScores(eagle, testPcm, testProfile);
 
-            expect(Math.max(...scores)).to.be.lt(0.5);
+            expect(scores[0]).to.be.lt(0.5);
             await eagle.release();
           } catch (e) {
             expect(e).to.be.undefined;
@@ -412,10 +394,9 @@ describe('Eagle', function () {
     const eagle = await Eagle.create(
       ACCESS_KEY,
       { base64: eagleParams, forceWrite: true },
-      testProfile,
       { device: DEVICE }
     );
-    const testPcm = new Int16Array(eagle.frameLength);
+    const testPcm = new Int16Array(eagle.minProcessSamples);
     // @ts-ignore
     const objectAddress = eagle._objectAddress;
 
@@ -423,7 +404,7 @@ describe('Eagle', function () {
     eagle._objectAddress = 0;
 
     try {
-      await eagle.process(testPcm);
+      await eagle.process(testPcm, testProfile);
     } catch (e: any) {
       error = e;
     }

@@ -38,12 +38,11 @@ const initRequest = async (request: EagleWorkerInitRequest): Promise<any> => {
     eagle = await Eagle._init(
       request.accessKey,
       request.modelPath,
-      request.speakerProfiles,
       request.options
     );
     return {
       command: 'ok',
-      frameLength: eagle.frameLength,
+      minProcessSamples: eagle.minProcessSamples,
       sampleRate: eagle.sampleRate,
       version: eagle.version,
     };
@@ -76,41 +75,13 @@ const processRequest = async (
     };
   }
   try {
-    const scores = await eagle.process(request.inputFrame);
+    const scores = await eagle.process(
+      request.inputFrame,
+      request.speakerProfiles
+    );
     return {
       command: 'ok',
       scores,
-    };
-  } catch (e: any) {
-    if (e instanceof EagleError) {
-      return {
-        command: 'error',
-        status: e.status,
-        shortMessage: e.shortMessage,
-        messageStack: e.messageStack
-      };
-    } else {
-      return {
-        command: 'error',
-        status: PvStatus.RUNTIME_ERROR,
-        shortMessage: e.message
-      };
-    }
-  }
-};
-
-const resetRequest = async (): Promise<any> => {
-  if (eagle === null) {
-    return {
-      command: 'error',
-      status: PvStatus.INVALID_STATE,
-      shortMessage: 'Eagle has not been initialized',
-    };
-  }
-  try {
-    await eagle.reset();
-    return {
-      command: 'ok',
     };
   } catch (e: any) {
     if (e instanceof EagleError) {
@@ -153,9 +124,6 @@ self.onmessage = async function (
       break;
     case 'process':
       self.postMessage(await processRequest(event.data));
-      break;
-    case 'reset':
-      self.postMessage(await resetRequest());
       break;
     case 'release':
       self.postMessage(await releaseRequest());

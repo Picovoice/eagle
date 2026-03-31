@@ -25,11 +25,19 @@ async function testEnrollPerformance(
   );
 
   for (let i = 0; i < NUM_TEST_ITERATIONS + 1; i++) {
-    let start = Date.now();
-    await profiler.enroll(inputPcm);
-    if (i > 0) {
-      enrollPerfResults.push((Date.now() - start) / 1000);
+    for (
+      let j = 0;
+      j < inputPcm.length - profiler.frameLength + 1;
+      j += profiler.frameLength
+    ) {
+      let start = Date.now();
+      await profiler.enroll(inputPcm.slice(j, j + profiler.frameLength));
+      if (i > 0) {
+        enrollPerfResults.push((Date.now() - start) / 1000);
+      }
     }
+
+    await profiler.flush();
   }
 
   if (profiler instanceof EagleProfilerWorker) {
@@ -61,7 +69,13 @@ async function testProcessPerformance(
     { device: DEVICE }
   );
   for (const pcm of enrollPcm) {
-    await profiler.enroll(pcm);
+    for (
+      let j = 0;
+      j < pcm.length - profiler.frameLength + 1;
+      j += profiler.frameLength
+    ) {
+      await profiler.enroll(pcm.slice(j, j + profiler.frameLength));
+    }
   }
   const profile = await profiler.export();
   profiler.release();
@@ -71,22 +85,15 @@ async function testProcessPerformance(
     {
       publicPath: '/test/eagle_params.pv',
       forceWrite: true,
-    },
-    profile
+    }
   );
 
   const processPerfResults: number[] = [];
   for (let i = 0; i < NUM_TEST_ITERATIONS + 1; i++) {
-    for (
-      let j = 0;
-      j < testPcm.length - eagle.frameLength + 1;
-      j += eagle.frameLength
-    ) {
-      let start = Date.now();
-      await eagle.process(testPcm.slice(j, j + eagle.frameLength));
-      if (i > 0) {
-        processPerfResults.push((Date.now() - start) / 1000);
-      }
+    let start = Date.now();
+    await eagle.process(testPcm, profile);
+    if (i > 0) {
+      processPerfResults.push((Date.now() - start) / 1000);
     }
   }
 

@@ -14,9 +14,9 @@ import PvWorker from 'web-worker:./eagle_profiler_worker_handler.ts';
 import {
   EagleModel,
   EagleProfile,
-  EagleProfilerEnrollResult,
   EagleProfilerOptions,
   EagleProfilerWorkerEnrollResponse,
+  EagleProfilerWorkerFlushResponse,
   EagleProfilerWorkerExportResponse,
   EagleProfilerWorkerInitResponse,
   EagleProfilerWorkerReleaseResponse,
@@ -28,7 +28,7 @@ import { pvStatusToException } from "./eagle_errors";
 
 export class EagleProfilerWorker {
   private readonly _worker: Worker;
-  private readonly _minEnrollSamples: number;
+  private readonly _frameLength: number;
   private readonly _sampleRate: number;
   private readonly _version: string;
 
@@ -41,12 +41,12 @@ export class EagleProfilerWorker {
 
   private constructor(
     worker: Worker,
-    minEnrollSamples: number,
+    frameLength: number,
     sampleRate: number,
     version: string
   ) {
     this._worker = worker;
-    this._minEnrollSamples = minEnrollSamples;
+    this._frameLength = frameLength;
     this._sampleRate = sampleRate;
     this._version = version;
   }
@@ -54,8 +54,8 @@ export class EagleProfilerWorker {
   /**
    * The minimum length of the input pcm required by `.enroll()`.
    */
-  get minEnrollSamples(): number {
-    return this._minEnrollSamples;
+  get frameLength(): number {
+    return this._frameLength;
   }
 
   /**
@@ -159,7 +159,7 @@ export class EagleProfilerWorker {
               resolve(
                 new EagleProfilerWorker(
                   worker,
-                  event.data.minEnrollSamples,
+                  event.data.frameLength,
                   event.data.sampleRate,
                   event.data.version
                 )
@@ -228,8 +228,8 @@ export class EagleProfilerWorker {
    *    - `QUALITY_ISSUE`: The audio quality is too low for enrollment due to a bad microphone
    *       or recording environment.
    */
-  public enroll(pcm: Int16Array): Promise<EagleProfilerEnrollResult> {
-    const returnPromise: Promise<EagleProfilerEnrollResult> = new Promise(
+  public enroll(pcm: Int16Array): Promise<number> {
+    const returnPromise: Promise<number> = new Promise(
       (resolve, reject) => {
         this._worker.onmessage = (
           event: MessageEvent<EagleProfilerWorkerEnrollResponse>
@@ -264,6 +264,71 @@ export class EagleProfilerWorker {
     this._worker.postMessage({
       command: 'enroll',
       inputFrame: pcm,
+    });
+
+    return returnPromise;
+  }
+
+  /**
+   * Enrolls a speaker. This function should be called multiple times with different utterances of the same speaker
+   * until `percentage` reaches `100.0`, at which point a speaker voice profile can be exported using `.export()`.
+   * Any further enrollment can be used to improve the speaker profile. The minimum length of the input pcm to
+   * `.enroll()` can be obtained by calling `.minEnrollSamples`.
+   * The audio data used for enrollment should satisfy the following requirements:
+   *    - only one speaker should be present in the audio
+   *    - the speaker should be speaking in a normal voice
+   *    - the audio should contain no speech from other speakers and no other sounds (e.g. music)
+   *    - it should be captured in a quiet environment with no background noise
+   * @param pcm Audio data for enrollment. The audio needs to have a sample rate equal to `.sampleRate` and be
+   * 16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
+   *
+   * @return The percentage of completeness of the speaker enrollment process along with the feedback code
+   * corresponding to the last enrollment attempt:
+   *    - `AUDIO_OK`: The audio is good for enrollment.
+   *    - `AUDIO_TOO_SHORT`: Audio length is insufficient for enrollment,
+   *       i.e. it is shorter than`.min_enroll_samples`.
+   *    - `UNKNOWN_SPEAKER`: There is another speaker in the audio that is different from the speaker
+   *       being enrolled. Too much background noise may cause this error as well.
+   *    - `NO_VOICE_FOUND`: The audio does not contain any voice, i.e. it is silent or
+   *       has a low signal-to-noise ratio.
+   *    - `QUALITY_ISSUE`: The audio quality is too low for enrollment due to a bad microphone
+   *       or recording environment.
+   */
+  public flush(): Promise<number> {
+    const returnPromise: Promise<number> = new Promise(
+      (resolve, reject) => {
+        this._worker.onmessage = (
+          event: MessageEvent<EagleProfilerWorkerFlushResponse>
+        ): void => {
+          switch (event.data.command) {
+            case 'ok':
+              resolve(event.data.result);
+              break;
+            case 'failed':
+            case 'error':
+              reject(
+                pvStatusToException(
+                  event.data.status,
+                  event.data.shortMessage,
+                  event.data.messageStack
+                )
+              );
+              break;
+            default:
+              reject(
+                pvStatusToException(
+                  PvStatus.RUNTIME_ERROR,
+                  // @ts-ignore
+                  `Unrecognized command: ${event.data.command}`
+                )
+              );
+          }
+        };
+      }
+    );
+
+    this._worker.postMessage({
+      command: 'flush',
     });
 
     return returnPromise;
