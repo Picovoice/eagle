@@ -121,7 +121,7 @@ dependencies {
     implementation 'com.google.android.material:material:1.8.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     // implementation 'ai.picovoice:eagle-android:3.0.0'
-    implementation files("../../Eagle/eagle/build/outputs/aar/eagle-debug.aar")
+    implementation files("../../Eagle/eagle/build/outputs/aar/eagle-release.aar")
 
     // Espresso UI Testing
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'

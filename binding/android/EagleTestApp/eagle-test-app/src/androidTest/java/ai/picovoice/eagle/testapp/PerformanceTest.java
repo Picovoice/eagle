@@ -132,7 +132,7 @@ public class PerformanceTest extends BaseTest {
         long totalNSec = 0;
         for (int i = 0; i < numTestIterations + 1; i++) {
             long before = System.nanoTime();
-                eagle.process(pcm, speakerProfiles);
+            eagle.process(pcm, speakerProfiles);
             long after = System.nanoTime();
 
             // throw away first run to account for cold start

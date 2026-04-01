@@ -50,6 +50,12 @@ jobs:
     - name: Setup Android keystore file
       run: echo "${{secrets.ANDROID_RELEASE_KEYSTORE_FILE_B64}}" | base64 -d > picovoice.jks
 
+    ############## REMOVE AFTER RELEASE ##########################
+    - name: Build binding
+      run: ./gradlew assembleRelease --info
+      working-directory: binding/android/Eagle
+    ############## REMOVE AFTER RELEASE ##########################
+
     - name: Build
       run: ./gradlew bundleRelease
 

@@ -237,7 +237,11 @@ public class MainActivity extends AppCompatActivity {
         return e.export();
     }
 
-    private float[] processTestAudio(@NonNull Eagle e, EagleProfile[] speakerProfiles, String audioPath) throws Exception {
+    private float[] processTestAudio(
+            @NonNull Eagle e,
+            EagleProfile[] speakerProfiles,
+            String audioPath
+    ) throws Exception {
         File testAudio = new File(getApplicationContext().getFilesDir(), audioPath);
 
         if (!testAudio.exists()) {

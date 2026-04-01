@@ -26,14 +26,14 @@ class EagleNative {
             String accessKey,
             String modelPath,
             String device,
-            float voice_threshold) throws EagleException;
+            float voiceThreshold) throws EagleException;
 
     static native void delete(long object);
 
     static native float[] process(
-        long object,
-        short[] pcm,
-        long[] speakerProfiles) throws EagleException;
+            long object,
+            short[] pcm,
+            long[] speakerProfiles) throws EagleException;
 
     static native int minProcessSamples(long object);
 

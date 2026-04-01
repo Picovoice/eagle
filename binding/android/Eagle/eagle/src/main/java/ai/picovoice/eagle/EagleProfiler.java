@@ -115,17 +115,9 @@ public class EagleProfiler {
     }
 
     /**
-     * Enrolls a speaker. This function should be called multiple times with different utterances of the same speaker
-     * until `percentage` reaches `100.0`. Any further enrollment can be used to improve the speaker voice profile.
-     * The minimum number of required samples can be obtained by calling `.getMinEnrollSamples()`.
-     * The audio data used for enrollment should satisfy the following requirements:
-     *     - only one speaker should be present in the audio
-     *     - the speaker should be speaking in a normal voice
-     *     - the audio should contain no speech from other speakers and no other sounds (e.g. music)
-     *     - it should be captured in a quiet environment with no background noise
+     * Marks the end of the audio stream, flushes internal state of the object,
+     * and returns the percentage of enrollment completed.
      *
-     * @param pcm The audio needs to have a sample rate equal to `.getSampleRate()` and be
-     *            16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
      * @return The percentage of completeness of the speaker enrollment process.
      * @throws EagleException if there is an error while enrolling speaker.
      */

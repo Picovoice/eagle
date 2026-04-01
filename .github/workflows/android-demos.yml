@@ -53,5 +53,11 @@ jobs:
       with:
         gradle-version: ${{ matrix.gradle-version }}
 
+    ############## REMOVE AFTER RELEASE ##########################
+    - name: Build binding
+      run: ./gradlew assembleRelease --info
+      working-directory: binding/android/Eagle
+    ############## REMOVE AFTER RELEASE ##########################
+
     - name: Build
       run: gradle assembleDebug

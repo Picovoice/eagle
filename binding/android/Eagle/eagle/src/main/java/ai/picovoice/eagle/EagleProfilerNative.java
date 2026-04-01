@@ -24,8 +24,8 @@ class EagleProfilerNative {
             String accessKey,
             String modelPath,
             String device,
-            int min_enrollment_chunks,
-            float voice_threshold) throws EagleException;
+            int minEnrollmentChunks,
+            float voiceThreshold) throws EagleException;
 
     static native void delete(long object);
 
