@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 55;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -14,6 +14,7 @@
 		1E0064D427CEEA66006FF6E9 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1E0064D227CEEA66006FF6E9 /* LaunchScreen.storyboard */; };
 		1E00654627CFF260006FF6E9 /* EagleAppTestUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E0064E827CEEA66006FF6E9 /* EagleAppTestUITests.swift */; };
 		1E5B7B042800D9BE00F8BDDB /* PerformanceTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E5B7B032800D9BE00F8BDDB /* PerformanceTest.swift */; };
+		34CEA4832F7DAE2D00ABC219 /* Eagle in Frameworks */ = {isa = PBXBuildFile; productRef = 34CEA4822F7DAE2D00ABC219 /* Eagle */; };
 		36696536961DE78B3E1C06FA /* (null) in Frameworks */ = {isa = PBXBuildFile; };
 		C757D8CD28A1C77100F391C8 /* BaseTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = C757D8CB28A1C77100F391C8 /* BaseTest.swift */; };
 		C790A6FB2A2012C40074FF7A /* audio_samples in Resources */ = {isa = PBXBuildFile; fileRef = C790A6FA2A2012C40074FF7A /* audio_samples */; };
@@ -64,6 +65,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E173C8FE2CFE43C900A0903C /* Eagle in Frameworks */,
+				34CEA4832F7DAE2D00ABC219 /* Eagle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -237,7 +239,7 @@
 			);
 			mainGroup = 1E0064BB27CEEA65006FF6E9;
 			packageReferences = (
-				E1F352FC2D00E9790069B0E6 /* XCRemoteSwiftPackageReference "eagle" */,
+				34CEA4812F7DAE2C00ABC219 /* XCLocalSwiftPackageReference "../../../../eagle" */,
 			);
 			productRefGroup = 1E0064C527CEEA65006FF6E9 /* Products */;
 			projectDirPath = "";
@@ -652,24 +654,21 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		34CEA4812F7DAE2C00ABC219 /* XCLocalSwiftPackageReference "../../../../eagle" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../../../eagle;
+		};
 		E173C8FB2CFE40F000A0903C /* XCLocalSwiftPackageReference "../../../../eagle" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../../../../eagle;
 		};
 /* End XCLocalSwiftPackageReference section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		E1F352FC2D00E9790069B0E6 /* XCRemoteSwiftPackageReference "eagle" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/Picovoice/eagle";
-			requirement = {
-				kind = exactVersion;
-				version = 2.0.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
 /* Begin XCSwiftPackageProductDependency section */
+		34CEA4822F7DAE2D00ABC219 /* Eagle */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Eagle;
+		};
 		E173C8FD2CFE43C900A0903C /* Eagle */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E173C8FB2CFE40F000A0903C /* XCLocalSwiftPackageReference "../../../../eagle" */;

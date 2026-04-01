@@ -1,5 +1,5 @@
 //
-//  Copyright 2023-2025 Picovoice Inc.
+//  Copyright 2023-2026 Picovoice Inc.
 //  You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 //  file accompanying this source.
 //  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
@@ -14,17 +14,14 @@ import PvEagle
 /// It can determine audio similarity scores given a set of EagleProfiles.
 public class Eagle: EagleBase {
 
-    public static let frameLength = Int(pv_eagle_frame_length())
-
-    private var speakerCount = 0
-
     private var handle: OpaquePointer?
+
+    private var minProcessAudioLength: Int?;
 
     /// Constructor.
     ///
     /// - Parameters:
     ///   - accessKey: AccessKey obtained from the Picovoice Console (https://console.picovoice.ai/)
-    ///   - speakerProfiles: An array of EagleProfile objects obtained from EagleProfiler.
     ///   - modelPath: Absolute path to file containing model parameters.
     ///   - device: String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
     ///     suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU
@@ -32,18 +29,15 @@ public class Eagle: EagleBase {
     ///     is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the default
     ///     number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
     ///     where `${NUM_THREADS}` is the desired number of threads.
+    ///   - voiceThreshold: Sensitivity threshold for detecting voice.
     /// - Throws: EagleError
     public init(
         accessKey: String,
-        speakerProfiles: [EagleProfile],
         modelPath: String? = nil,
-        device: String? = nil
+        device: String? = nil,
+        voiceThreshold: Float = 0.3
     ) throws {
         super.init()
-
-        if speakerProfiles.isEmpty {
-            throw EagleInvalidArgumentError("`speakerProfiles` must contain at least one profile")
-        }
 
         var modelPathArg = modelPath
 
@@ -63,53 +57,31 @@ public class Eagle: EagleBase {
             deviceArg = "best"
         }
 
-        var speakerHandles: [UnsafeRawPointer?] = []
-        for profile in speakerProfiles {
-            var profileBytes = profile.getBytes()
-            speakerHandles.append(&profileBytes)
-        }
-
-        speakerCount = speakerProfiles.count
-
         pv_set_sdk(Eagle.sdk)
 
-        let status = pv_eagle_init(
+        var status = pv_eagle_init(
             accessKey,
             modelPathArg,
             deviceArg,
-            Int32(speakerCount),
-            speakerHandles,
+            voiceThreshold,
             &handle)
         if status != PV_STATUS_SUCCESS {
             let messageStack = try Eagle.getMessageStack()
             throw Eagle.pvStatusToEagleError(status, "Eagle init failed", messageStack)
         }
-    }
 
-    /// Constructor.
-    ///
-    /// - Parameters:
-    ///   - accessKey: AccessKey obtained from the Picovoice Console (https://console.picovoice.ai/)
-    ///   - speakerProfile: An EagleProfile object obtained from EagleProfiler.
-    ///   - modelPath: Absolute path to file containing model parameters.
-    ///   - device: String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
-    ///     suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU
-    ///     device. To select a specific GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}`
-    ///     is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the default
-    ///     number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
-    ///     where `${NUM_THREADS}` is the desired number of threads.
-    /// - Throws: EagleError
-    public convenience init(
-        accessKey: String,
-        speakerProfile: EagleProfile,
-        modelPath: String? = nil,
-        device: String = "best"
-    ) throws {
-        try self.init(
-            accessKey: accessKey,
-            speakerProfiles: [speakerProfile],
-            modelPath: modelPath,
-            device: device)
+        var cMinAudioLengthSamples: Int32 = 0
+        status = pv_eagle_process_min_audio_length_samples(
+            handle,
+            &cMinAudioLengthSamples)
+        if status != PV_STATUS_SUCCESS {
+            let messageStack = try Eagle.getMessageStack()
+            throw Eagle.pvStatusToEagleError(
+                status,
+                "Eagle process_min_audio_length_sample failed",
+                messageStack)
+        }
+        minProcessAudioLength = Int(cMinAudioLengthSamples)
     }
 
     deinit {
@@ -124,52 +96,72 @@ public class Eagle: EagleBase {
         }
     }
 
-    /// Processes given audio data and returns its speaker likelihood scores.
+    /// Processes given audio data and returns its speaker likelihood scores or nil.
     ///
     /// - Parameters:
-    ///   - pcm: An array of audio samples. The number of samples per frame can be attained
-    ///          by calling `.frameLength`. The audio needs to have a sample rate
-    ///          equal to `.sampleRate` and be single-channel, 16-bit linearly-encoded.
+    ///   - pcm: An array of audio samples. The minimum number of samples per frame can be
+    //           attained by calling `.minProcessSamples()`. The audio needs to have a sample
+    //           rate equal to `.sampleRate` and be single-channel, 16-bit linearly-encoded.
+    ///   - speakerProfiles: An array of EagleProfile objects obtained from EagleProfiler.
     /// - Throws: EagleError
-    /// - Returns: Similarity scores for each enrolled speaker.
-    ///            The scores are in the range [0, 1] with 1 being a perfect match.
-    public func process(pcm: [Int16]) throws -> [Float] {
+    /// - Returns: Similarity scores for each enrolled speaker. The scores are in the range
+    ///            [0, 1] with 1 being a perfect match. A return value of nil indicated that
+    ///            there was not enough voice in the pcm to detect a speaker.
+    public func process(
+        pcm: [Int16],
+        speakerProfiles: [EagleProfile],
+    ) throws -> [Float]? {
 
         if handle == nil {
             throw EagleInvalidStateError("Eagle must be initialized before indexing")
         }
 
-        let scores = UnsafeMutableBufferPointer<Float32>.allocate(capacity: speakerCount)
+        if speakerProfiles.isEmpty {
+            throw EagleInvalidArgumentError("`speakerProfiles` must contain at least one profile")
+        }
+        
+        var speakerHandles: [UnsafeMutableRawPointer?] = []
+        for profile in speakerProfiles {
+            var profileBytes = profile.getBytes()
+            speakerHandles.append(&profileBytes)
+        }
+
+        var cScores: UnsafeMutablePointer<Float32>?
         let status = pv_eagle_process(
             handle,
             pcm,
-            scores.baseAddress)
+            Int32(pcm.count),
+            &speakerHandles,
+            Int32(speakerProfiles.count),
+            &cScores)
 
         if status != PV_STATUS_SUCCESS {
             let messageStack = try Eagle.getMessageStack()
             throw Eagle.pvStatusToEagleError(status, "Eagle process failed", messageStack)
         }
 
-        return Array(scores)
+        if cScores != nil {
+            var scores: [Float] = []
+            for i in 0...speakerProfiles.count {
+                scores.append(cScores![Int(i)])
+            }
+
+            pv_eagle_scores_delete(cScores);
+
+            return scores;
+        }
+
+        return nil
     }
 
-    /// Resets the internal state of the Eagle engine.
-    /// It is best to call before processing a new sequence of audio (e.g. a new voice interaction).
-    /// This ensures that the accuracy of the engine is not affected by a change in audio context.
-    ///
-    /// - Parameters:
+    /// Getter for the minimum length of the input pcm required by `process()`.
     /// - Throws: EagleError
-    public func reset() throws {
-
+    /// - Returns: Minimum number of samples required for a call to `process()`
+    public func minProcessSamples() throws -> Int {
         if handle == nil {
-            throw EagleInvalidStateError("Eagle must be initialized before indexing")
+            throw EagleInvalidStateError("Eagle must be initialized before calling minProcessSamples")
         }
 
-        let status = pv_eagle_reset(handle)
-
-        if status != PV_STATUS_SUCCESS {
-            let messageStack = try Eagle.getMessageStack()
-            throw Eagle.pvStatusToEagleError(status, "Eagle reset failed", messageStack)
-        }
+        return minProcessAudioLength!
     }
 }

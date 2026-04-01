@@ -10,22 +10,15 @@
 import Foundation
 import PvEagle
 
-public enum EagleProfilerEnrollFeedback {
-    case AUDIO_OK
-    case AUDIO_TOO_SHORT
-    case UNKNOWN_SPEAKER
-    case NO_VOICE_FOUND
-    case QUALITY_ISSUE
-}
-
 /// EagleProfiler class for iOS Eagle text-independent speaker recognition engine.
 /// It enrolls a speaker given a set of utterances and then constructs a profile for the enrolled speaker.
 public class EagleProfiler: EagleBase {
 
-    private var handle: OpaquePointer?
+    public static let frameLength = Int(pv_eagle_profiler_frame_length())
 
+    private var handle: OpaquePointer?
+    
     private var speakerProfileSize: Int?
-    private var minEnrollAudioLength: Int?
 
     /// Constructor.
     ///
@@ -38,11 +31,15 @@ public class EagleProfiler: EagleBase {
     ///     is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the default
     ///     number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
     ///     where `${NUM_THREADS}` is the desired number of threads.
+    ///   - minEnrollmentChunks: Minimum number of chunks to be processed before enroll returns 100%.
+    ///   - voiceThreshold: Sensitivity threshold for detecting voice.
     /// - Throws: EagleError
     public init(
         accessKey: String,
         modelPath: String? = nil,
-        device: String? = nil
+        device: String? = nil,
+        minEnrollmentChunks: Int = 1,
+        voiceThreshold: Float = 0.3
     ) throws {
         super.init()
 
@@ -70,6 +67,8 @@ public class EagleProfiler: EagleBase {
             accessKey,
             modelPathArg,
             deviceArg,
+            Int32(minEnrollmentChunks),
+            voiceThreshold,
             &handle)
         if status != PV_STATUS_SUCCESS {
             let messageStack = try EagleProfiler.getMessageStack()
@@ -85,19 +84,6 @@ public class EagleProfiler: EagleBase {
             throw EagleProfiler.pvStatusToEagleError(status, "EagleProfiler speaker_profile_size failed", messageStack)
         }
         speakerProfileSize = Int(cSpeakerProfileSizeBytes)
-
-        var cMinAudioLengthSamples: Int32 = 0
-        status = pv_eagle_profiler_enroll_min_audio_length_samples(
-            handle,
-            &cMinAudioLengthSamples)
-        if status != PV_STATUS_SUCCESS {
-            let messageStack = try EagleProfiler.getMessageStack()
-            throw EagleProfiler.pvStatusToEagleError(
-                status,
-                "EagleProfiler enrollment_min_audio_length_sample failed",
-                messageStack)
-        }
-        minEnrollAudioLength = Int(cMinAudioLengthSamples)
     }
 
     deinit {
@@ -116,23 +102,18 @@ public class EagleProfiler: EagleBase {
     /// - Parameters:
     ///   - pcm: An array of audio samples. The audio needs to have a sample rate
     ///          equal to `.sampleRate` and be single-channel, 16-bit linearly-encoded.
-    ///          In addition it must be at least `.minEnrollSamples` samples long.
+    ///          In addition it must be `.frameLength` samples long.
     /// - Throws: EagleError
-    /// - Returns: A tuple containing a the percentage of enrollment completed as a Float and
-    ///            an enum representing the feedback code.
-    public func enroll(pcm: [Int16]) throws -> (Float, EagleProfilerEnrollFeedback) {
-
+    /// - Returns: The percentage of enrollment completed as a Float.
+    public func enroll(pcm: [Int16]) throws -> Float {
         if handle == nil {
             throw EagleInvalidStateError("EagleProfiler must be initialized before enrolling")
         }
 
-        var cEnrollError: pv_eagle_profiler_enroll_feedback_t = PV_EAGLE_PROFILER_ENROLL_FEEDBACK_AUDIO_OK
         var cPercentage: Float32 = 0
         let status = pv_eagle_profiler_enroll(
             handle,
             pcm,
-            Int32(pcm.count),
-            &cEnrollError,
             &cPercentage)
 
         if status != PV_STATUS_SUCCESS {
@@ -140,10 +121,29 @@ public class EagleProfiler: EagleBase {
             throw EagleProfiler.pvStatusToEagleError(status, "EagleProfiler enroll failed", messageStack)
         }
 
-        let enrollFeedback = pvProfilerEnrollmentErrorToEnrollFeedback(cEnrollError)
-        let percentage = Float(cPercentage)
+        return Float(cPercentage)
+    }
 
-        return (percentage, enrollFeedback)
+    /// Marks the end of the audio stream, flushes internal state of the object
+    /// and returns the percentage of enrollment completed.
+    /// - Throws: EagleError
+    /// - Returns: The percentage of enrollment completed as a Float.
+    public func flush() throws -> Float {
+        if handle == nil {
+            throw EagleInvalidStateError("EagleProfiler must be initialized before enrolling")
+        }
+
+        var cPercentage: Float32 = 0
+        let status = pv_eagle_profiler_flush(
+            handle,
+            &cPercentage)
+
+        if status != PV_STATUS_SUCCESS {
+            let messageStack = try EagleProfiler.getMessageStack()
+            throw EagleProfiler.pvStatusToEagleError(status, "EagleProfiler enroll failed", messageStack)
+        }
+
+        return Float(cPercentage)
     }
 
     /// Exports the speaker profile. The exported profile can be used in `Eagle` or stored for later use.
@@ -180,16 +180,5 @@ public class EagleProfiler: EagleBase {
             let messageStack = try EagleProfiler.getMessageStack()
             throw EagleProfiler.pvStatusToEagleError(status, "EagleProfiler reset failed", messageStack)
         }
-    }
-
-    /// Getter for the minimum length of the input pcm required by `enroll()`.
-    /// - Throws: EagleError
-    /// - Returns: Minimum number of samples required for a call to `enroll()`
-    public func minEnrollSamples() throws -> Int {
-        if handle == nil {
-            throw EagleInvalidStateError("EagleProfiler must be initialized before calling minEnrollSamples")
-        }
-
-        return minEnrollAudioLength!
     }
 }

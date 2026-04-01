@@ -1,5 +1,5 @@
 //
-//  Copyright 2023-2025 Picovoice Inc.
+//  Copyright 2023-2026 Picovoice Inc.
 //  You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 //  file accompanying this source.
 //  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
@@ -41,6 +41,7 @@ class PerformanceTest: XCTestCase {
         _ = pcm.withUnsafeMutableBytes {
             audioData.copyBytes(to: $0, from: 44..<audioData.count)
         }
+        let numFrames = pcm.count / EagleProfiler.frameLength
 
         let eagleProfiler = try EagleProfiler(accessKey: accessKey, device: device)
 
@@ -49,7 +50,13 @@ class PerformanceTest: XCTestCase {
             var totalNSec = 0.0
 
             let before = CFAbsoluteTimeGetCurrent()
-            (_, _) = try eagleProfiler.enroll(pcm: pcm)
+            for i in 0..<numFrames {
+                let start = i * EagleProfiler.frameLength
+                let end = start + EagleProfiler.frameLength
+
+                _ = try eagleProfiler.enroll(pcm: Array(pcm[start..<end]))
+            }
+            _ = try eagleProfiler.flush()
             let after = CFAbsoluteTimeGetCurrent()
             totalNSec += (after - before)
             results.append(totalNSec)
@@ -81,8 +88,15 @@ class PerformanceTest: XCTestCase {
             _ = pcm.withUnsafeMutableBytes {
                 audioData.copyBytes(to: $0, from: 44..<audioData.count)
             }
+            let numFrames = pcm.count / EagleProfiler.frameLength
 
-            (_, _) = try eagleProfiler.enroll(pcm: pcm)
+            for i in 0..<numFrames {
+                let start = i * EagleProfiler.frameLength
+                let end = start + EagleProfiler.frameLength
+
+                _ = try eagleProfiler.enroll(pcm: Array(pcm[start..<end]))
+            }
+            _ = try eagleProfiler.flush()
         }
         let profile = try eagleProfiler.export()
         eagleProfiler.delete()
@@ -97,14 +111,14 @@ class PerformanceTest: XCTestCase {
             audioData.copyBytes(to: $0, from: 44..<audioData.count)
         }
 
-        let eagle = try Eagle(accessKey: accessKey, speakerProfiles: [profile], device: device)
+        let eagle = try Eagle(accessKey: accessKey, device: device)
 
         var results: [Double] = []
         for _ in 0...numTestIterations {
             var totalNSec = 0.0
 
             let before = CFAbsoluteTimeGetCurrent()
-            _ = try eagle.process(pcm: pcm)
+            _ = try eagle.process(pcm: pcm, speakerProfiles: [profile])
             let after = CFAbsoluteTimeGetCurrent()
             totalNSec += (after - before)
             results.append(totalNSec)
