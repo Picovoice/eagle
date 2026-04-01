@@ -139,7 +139,6 @@ class ViewModel: ObservableObject {
             DispatchQueue.main.async {
                 self.profiles.append(newProfile)
                 self.scores.append(0)
-                print("profiles", self.profiles.count)
             }
         }
 
@@ -171,20 +170,19 @@ class ViewModel: ObservableObject {
                     if self.processPcmBuffer.count >= minProcessSamples {
                         let processFrame = Array(self.processPcmBuffer[0..<minProcessSamples])
                         self.processPcmBuffer.removeFirst(minProcessSamples)
-                        
+
                         let profileScores = try self.eagle.process(pcm: processFrame, speakerProfiles: self.profiles)
-                        print("scores", self.profiles.count, profileScores);
-                        
-                        if (profileScores != nil) {
+
+                        if profileScores != nil {
                             DispatchQueue.main.async {
                                 self.scores = profileScores!
                             }
                         } else {
                             DispatchQueue.main.async {
-                                self.scores = Array(repeating: 0, count: self.profiles.count) 
+                                self.scores = Array(repeating: 0, count: self.profiles.count)
                             }
                         }
-                        
+
                         try self.appendToDumpFile(pcm: processFrame)
                     }
                 } catch {

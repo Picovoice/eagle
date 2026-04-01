@@ -17,7 +17,7 @@ public class EagleProfiler: EagleBase {
     public static let frameLength = Int(pv_eagle_profiler_frame_length())
 
     private var handle: OpaquePointer?
-    
+
     private var speakerProfileSize: Int?
 
     /// Constructor.

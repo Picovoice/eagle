@@ -86,8 +86,8 @@ class EagleAppTestUITests: BaseTest {
 
                 _ = try eagleProfiler.enroll(pcm: Array(pcm[start..<end]))
             }
-            
-            _ = try eagleProfiler.flush();
+
+            _ = try eagleProfiler.flush()
         }
 
         let profile = try eagleProfiler.export()
@@ -124,8 +124,8 @@ class EagleAppTestUITests: BaseTest {
 
                 _ = try eagleProfiler.enroll(pcm: Array(pcm[start..<end]))
             }
-            
-            _ = try eagleProfiler.flush();
+
+            _ = try eagleProfiler.flush()
         }
 
         let profile = try eagleProfiler.export()
@@ -212,8 +212,8 @@ class EagleAppTestUITests: BaseTest {
 
                 _ = try eagleProfiler.enroll(pcm: Array(pcm[start..<end]))
             }
-            
-            _ = try eagleProfiler.flush();
+
+            _ = try eagleProfiler.flush()
         }
 
         let profile = try eagleProfiler.export()

@@ -16,7 +16,7 @@ public class Eagle: EagleBase {
 
     private var handle: OpaquePointer?
 
-    private var minProcessAudioLength: Int?;
+    private var minProcessAudioLength: Int?
 
     /// Constructor.
     ///
@@ -100,8 +100,8 @@ public class Eagle: EagleBase {
     ///
     /// - Parameters:
     ///   - pcm: An array of audio samples. The minimum number of samples per frame can be
-    //           attained by calling `.minProcessSamples()`. The audio needs to have a sample
-    //           rate equal to `.sampleRate` and be single-channel, 16-bit linearly-encoded.
+    ///          attained by calling `.minProcessSamples()`. The audio needs to have a sample
+    ///          rate equal to `.sampleRate` and be single-channel, 16-bit linearly-encoded.
     ///   - speakerProfiles: An array of EagleProfile objects obtained from EagleProfiler.
     /// - Throws: EagleError
     /// - Returns: Similarity scores for each enrolled speaker. The scores are in the range
@@ -119,7 +119,7 @@ public class Eagle: EagleBase {
         if speakerProfiles.isEmpty {
             throw EagleInvalidArgumentError("`speakerProfiles` must contain at least one profile")
         }
-        
+
         var speakerHandles: [UnsafeMutableRawPointer?] = []
         for profile in speakerProfiles {
             var profileBytes = profile.getBytes()
@@ -146,9 +146,9 @@ public class Eagle: EagleBase {
                 scores.append(cScores![Int(i)])
             }
 
-            pv_eagle_scores_delete(cScores);
+            pv_eagle_scores_delete(cScores)
 
-            return scores;
+            return scores
         }
 
         return nil
