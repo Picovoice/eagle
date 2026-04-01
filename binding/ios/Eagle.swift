@@ -142,7 +142,7 @@ public class Eagle: EagleBase {
 
         if cScores != nil {
             var scores: [Float] = []
-            for i in 0...speakerProfiles.count {
+            for i in 0..<speakerProfiles.count {
                 scores.append(cScores![Int(i)])
             }
 
