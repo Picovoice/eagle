@@ -35,7 +35,7 @@ class EagleNative {
             short[] pcm,
             long[] speakerProfiles) throws EagleException;
 
-    static native int minProcessSamples(long object);
+    static native int getMinProcessSamples(long object);
 
     static native String[] listHardwareDevices() throws EagleException;
 

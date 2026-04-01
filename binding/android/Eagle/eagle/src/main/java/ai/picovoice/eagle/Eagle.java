@@ -139,7 +139,7 @@ public class Eagle {
      * @return Minimum number of audio samples per frame.
      */
     public int getMinProcessSamples() {
-        return EagleNative.minProcessSamples(handle);
+        return EagleNative.getMinProcessSamples(handle);
     }
 
     /**

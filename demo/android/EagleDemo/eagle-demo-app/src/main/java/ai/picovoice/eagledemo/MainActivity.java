@@ -1,5 +1,5 @@
 /*
-    Copyright 2023 Picovoice Inc.
+    Copyright 2026 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is
     located in the "LICENSE" file accompanying this source.
@@ -45,15 +45,13 @@ import ai.picovoice.eagle.EagleException;
 import ai.picovoice.eagle.EagleInvalidArgumentException;
 import ai.picovoice.eagle.EagleProfile;
 import ai.picovoice.eagle.EagleProfiler;
-import ai.picovoice.eagle.EagleProfilerEnrollFeedback;
-import ai.picovoice.eagle.EagleProfilerEnrollResult;
 
 public class MainActivity extends AppCompatActivity {
     private static final String ACCESS_KEY = "${YOUR_ACCESS_KEY_HERE}";
 
     private final VoiceProcessor voiceProcessor = VoiceProcessor.getInstance();
     private final List<Integer> progressBarIds = new ArrayList<>();
-    private final ArrayList<Short> enrollmentPcm = new ArrayList<>();
+    private final ArrayList<Short> processPcm = new ArrayList<>();
     private final List<EagleProfile> profiles = new ArrayList<>();
     private final boolean enableDump = false;
     private Eagle eagle = null;
@@ -179,24 +177,10 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        final int frameLength = 1024;
-        enrollmentPcm.clear();
+        final int frameLength = eagleProfiler.getFrameLength();
 
         voiceProcessor.addFrameListener(frame -> {
-            for (short sample : frame) {
-                enrollmentPcm.add(sample);
-            }
-            if (enrollmentPcm.size() > eagleProfiler.getMinEnrollSamples()) {
-                short[] enrollFrame = new short[enrollmentPcm.size()];
-                for (int i = 0; i < enrollmentPcm.size(); i++) {
-                    enrollFrame[i] = enrollmentPcm.get(i);
-                }
-                enrollmentPcm.clear();
-                if (enableDump) {
-                    eagleDump.add(enrollFrame);
-                }
-                enrollSpeaker(enrollFrame);
-            }
+            enrollSpeaker(frame);
         });
 
         try {
@@ -207,38 +191,63 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startTesting() {
-        voiceProcessor.addFrameListener(frame -> {
-            try {
-                synchronized (voiceProcessor) {
-                    if (eagle == null) {
-                        return;
-                    }
-                    float[] scores = eagle.process(frame);
-                    for (int i = 0; i < scores.length; i++) {
-                        float alpha = 0.25f;
-                        smoothScores[i] = alpha * smoothScores[i] + (1 - alpha) * scores[i];
-                    }
-                    if (enableDump) {
-                        eagleDump.add(frame);
-                    }
-                }
-                runOnUiThread(() -> {
-                    if (progressBarIds.size() == 0) {
-                        return;
-                    }
+        processPcm.clear();
 
-                    for (int i = 0; i < smoothScores.length; i++) {
-                        ProgressBar progressBar = findViewById(progressBarIds.get(i));
-                        progressBar.setProgress(Math.round(smoothScores[i] * 100));
+        voiceProcessor.addFrameListener(frame -> {
+            for (short sample : frame) {
+                processPcm.add(sample);
+            }
+            if (processPcm.size() > eagle.getMinProcessSamples()) {
+                short[] processFrame = new short[processPcm.size()];
+                for (int i = 0; i < processPcm.size(); i++) {
+                    processFrame[i] = processPcm.get(i);
+                }
+                processPcm.clear();
+                if (enableDump) {
+                    eagleDump.add(processFrame);
+                }
+
+                try {
+                    synchronized (voiceProcessor) {
+                        if (eagle == null) {
+                            return;
+                        }
+
+                        EagleProfile[] e = new EagleProfile[profiles.size()];
+                        for (int i = 0; i < profiles.size(); i++) {
+                            e[i] = profiles.get(i);
+                        }
+
+                        float alpha = 0.25f;
+                        float[] scores = eagle.process(processFrame, e);
+                        if (scores != null) {
+                            for (int i = 0; i < profiles.size(); i++) {
+                                smoothScores[i] = alpha * smoothScores[i] + (1 - alpha) * scores[i];
+                            }
+                        } else {
+                            for (int i = 0; i < profiles.size(); i++) {
+                                smoothScores[i] = alpha * smoothScores[i];
+                            }
+                        }
                     }
-                });
-            } catch (EagleException e) {
-                runOnUiThread(() -> displayError("Failed to process audio\n" + e.getMessage()));
+                    runOnUiThread(() -> {
+                        if (progressBarIds.size() == 0) {
+                            return;
+                        }
+
+                        for (int i = 0; i < smoothScores.length; i++) {
+                            ProgressBar progressBar = findViewById(progressBarIds.get(i));
+                            progressBar.setProgress(Math.round(smoothScores[i] * 100));
+                        }
+                    });
+                } catch (EagleException e) {
+                    runOnUiThread(() -> displayError("Failed to process audio\n" + e.getMessage()));
+                }
             }
         });
 
         try {
-            voiceProcessor.start(eagle.getFrameLength(), eagleProfiler.getSampleRate());
+            voiceProcessor.start(eagle.getMinProcessSamples(), eagleProfiler.getSampleRate());
         } catch (VoiceProcessorException e) {
             displayError("Failed to start recording\n" + e.getMessage());
         }
@@ -248,6 +257,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             voiceProcessor.stop();
             voiceProcessor.clearFrameListeners();
+            setUIState(UIState.IDLE);
         } catch (VoiceProcessorException e) {
             displayError("Failed to stop recording\n" + e.getMessage());
         }
@@ -319,13 +329,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (testButton.isChecked()) {
             try {
-                EagleProfile[] e = new EagleProfile[profiles.size()];
-                for (int i = 0; i < profiles.size(); i++) {
-                    e[i] = profiles.get(i);
-                }
-
                 eagle = new Eagle.Builder()
-                        .setSpeakerProfiles(e)
                         .setAccessKey(ACCESS_KEY)
                         .build(getApplicationContext());
 
@@ -380,23 +384,6 @@ public class MainActivity extends AppCompatActivity {
         setUIState(UIState.IDLE);
     }
 
-    private String getFeedback(EagleProfilerEnrollFeedback feedback) {
-        switch (feedback) {
-            case AUDIO_OK:
-                return "Enrolling speaker..";
-            case AUDIO_TOO_SHORT:
-                return "Insufficient audio length";
-            case UNKNOWN_SPEAKER:
-                return "Different speaker in audio";
-            case NO_VOICE_FOUND:
-                return "Unable to detect voice in audio";
-            case QUALITY_ISSUE:
-                return "Audio quality too low to use for enrollment";
-            default:
-                return "Unrecognized feedback";
-        }
-    }
-
     @SuppressLint("DefaultLocale")
     private void createSpeaker() {
         runOnUiThread(() -> {
@@ -431,14 +418,14 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressLint("DefaultLocale")
     private void enrollSpeaker(short[] enrollFrame) {
-
         try {
-            EagleProfilerEnrollResult result = eagleProfiler.enroll(enrollFrame);
+            float percentage = eagleProfiler.enroll(enrollFrame);
 
-            if (result.getFeedback() == EagleProfilerEnrollFeedback.AUDIO_OK && result.getPercentage() == 100) {
+            if (percentage == 100) {
                 stop();
 
                 EagleProfile profile = eagleProfiler.export();
+                eagleProfiler.reset();
                 profiles.add(profile);
 
                 runOnUiThread(() -> {
@@ -447,7 +434,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     ProgressBar progressBar = findViewById(progressBarIds.get(progressBarIds.size() - 1));
-                    progressBar.setProgress(Math.round(result.getPercentage()));
+                    progressBar.setProgress(Math.round(percentage));
 
                     ToggleButton enrollButton = findViewById(R.id.enrollButton);
                     enrollButton.performClick();
@@ -458,15 +445,14 @@ public class MainActivity extends AppCompatActivity {
                 }
             } else {
                 String finalMessage = String.format(
-                        "%s. Keep speaking until the enrollment percentage reaches 100%%.",
-                        getFeedback(result.getFeedback()));
+                        "Keep speaking until the enrollment percentage reaches 100%%.");
                 runOnUiThread(() -> {
                     if (progressBarIds.size() == 0) {
                         return;
                     }
 
                     ProgressBar progressBar = findViewById(progressBarIds.get(progressBarIds.size() - 1));
-                    progressBar.setProgress(Math.round(result.getPercentage()));
+                    progressBar.setProgress(Math.round(percentage));
 
                     TextView recordingTextView = findViewById(R.id.recordingTextView);
                     recordingTextView.setText(finalMessage);
