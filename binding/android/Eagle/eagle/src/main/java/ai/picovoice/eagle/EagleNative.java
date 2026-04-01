@@ -1,5 +1,5 @@
 /*
-    Copyright 2023-2025 Picovoice Inc.
+    Copyright 2023-2026 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is
     located in the "LICENSE" file accompanying this source.
@@ -18,8 +18,6 @@ class EagleNative {
 
     static native String getVersion();
 
-    static native int getFrameLength();
-
     static native int getSampleRate();
 
     static native void setSdk(String sdk);
@@ -28,14 +26,16 @@ class EagleNative {
             String accessKey,
             String modelPath,
             String device,
-            int numSpeakers,
-            long[] speakerProfiles) throws EagleException;
+            float voice_threshold) throws EagleException;
 
     static native void delete(long object);
 
-    static native float[] process(long object, short[] pcm, int numSpeakers) throws EagleException;
+    static native float[] process(
+        long object,
+        short[] pcm,
+        long[] speakerProfiles) throws EagleException;
 
-    static native void reset(long object) throws EagleException;
+    static native int minProcessSamples(long object);
 
     static native String[] listHardwareDevices() throws EagleException;
 

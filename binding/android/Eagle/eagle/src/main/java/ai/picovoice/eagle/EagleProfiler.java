@@ -1,5 +1,5 @@
 /*
-    Copyright 2023-2025 Picovoice Inc.
+    Copyright 2023-2026 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is
     located in the "LICENSE" file accompanying this source.
@@ -30,8 +30,6 @@ public class EagleProfiler {
 
     private static String defaultModelPath;
     private static String _sdk = "android";
-
-    private final int minEnrollSamples;
 
     static {
         System.loadLibrary("pv_eagle");
@@ -71,13 +69,16 @@ public class EagleProfiler {
     private EagleProfiler(
             String accessKey,
             String modelPath,
-            String device) throws EagleException {
+            String device,
+            int minEnrollmentChunks,
+            float voiceThreshold) throws EagleException {
         EagleNative.setSdk(EagleProfiler._sdk);
         handle = EagleProfilerNative.init(
                 accessKey,
                 modelPath,
-                device);
-        minEnrollSamples = EagleProfilerNative.minEnrollSamples(handle);
+                device,
+                minEnrollmentChunks,
+                voiceThreshold);
     }
 
     /**
@@ -102,16 +103,38 @@ public class EagleProfiler {
      *
      * @param pcm The audio needs to have a sample rate equal to `.getSampleRate()` and be
      *            16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
-     * @return The percentage of completeness of the speaker enrollment process along with the feedback code
-     *         corresponding to the last enrollment attempt.
+     * @return The percentage of completeness of the speaker enrollment process.
      * @throws EagleException if there is an error while enrolling speaker.
      */
-    public EagleProfilerEnrollResult enroll(short[] pcm) throws EagleException {
+    public float enroll(short[] pcm) throws EagleException {
         if (handle == 0) {
             throw new EagleInvalidStateException("Attempted to call eagle enroll after delete.");
         }
 
-        return EagleProfilerNative.enroll(handle, pcm, pcm.length);
+        return EagleProfilerNative.enroll(handle, pcm);
+    }
+
+    /**
+     * Enrolls a speaker. This function should be called multiple times with different utterances of the same speaker
+     * until `percentage` reaches `100.0`. Any further enrollment can be used to improve the speaker voice profile.
+     * The minimum number of required samples can be obtained by calling `.getMinEnrollSamples()`.
+     * The audio data used for enrollment should satisfy the following requirements:
+     *     - only one speaker should be present in the audio
+     *     - the speaker should be speaking in a normal voice
+     *     - the audio should contain no speech from other speakers and no other sounds (e.g. music)
+     *     - it should be captured in a quiet environment with no background noise
+     *
+     * @param pcm The audio needs to have a sample rate equal to `.getSampleRate()` and be
+     *            16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
+     * @return The percentage of completeness of the speaker enrollment process.
+     * @throws EagleException if there is an error while enrolling speaker.
+     */
+    public float flush() throws EagleException {
+        if (handle == 0) {
+            throw new EagleInvalidStateException("Attempted to call eagle flush after delete.");
+        }
+
+        return EagleProfilerNative.flush(handle);
     }
 
     /**
@@ -157,12 +180,12 @@ public class EagleProfiler {
     }
 
     /**
-     * Getter for minimum length of the input pcm required by `.enroll()`.
+     * Getter for number of audio samples per frame.
      *
-     * @return minimum length of the input pcm.
+     * @return Number of audio samples per frame.
      */
-    public int getMinEnrollSamples() {
-        return this.minEnrollSamples;
+    public int getFrameLength() {
+        return EagleProfilerNative.getFrameLength();
     }
 
     /**
@@ -173,6 +196,8 @@ public class EagleProfiler {
         private String accessKey = null;
         private String modelPath = null;
         private String device = null;
+        private int minEnrollmentChunks = 1;
+        private float voiceThreshold = 0.3f;
 
         public Builder setAccessKey(String accessKey) {
             this.accessKey = accessKey;
@@ -186,6 +211,16 @@ public class EagleProfiler {
 
         public Builder setDevice(String device) {
             this.device = device;
+            return this;
+        }
+
+        public Builder setMinEnrollmentChunks(int minEnrollmentChunks) {
+            this.minEnrollmentChunks = minEnrollmentChunks;
+            return this;
+        }
+
+        public Builder setVoiceThreshold(int voiceThreshold) {
+            this.voiceThreshold = voiceThreshold;
             return this;
         }
 
@@ -254,7 +289,7 @@ public class EagleProfiler {
                 device = "best";
             }
 
-            return new EagleProfiler(accessKey, modelPath, device);
+            return new EagleProfiler(accessKey, modelPath, device, minEnrollmentChunks, voiceThreshold);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
-    Copyright 2023-2025 Picovoice Inc.
+    Copyright 2023-2026 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is
     located in the "LICENSE" file accompanying this source.
@@ -59,11 +59,18 @@ public class PerformanceTest extends BaseTest {
 
         File audioFile = new File(getAudioFilepath(testPath));
         short[] pcm = readAudioFile(audioFile.getAbsolutePath());
+        int numFrames = pcm.length / eagleProfiler.getFrameLength();
 
         long totalNSec = 0;
         for (int i = 0; i < numTestIterations + 1; i++) {
             long before = System.nanoTime();
-            eagleProfiler.enroll(pcm);
+            for (int j = 0; j < numFrames; j++) {
+                eagleProfiler.enroll(Arrays.copyOfRange(
+                        pcm,
+                        j * eagleProfiler.getFrameLength(),
+                        (j + 1) * eagleProfiler.getFrameLength()));
+            }
+            eagleProfiler.flush();
             long after = System.nanoTime();
 
             // throw away first run to account for cold start
@@ -101,7 +108,14 @@ public class PerformanceTest extends BaseTest {
         for (String path : enrollPaths) {
             File audioFile = new File(getAudioFilepath(path));
             short[] pcm = readAudioFile(audioFile.getAbsolutePath());
-            eagleProfiler.enroll(pcm);
+            int numFrames = pcm.length / eagleProfiler.getFrameLength();
+            for (int j = 0; j < numFrames; j++) {
+                eagleProfiler.enroll(Arrays.copyOfRange(
+                        pcm,
+                        j * eagleProfiler.getFrameLength(),
+                        (j + 1) * eagleProfiler.getFrameLength()));
+            }
+            eagleProfiler.flush();
         }
 
         EagleProfile profile = eagleProfiler.export();
@@ -109,22 +123,16 @@ public class PerformanceTest extends BaseTest {
         Eagle eagle = new Eagle.Builder()
                 .setAccessKey(accessKey)
                 .setDevice(device)
-                .setSpeakerProfile(profile)
                 .build(appContext);
 
         File audioFile = new File(getAudioFilepath(testPath));
         short[] pcm = readAudioFile(audioFile.getAbsolutePath());
-        int numFrames = pcm.length / eagle.getFrameLength();
+        EagleProfile[] speakerProfiles = {profile};
 
         long totalNSec = 0;
         for (int i = 0; i < numTestIterations + 1; i++) {
             long before = System.nanoTime();
-            for (int j = 0; j < numFrames; j++) {
-                eagle.process(Arrays.copyOfRange(
-                        pcm,
-                        i * eagle.getFrameLength(), (i + 1) * eagle.getFrameLength())
-                );
-            }
+                eagle.process(pcm, speakerProfiles);
             long after = System.nanoTime();
 
             // throw away first run to account for cold start

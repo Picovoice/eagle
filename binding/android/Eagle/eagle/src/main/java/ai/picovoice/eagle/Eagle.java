@@ -1,5 +1,5 @@
 /*
-    Copyright 2023-2025 Picovoice Inc.
+    Copyright 2023-2026 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is
     located in the "LICENSE" file accompanying this source.
@@ -35,7 +35,6 @@ public class Eagle {
     }
 
     private long handle;
-    private int numSpeakers;
 
     public static void setSdk(String sdk) {
         Eagle._sdk = sdk;
@@ -64,29 +63,19 @@ public class Eagle {
      *               set to `cpu`, the engine will run on the CPU with the default number of threads. To specify
      *               the number of threads, set this argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}`
      *               is the desired number of threads.
-     * @param speakerProfiles A list of EagleProfile objects. This can be constructed using `EagleProfiler`.
      * @throws EagleException if there is an error while initializing Eagle.
      */
     private Eagle(
             String accessKey,
             String modelPath,
             String device,
-            EagleProfile[] speakerProfiles) throws EagleException {
-        long[] profileHandles = new long[speakerProfiles.length];
-
-        for (int i = 0; i < speakerProfiles.length; i++) {
-            profileHandles[i] = speakerProfiles[i].profileNative.handle;
-        }
-
+            float voiceThreshold) throws EagleException {
         EagleNative.setSdk(Eagle._sdk);
         handle = EagleNative.init(
                 accessKey,
                 modelPath,
                 device,
-                speakerProfiles.length,
-                profileHandles);
-
-        numSpeakers = speakerProfiles.length;
+                voiceThreshold);
     }
 
     /**
@@ -105,37 +94,34 @@ public class Eagle {
      * @param pcm A frame of audio samples. The number of samples per frame can be attained by calling
      *            `.getFrameLength()`. The incoming audio needs to have a sample rate equal
      *            to `.getSampleRate()` and be 16-bit linearly-encoded. Eagle operates on single-channel audio.
+     * @param speakerProfiles A list of EagleProfile objects. This can be constructed using `EagleProfiler`.
      * @return A list of similarity scores for each speaker profile. A higher score indicates that the voice
      *         belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match.
      * @throws EagleException if there is an error while processing audio frames.
      */
-    public float[] process(short[] pcm) throws EagleException {
+    public float[] process(short[] pcm, EagleProfile[] speakerProfiles) throws EagleException {
         if (handle == 0) {
             throw new EagleInvalidStateException("Attempted to call eagle process after delete.");
         }
 
-        if (pcm.length != this.getFrameLength()) {
+        if (pcm.length < this.getMinProcessSamples()) {
             throw new EagleInvalidArgumentException(
-                    String.format("Length of input frame %d does not match required frame length %d",
+                    String.format("Length of input frame %d is less than the minimum frame length %d",
                             pcm.length,
-                            this.getSampleRate()));
+                            this.getMinProcessSamples()));
         }
 
-        return EagleNative.process(handle, pcm, numSpeakers);
-    }
-
-    /**
-     * Resets the internal state of Eagle Profiler.
-     * It should be called before starting a new enrollment session.
-     *
-     * @throws EagleException if there is an error while resetting Eagle.
-     */
-    public void reset() throws EagleException {
-        if (handle == 0) {
-            throw new EagleInvalidStateException("Attempted to call eagle reset after delete.");
+        if (speakerProfiles == null || speakerProfiles.length == 0) {
+            throw new EagleInvalidArgumentException("No speaker profiles provided to Eagle");
         }
 
-        EagleNative.reset(handle);
+        long[] profileHandles = new long[speakerProfiles.length];
+
+        for (int i = 0; i < speakerProfiles.length; i++) {
+            profileHandles[i] = speakerProfiles[i].profileNative.handle;
+        }
+
+        return EagleNative.process(handle, pcm, profileHandles);
     }
 
     /**
@@ -148,12 +134,12 @@ public class Eagle {
     }
 
     /**
-     * Getter for number of audio samples per frame.
+     * Getter for minimum number of audio samples per frame.
      *
-     * @return Number of audio samples per frame.
+     * @return Minimum number of audio samples per frame.
      */
-    public int getFrameLength() {
-        return EagleNative.getFrameLength();
+    public int getMinProcessSamples() {
+        return EagleNative.minProcessSamples(handle);
     }
 
     /**
@@ -173,8 +159,7 @@ public class Eagle {
         private String accessKey = null;
         private String modelPath = null;
         private String device = null;
-
-        private EagleProfile[] speakerProfiles = null;
+        private float voiceThreshold = 0.3f;
 
         public Builder setAccessKey(String accessKey) {
             this.accessKey = accessKey;
@@ -191,13 +176,8 @@ public class Eagle {
             return this;
         }
 
-        public Builder setSpeakerProfiles(EagleProfile[] speakerProfiles) {
-            this.speakerProfiles = speakerProfiles;
-            return this;
-        }
-
-        public Builder setSpeakerProfile(EagleProfile speakerProfile) {
-            this.speakerProfiles = new EagleProfile[]{ speakerProfile };
+        public Builder setVoiceThreshold(float voiceThreshold) {
+            this.voiceThreshold = voiceThreshold;
             return this;
         }
 
@@ -266,11 +246,7 @@ public class Eagle {
                 device = "best";
             }
 
-            if (speakerProfiles == null || speakerProfiles.length == 0) {
-                throw new EagleInvalidArgumentException("No speaker profiles provided to Eagle");
-            }
-
-            return new Eagle(accessKey, modelPath, device, speakerProfiles);
+            return new Eagle(accessKey, modelPath, device, voiceThreshold);
         }
     }
 

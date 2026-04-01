@@ -1,5 +1,5 @@
 /*
-    Copyright 2023-2025 Picovoice Inc.
+    Copyright 2023-2026 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is
     located in the "LICENSE" file accompanying this source.
@@ -14,26 +14,29 @@ package ai.picovoice.eagle;
 
 class EagleProfilerNative {
 
-    static native int getSampleRate();
-
     static native String getVersion();
+
+    static native int getFrameLength();
+
+    static native int getSampleRate();
 
     static native long init(
             String accessKey,
             String modelPath,
-            String device) throws EagleException;
+            String device,
+            int min_enrollment_chunks,
+            float voice_threshold) throws EagleException;
 
     static native void delete(long object);
 
-    static native EagleProfilerEnrollResult enroll(
+    static native float enroll(
             long handle,
-            short[] pcm,
-            int numSamples) throws EagleException;
+            short[] pcm) throws EagleException;
+
+    static native float flush(long handle) throws EagleException;
 
     static native EagleProfileNative export(long handle) throws EagleException;
 
     static native void reset(long handle) throws EagleException;
-
-    static native int minEnrollSamples(long handle) throws EagleException;
 
 }

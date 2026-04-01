@@ -1,5 +1,5 @@
 /*
-    Copyright 2023 Picovoice Inc.
+    Copyright 2026 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is
     located in the "LICENSE" file accompanying this source.
@@ -117,7 +117,6 @@ public class MainActivity extends AppCompatActivity {
             eagle = new Eagle.Builder()
                     .setAccessKey(accessKey)
                     .setModelPath(modelFile)
-                    .setSpeakerProfile(profile)
                     .build(getApplicationContext());
             result.success = true;
         } catch (EagleException e) {
@@ -132,8 +131,9 @@ public class MainActivity extends AppCompatActivity {
         try {
             String audioPath = "audio_samples/speaker_1_test_utt.wav";
 
-            ArrayList<float[]> processResult = processTestAudio(eagle, audioPath);
-            if (processResult.size() > 0) {
+            EagleProfile[] speakerProfiles = {profile};
+            float[] scores = processTestAudio(eagle, speakerProfiles, audioPath);
+            if (scores != null) {
                 result.success = true;
             } else {
                 result.success = false;
@@ -224,12 +224,20 @@ public class MainActivity extends AppCompatActivity {
         }
 
         short[] pcm = readAudioFile(testAudio.getAbsolutePath());
-        e.enroll(pcm);
+        int numFrames = pcm.length / e.getFrameLength();
+        for (int j = 0; j < numFrames; j++) {
+            e.enroll(Arrays.copyOfRange(
+                    pcm,
+                    j * e.getFrameLength(),
+                    (j + 1) * e.getFrameLength()));
+        }
+
+        e.flush();
 
         return e.export();
     }
 
-    private ArrayList<float[]> processTestAudio(@NonNull Eagle e, String audioPath) throws Exception {
+    private float[] processTestAudio(@NonNull Eagle e, EagleProfile[] speakerProfiles, String audioPath) throws Exception {
         File testAudio = new File(getApplicationContext().getFilesDir(), audioPath);
 
         if (!testAudio.exists()) {
@@ -237,24 +245,9 @@ public class MainActivity extends AppCompatActivity {
             extractFile(audioPath);
         }
 
-        FileInputStream audioInputStream = new FileInputStream(testAudio);
+        short[] pcm = readAudioFile(testAudio.getAbsolutePath());
 
-        byte[] rawData = new byte[e.getFrameLength() * 2];
-        short[] pcm = new short[e.getFrameLength()];
-        ByteBuffer pcmBuff = ByteBuffer.wrap(rawData).order(ByteOrder.LITTLE_ENDIAN);
-
-        audioInputStream.skip(44);
-
-        ArrayList<float[]> results = new ArrayList<>();
-        while (audioInputStream.available() > 0) {
-            int numRead = audioInputStream.read(pcmBuff.array());
-            if (numRead == e.getFrameLength() * 2) {
-                pcmBuff.asShortBuffer().get(pcm);
-                results.add(e.process(pcm));
-            }
-        }
-
-        return results;
+        return e.process(pcm, speakerProfiles);
     }
 
     private void extractFile(String filepath) throws IOException {
