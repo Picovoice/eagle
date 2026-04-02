@@ -59,8 +59,8 @@ const eagleProfiler = new EagleProfiler(accessKey);
 `EagleProfiler` is responsible for processing and enrolling PCM audio data, with the valid audio sample rate determined
 by `eagleProfiler.sampleRate`. The audio data must be 16-bit linearly-encoded and single-channel.
 
-When passing samples to `eagleProfiler.enroll`, the number of samples must be `eagleProfiler.frameLength`. The
-percentage value returned from this process indicates the progress of enrollment.
+When passing samples to `eagleProfiler.enroll`, the number of samples must be equal to `eagleProfiler.frameLength`. The
+percentage value obtained from this process indicates the progress of enrollment.
 
 ```typescript
 const { EnrollProgress } = require("@picovoice/eagle-node");
@@ -84,8 +84,8 @@ percentage = eagleProfiler.flush();
 
 After the percentage reaches 100%, the enrollment process is considered complete. While it is possible to continue
 providing additional audio data to the profiler to improve the accuracy of the voiceprint, it is not necessary to do so.
-When there is no more audio in the current stream call flush to process any queued audio and prepare the profiler to
-receive a new stream of audio.
+Once all the audio from a single source has been submitted it is necessary to call `flush` before submitting any audio
+from another source.
 
 ```typescript
 const speakerProfile: Uint8Array = eagleProfiler.export();
@@ -118,7 +118,7 @@ number of audio samples in an input array, is defined by `eagle.minProcessSample
 
 Like the profiler, Eagle is designed to work with single-channel audio that is encoded using 16-bit linear PCM.
 
-Process the audio with one or more speaker profiles created by the profiler:
+Process audio with one or more speaker profiles from the `EagleProfiler`.
 
 ```typescript
 function getAudioData(numSamples): Int16Array {
@@ -131,10 +131,11 @@ while (true) {
 }
 ```
 
-The return value `scores` represents the degree of similarity between the input audio frame and the enrolled speakers.
-Scores will be null or an array of floating point values. Each value is a floating-point number ranging from 0 to 1,
-with higher values indicating a greater degree of similarity. A result of null indicated that there was not enough voice
-in the audio to detect a speaker.
+The `scores` will be null or be an array that contains floating-point numbers that indicate the similarity between the
+input audio frame and the enrolled speakers. Each value in the array corresponds to a specific enrolled speaker,
+maintaining the same order as the speaker profiles provided during initialization. The values in the array range from
+0.0 to 1.0, where higher values indicate a stronger degree of similarity. A result of null indicates that there was not
+enough voice in the audio to recognize any speakers.
 
 Finally, when done be sure to explicitly release the resources:
 

@@ -1,5 +1,5 @@
 //
-// Copyright 2024-2025 Picovoice Inc.
+// Copyright 2024-2026 Picovoice Inc.
 //
 // You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 // file accompanying this source.
@@ -75,11 +75,12 @@ export class EagleProfiler {
    * `${GPU_INDEX}` is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the
    * default number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
    * where `${NUM_THREADS}` is the desired number of threads.
-   * @param {number} options.minEnrollmentChunks Minimum number of chunks to be processed before enroll returns 100%. The value should be
-   * a number greater than or equal to 1. A higher number results in more accurate profiles at the cost of needing more
-   * data to create the profile.
-   * @param {number} options.voiceThreshold Sensitivity threshold for detecting voice. The value should be a number within [0, 1]. A
-   * higher threshold increases detection confidence values at the cost of potentially missing frames of voice.
+   * @param {number} options.minEnrollmentChunks Minimum number of chunks to be processed before enroll returns 100%.
+   * The value should be a number greater than or equal to 1. A higher number results in more accurate profiles at the
+   * cost of needing more data to create the profile.
+   * @param {number} options.voiceThreshold Sensitivity threshold for detecting voice. The value should be a number
+   * within [0, 1]. A higher threshold increases detection confidence values at the cost of potentially missing frames
+   * of voice.
    * @param {string} options.libraryPath Path to the Eagle library (.node extension)
    */
   constructor(accessKey: string, options: EagleProfilerOptions = {}) {
@@ -175,7 +176,7 @@ export class EagleProfiler {
    *    - it should be captured in a quiet environment with no background noise
    * @param {Int16Array} pcm Audio data for enrollment. The audio needs to have a sample rate equal to `.sampleRate` and be
    * 16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
-   * @return {number} The percentage of completeness of the speaker enrollment process
+   * @return {number} The percentage of enrollment completed.
    */
   enroll(pcm: Int16Array): number {
     assert(pcm instanceof Int16Array);
@@ -216,7 +217,7 @@ export class EagleProfiler {
   /**
    * Marks the end of the audio stream, flushes internal state of the object, and returns the percentage of enrollment
    * completed.
-   * @return {number} The percentage of completeness of the speaker enrollment process
+   * @return {number} The percentage of enrollment completed.
    */
   flush(): number {
     if (
@@ -343,8 +344,9 @@ export class Eagle {
    * `${GPU_INDEX}` is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the
    * default number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
    * where `${NUM_THREADS}` is the desired number of threads.
-   * @param {number} options.voiceThreshold Sensitivity threshold for detecting voice. The value should be a number within [0, 1]. A
-   * higher threshold increases detection confidence values at the cost of potentially missing frames of voice.
+   * @param {number} options.voiceThreshold Sensitivity threshold for detecting voice. The value should be a number
+   * within [0, 1]. A higher threshold increases detection confidence values at the cost of potentially missing frames
+   * of voice.
    * @param {string} options.libraryPath The path to the Eagle library (.node extension)
    */
   constructor(

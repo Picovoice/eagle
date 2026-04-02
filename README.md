@@ -614,7 +614,8 @@ const eagleProfiler = await EagleProfiler.create(
         eagleModel);
 ```
 
-Replace `${ACCESS_KEY}` with the AccessKey obtained from Picovoice Console, and the model options with the path to the model file available under [lib/common](./lib/common) or a base64 string of it.
+Replace `${ACCESS_KEY}` with the AccessKey obtained from Picovoice Console, and the model options with the path to the
+model file available under [lib/common](./lib/common) or a base64 string of it.
 
 Use `EagleProfiler` to create a new speaker profile:
 ```typescript
@@ -726,7 +727,7 @@ const accessKey = "${ACCESS_KEY}"; // Obtained from the Picovoice Console (https
 const eagle = new Eagle(accessKey);
 ```
 
-Process incoming audio frames using the speaker profile exported before:
+Process audio with one or more speaker profiles from the `EagleProfiler`:
 
 ```typescript
 function getAudioData(numSamples): Int16Array {
