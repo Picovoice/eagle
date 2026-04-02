@@ -64,7 +64,8 @@ public class Eagle {
      *               the number of threads, set this argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}`
      *               is the desired number of threads.
      * @param voiceThreshold Sensitivity threshold for detecting voice. The value should be a number within [0, 1]. A
-     * higher threshold increases detection confidence values at the cost of potentially missing frames of voice.
+     *                       higher threshold increases detection confidence values at the cost of potentially missing
+     *                       frames of voice.
      * @throws EagleException if there is an error while initializing Eagle.
      */
     private Eagle(
