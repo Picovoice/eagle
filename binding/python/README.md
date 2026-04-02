@@ -53,10 +53,8 @@ eagle_profiler = pveagle.create_profiler(access_key)
 `EagleProfiler` is responsible for processing and enrolling PCM audio data, with the valid audio sample rate determined
 by `eagle_profiler.sample_rate`. The audio data must be 16-bit linearly-encoded and single-channel.
 
-When passing samples to `eagle_profiler.enroll`, the number of samples must be at
-least `eagle_profiler.min_enroll_samples` to ensure sufficient data for enrollment. The percentage value
-obtained from this process indicates the progress of enrollment, while the feedback value can be utilized to determine
-the status of the enrollment process.
+When passing samples to `eagle_profiler.enroll`, the number of samples must be equal to `eagle_profiler.frame_length`.
+The percentage value obtained from this process indicates the progress of enrollment.
 
 ```python
 def get_next_enroll_audio_frame(frame_length):
@@ -121,8 +119,8 @@ while True:
 The `scores` will be None or be an array that contains floating-point numbers that indicate the similarity between the
 input audio frame and the enrolled speakers. Each value in the array corresponds to a specific enrolled speaker,
 maintaining the same order as the speaker profiles provided during initialization. The values in the array range from
-0.0 to 1.0, where higher values indicate a stronger degree of similarity. If there was no voice detected in the audio
-sample a value of None is returned instead of the scores.
+0.0 to 1.0, where higher values indicate a stronger degree of similarity. A result of None indicates that there was not
+enough voice in the audio to recognize any speakers.
 
 Finally, when done be sure to explicitly release the resources:
 

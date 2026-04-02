@@ -295,13 +295,13 @@ eagle_profiler.delete()
 
 #### Speaker Recognition
 
-Create an instance of the engine using the speaker profile exported before:
+Create an instance of the engine:
 
 ```python
 eagle = pveagle.create_recognizer(access_key, speaker_profile)
 ```
 
-Process incoming audio frames:
+Process audio with one or more speaker profiles from the `EagleProfiler`.
 
 ```python
 def get_next_audio_chunk(num_samples):

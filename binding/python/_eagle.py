@@ -1,5 +1,5 @@
 #
-# Copyright 2023-2025 Picovoice Inc.
+# Copyright 2023-2026 Picovoice Inc.
 #
 # You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 # file accompanying this source.
@@ -205,6 +205,11 @@ class EagleProfiler(object):
         of the target GPU. If set to`cpu`, the engine will run on the CPU with the default number of threads. To
         specify the number of threads, set this argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the
         desired number of threads.
+        :param min_enrollment_chunks: Minimum number of chunks to be processed before enroll returns 100%. The value
+        should be a number greater than or equal to 1. A higher number results in more accurate profiles at the cost of
+        needing more data to create the profile.
+        :param voice_threshold: Sensitivity threshold for detecting voice. The value should be a number within [0, 1]. A
+        higher threshold increases detection confidence values at the cost of potentially missing frames of voice.
         :param library_path: Absolute path to Eagle's dynamic library.
         """
 
@@ -492,8 +497,9 @@ class Eagle(object):
         of the target GPU. If set to`cpu`, the engine will run on the CPU with the default number of threads. To
         specify the number of threads, set this argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the
         desired number of threads.
+        :param voice_threshold: Sensitivity threshold for detecting voice. The value should be a number within [0, 1]. A
+        higher threshold increases detection confidence values at the cost of potentially missing frames of voice.
         :param library_path: Absolute path to Eagle's dynamic library.
-        :param speaker_profiles: A list of EagleProfile objects. This can be constructed using `EagleProfiler`.
         """
 
         if len(access_key) == 0:
@@ -604,9 +610,10 @@ class Eagle(object):
         :param pcm: A frame of audio samples. The number of samples per frame can be attained by calling
         `.frame_length`. The incoming audio needs to have a sample rate equal to `.sample_rate` and be 16-bit
         linearly-encoded. Eagle operates on single-channel audio.
+        :param speaker_profiles: A list of EagleProfile objects. This can be constructed using `EagleProfiler`.
         :return: A list of similarity scores for each speaker profile or None. A higher score indicates that the voice
-        belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match. A result of
-        None indicates that there was not enough speech in the audio to recognize any speakers.
+        belongs to the corresponding speaker. The range is [0, 1] with 1 representing a perfect match. A result of None
+        indicates that there was not enough voice in the audio to recognize any speakers.
         """
 
         if len(speaker_profiles) == 0:
