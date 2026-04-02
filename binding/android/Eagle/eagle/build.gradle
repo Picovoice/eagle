@@ -5,7 +5,6 @@ ext {
     PUBLISH_VERSION = '3.0.0'
     PUBLISH_ARTIFACT_ID = 'eagle-android'
 }
-
 android {
     compileSdkVersion defaultTargetSdkVersion
 
@@ -13,7 +12,7 @@ android {
         minSdkVersion 21
         targetSdkVersion defaultTargetSdkVersion
         versionCode 1
-        versionName "0.1"
+        versionName "1.0"
 
         consumerProguardFiles "consumer-rules.pro"
     }
@@ -24,7 +23,6 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
