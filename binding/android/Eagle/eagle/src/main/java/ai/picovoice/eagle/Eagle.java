@@ -63,6 +63,8 @@ public class Eagle {
      *               set to `cpu`, the engine will run on the CPU with the default number of threads. To specify
      *               the number of threads, set this argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}`
      *               is the desired number of threads.
+     * @param voiceThreshold Sensitivity threshold for detecting voice. The value should be a number within [0, 1]. A
+     * higher threshold increases detection confidence values at the cost of potentially missing frames of voice.
      * @throws EagleException if there is an error while initializing Eagle.
      */
     private Eagle(
@@ -95,8 +97,9 @@ public class Eagle {
      *            `.getFrameLength()`. The incoming audio needs to have a sample rate equal
      *            to `.getSampleRate()` and be 16-bit linearly-encoded. Eagle operates on single-channel audio.
      * @param speakerProfiles A list of EagleProfile objects. This can be constructed using `EagleProfiler`.
-     * @return A list of similarity scores for each speaker profile. A higher score indicates that the voice
-     *         belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match.
+     * @return A list of similarity scores for each speaker profile or null. A higher score indicates that the voice
+     *         belongs to the corresponding speaker. The range is [0, 1] with 1 representing a perfect match. A result
+     *         of null indicates that there was not enough voice in the audio to recognize any speakers.
      * @throws EagleException if there is an error while processing audio frames.
      */
     public float[] process(short[] pcm, EagleProfile[] speakerProfiles) throws EagleException {
@@ -134,9 +137,9 @@ public class Eagle {
     }
 
     /**
-     * Getter for minimum number of audio samples per frame.
+     * Getter for minimum number of audio samples for `.process()`.
      *
-     * @return Minimum number of audio samples per frame.
+     * @return Minimum number of audio samples for `.process()`.
      */
     public int getMinProcessSamples() {
         return EagleNative.getMinProcessSamples(handle);

@@ -64,6 +64,12 @@ public class EagleProfiler {
      *               set to `cpu`, the engine will run on the CPU with the default number of threads. To specify
      *               the number of threads, set this argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}`
      *               is the desired number of threads.
+     * @param minEnrollmentChunks Minimum number of chunks to be processed before enroll returns 100%. The value should
+     *                            be a number greater than or equal to 1. A higher number results in more accurate
+     *                            profiles at the cost of needing more data to create the profile.
+     * @param voiceThreshold Sensitivity threshold for detecting voice. The value should be a number within [0, 1]. A
+     *                       higher threshold increases detection confidence values at the cost of potentially missing
+     *                       frames of voice.
      * @throws EagleException if there is an error while initializing EagleProfiler.
      */
     private EagleProfiler(
