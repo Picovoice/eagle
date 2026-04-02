@@ -431,18 +431,14 @@ let eagleProfiler = try EagleProfiler(accessKey: accessKey)
 Create a new speaker profile:
 
 ```swift
-func get_next_enroll_audio_data(numSamples: Int) -> [Int16] {
+func get_next_audio_frame(frameLength: Int) -> [Int16] {
     // ...
 }
 
 do {
-    let numSamples = eagleProfiler.minEnrollSamples()
-
     var percentage = 0.0
-    var feedback: EagleProfilerEnrollFeedback?
-
     while (percentage < 100.0) {
-        (percentage, feedback) = try eagleProfiler.enroll(pcm: get_next_enroll_audio_data(numSamples: numSamples))
+        percentage = try eagleProfiler.enroll(pcm: get_next_audio_frame())
     }
 } catch { }
 ```
@@ -461,21 +457,21 @@ eagleProfiler.delete()
 
 #### Speaker Recognition
 
-Create an instance of the engine using the speaker profile exported before:
+Create an instance of the engine:
 
 ```swift
-let eagle = Eagle(accessKey: accessKey, speakerProfiles: [speakerProfile])
+let eagle = Eagle(accessKey: accessKey)
 ```
 
-Process incoming audio frames:
+Process incoming audio frames using the speaker profile exported before:
 
 ```swift
-func get_next_audio_frame() -> [Int16] {
+func get_next_process_audio_data(numSamples: Int) -> [Int16] {
     // ...
 }
 
 do {
-    let profileScores = try eagle.process(pcm: get_next_audio_frame())
+    let profileScores = try eagle.process(pcm: get_next_process_audio_data(eagle.minProcessSamples()), speakerProfiles: [speakerProfile])
 } catch { }
 ```
 

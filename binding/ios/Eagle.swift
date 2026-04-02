@@ -29,7 +29,8 @@ public class Eagle: EagleBase {
     ///     is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the default
     ///     number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
     ///     where `${NUM_THREADS}` is the desired number of threads.
-    ///   - voiceThreshold: Sensitivity threshold for detecting voice.
+    ///   - voiceThreshold: Sensitivity threshold for detecting voice. The value should be a number within [0, 1]. A
+    ///     higher threshold increases detection confidence values at the cost of potentially missing frames of voice.
     /// - Throws: EagleError
     public init(
         accessKey: String,
@@ -104,9 +105,10 @@ public class Eagle: EagleBase {
     ///          rate equal to `.sampleRate` and be single-channel, 16-bit linearly-encoded.
     ///   - speakerProfiles: An array of EagleProfile objects obtained from EagleProfiler.
     /// - Throws: EagleError
-    /// - Returns: Similarity scores for each enrolled speaker. The scores are in the range
-    ///            [0, 1] with 1 being a perfect match. A return value of nil indicated that
-    ///            there was not enough voice in the pcm to detect a speaker.
+    /// - Returns: A list of similarity scores for each speaker profile or null. A higher
+    ///   score indicates that the voice belongs to the corresponding speaker. The range
+    ///   is [0, 1] with 1 representing a perfect match. A result of null indicates that there
+    ///   was not enough voice in the audio to recognize any speakers.
     public func process(
         pcm: [Int16],
         speakerProfiles: [EagleProfile],
