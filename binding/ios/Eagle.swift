@@ -120,18 +120,25 @@ public class Eagle: EagleBase {
             throw EagleInvalidArgumentError("`speakerProfiles` must contain at least one profile")
         }
 
-        var speakerHandles: [UnsafeMutableRawPointer?] = []
-        for profile in speakerProfiles {
-            var profileBytes = profile.getBytes()
-            speakerHandles.append(&profileBytes)
+        let speakerHandles = UnsafeMutablePointer<UnsafeMutablePointer<UInt8>?>.allocate(
+            capacity: speakerProfiles.count);
+        for i in 0..<speakerProfiles.count {
+            let profileBytes = speakerProfiles[i].getBytes()
+            let temp = UnsafeMutablePointer<UInt8>.allocate(capacity: profileBytes.count)
+            temp.initialize(from: profileBytes, count: profileBytes.count)
+            speakerHandles[i] = temp;
         }
+
+        let rawSpeakerHandles = speakerHandles.withMemoryRebound(
+            to: UnsafeMutableRawPointer?.self,
+            capacity: speakerProfiles.count) { $0 }
 
         var cScores: UnsafeMutablePointer<Float32>?
         let status = pv_eagle_process(
             handle,
             pcm,
             Int32(pcm.count),
-            &speakerHandles,
+            rawSpeakerHandles,
             Int32(speakerProfiles.count),
             &cScores)
 
@@ -143,7 +150,7 @@ public class Eagle: EagleBase {
         if cScores != nil {
             var scores: [Float] = []
             for i in 0..<speakerProfiles.count {
-                scores.append(cScores![Int(i)])
+                scores.append(Float(cScores![Int(i)]))
             }
 
             pv_eagle_scores_delete(cScores)
