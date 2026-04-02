@@ -121,12 +121,12 @@ public class Eagle: EagleBase {
         }
 
         let speakerHandles = UnsafeMutablePointer<UnsafeMutablePointer<UInt8>?>.allocate(
-            capacity: speakerProfiles.count);
+            capacity: speakerProfiles.count)
         for i in 0..<speakerProfiles.count {
             let profileBytes = speakerProfiles[i].getBytes()
             let temp = UnsafeMutablePointer<UInt8>.allocate(capacity: profileBytes.count)
             temp.initialize(from: profileBytes, count: profileBytes.count)
-            speakerHandles[i] = temp;
+            speakerHandles[i] = temp
         }
 
         let rawSpeakerHandles = speakerHandles.withMemoryRebound(
