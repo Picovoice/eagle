@@ -14,6 +14,13 @@
 		1E0064D427CEEA66006FF6E9 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1E0064D227CEEA66006FF6E9 /* LaunchScreen.storyboard */; };
 		1E00654627CFF260006FF6E9 /* EagleAppTestUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E0064E827CEEA66006FF6E9 /* EagleAppTestUITests.swift */; };
 		1E5B7B042800D9BE00F8BDDB /* PerformanceTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E5B7B032800D9BE00F8BDDB /* PerformanceTest.swift */; };
+		3414A5D62F845E88001F1FA6 /* Eagle in Frameworks */ = {isa = PBXBuildFile; productRef = 3414A5D52F845E88001F1FA6 /* Eagle */; };
+		3414A5D92F845EA7001F1FA6 /* Eagle in Frameworks */ = {isa = PBXBuildFile; productRef = 3414A5D82F845EA7001F1FA6 /* Eagle */; };
+		3414A5DC2F845ECF001F1FA6 /* Eagle in Frameworks */ = {isa = PBXBuildFile; productRef = 3414A5DB2F845ECF001F1FA6 /* Eagle */; };
+		3414A5DE2F845EF8001F1FA6 /* Eagle in Frameworks */ = {isa = PBXBuildFile; productRef = 3414A5DD2F845EF8001F1FA6 /* Eagle */; };
+		3414A5E12F845F34001F1FA6 /* Eagle in Frameworks */ = {isa = PBXBuildFile; productRef = 3414A5E02F845F34001F1FA6 /* Eagle */; };
+		3414A5E72F846076001F1FA6 /* Eagle in Frameworks */ = {isa = PBXBuildFile; productRef = 3414A5E62F846076001F1FA6 /* Eagle */; };
+		34CEA4832F7DAE2D00ABC219 /* Eagle in Frameworks */ = {isa = PBXBuildFile; productRef = 34CEA4822F7DAE2D00ABC219 /* Eagle */; };
 		36696536961DE78B3E1C06FA /* (null) in Frameworks */ = {isa = PBXBuildFile; };
 		C757D8CD28A1C77100F391C8 /* BaseTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = C757D8CB28A1C77100F391C8 /* BaseTest.swift */; };
 		C790A6FB2A2012C40074FF7A /* audio_samples in Resources */ = {isa = PBXBuildFile; fileRef = C790A6FA2A2012C40074FF7A /* audio_samples */; };
@@ -63,7 +70,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3414A5D62F845E88001F1FA6 /* Eagle in Frameworks */,
 				E173C8FE2CFE43C900A0903C /* Eagle in Frameworks */,
+				3414A5DC2F845ECF001F1FA6 /* Eagle in Frameworks */,
+				3414A5E72F846076001F1FA6 /* Eagle in Frameworks */,
+				3414A5DE2F845EF8001F1FA6 /* Eagle in Frameworks */,
+				34CEA4832F7DAE2D00ABC219 /* Eagle in Frameworks */,
+				3414A5E12F845F34001F1FA6 /* Eagle in Frameworks */,
+				3414A5D92F845EA7001F1FA6 /* Eagle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -237,7 +251,7 @@
 			);
 			mainGroup = 1E0064BB27CEEA65006FF6E9;
 			packageReferences = (
-				E1F352FC2D00E9790069B0E6 /* XCRemoteSwiftPackageReference "eagle" */,
+				3414A5E52F846076001F1FA6 /* XCRemoteSwiftPackageReference "eagle" */,
 			);
 			productRefGroup = 1E0064C527CEEA65006FF6E9 /* Products */;
 			projectDirPath = "";
@@ -462,12 +476,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 65723695GD;
+				DEVELOPMENT_TEAM = QW8RJJCS4H;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = EagleAppTest/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = PorcupineDemoApp;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UIRequiredDeviceCapabilities = armv7;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -491,12 +507,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 65723695GD;
+				DEVELOPMENT_TEAM = QW8RJJCS4H;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = EagleAppTest/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = PorcupineDemoApp;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UIRequiredDeviceCapabilities = armv7;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -659,17 +677,46 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		E1F352FC2D00E9790069B0E6 /* XCRemoteSwiftPackageReference "eagle" */ = {
+		3414A5E52F846076001F1FA6 /* XCRemoteSwiftPackageReference "eagle" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Picovoice/eagle";
 			requirement = {
 				kind = exactVersion;
-				version = 2.0.0;
+				version = 3.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		3414A5D52F845E88001F1FA6 /* Eagle */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Eagle;
+		};
+		3414A5D82F845EA7001F1FA6 /* Eagle */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Eagle;
+		};
+		3414A5DB2F845ECF001F1FA6 /* Eagle */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Eagle;
+		};
+		3414A5DD2F845EF8001F1FA6 /* Eagle */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Eagle;
+		};
+		3414A5E02F845F34001F1FA6 /* Eagle */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Eagle;
+		};
+		3414A5E62F846076001F1FA6 /* Eagle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3414A5E52F846076001F1FA6 /* XCRemoteSwiftPackageReference "eagle" */;
+			productName = Eagle;
+		};
+		34CEA4822F7DAE2D00ABC219 /* Eagle */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Eagle;
+		};
 		E173C8FD2CFE43C900A0903C /* Eagle */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E173C8FB2CFE40F000A0903C /* XCLocalSwiftPackageReference "../../../../eagle" */;
