@@ -633,7 +633,8 @@ const eagleProfiler = await EagleProfiler.create(
         eagleModel);
 ```
 
-Replace `${ACCESS_KEY}` with the AccessKey obtained from Picovoice Console, and the model options with the path to the model file available under [lib/common](./lib/common) or a base64 string of it.
+Replace `${ACCESS_KEY}` with the AccessKey obtained from Picovoice Console, and the model options with the path to the
+model file available under [lib/common](./lib/common) or a base64 string of it.
 
 Use `EagleProfiler` to create a new speaker profile:
 ```typescript
@@ -709,18 +710,17 @@ function getAudioData(numSamples): Int16Array {
   // get audio frame of size `numSamples`
 }
 
-let percentage = 0;
-while (percentage < 100) {
-  const audioData = getAudioData(eagleProfiler.minEnrollSamples);
-
-  const result: EnrollProgress = await eagleProfiler.enroll(audioData);
-  if (result.feedback === EagleProfilerEnrollFeedback.NONE) {
-      // audio is good!
-  } else {
-      // feedback code will tell you why audio was not used in enrollment
-  }
-  percentage = result.percentage;
+function hasAudioData(numSamples): Boolean {
+  // check if there are any remaining samples in the stream
 }
+
+let percentage = 0;
+while (percentage < 100 && hasAudioData(eagleProfiler.frameLength)) {
+  const audioData = getAudioData(eagleProfiler.frameLength);
+  percentage = eagleProfiler.enroll(audioData);
+}
+
+percentage = eagleProfiler.flush();
 ```
 
 Export the speaker profile once enrollment is complete:
@@ -737,16 +737,16 @@ eagleProfiler.release();
 
 #### Speaker Recognition
 
-Create an instance of the engine using the speaker profile exported before:
+Create an instance of the engine:
 
 ```typescript
 const { Eagle } = require("@picovoice/eagle-node");
 
 const accessKey = "${ACCESS_KEY}"; // Obtained from the Picovoice Console (https://console.picovoice.ai/)
-const eagle = new Eagle(accessKey, speakerProfile);
+const eagle = new Eagle(accessKey);
 ```
 
-Process incoming audio frames:
+Process audio with one or more speaker profiles from the `EagleProfiler`:
 
 ```typescript
 function getAudioData(numSamples): Int16Array {
@@ -754,8 +754,8 @@ function getAudioData(numSamples): Int16Array {
 }
 
 while (true) {
-  const audioData = getAudioData(eagle.frameLength);
-  const scores: number[] = eagle.process(audioData);
+  const audioData = getAudioData(eagle.minProcessSamples);
+  const scores: number[] = eagle.process(audioData, speakerProfile);
 }
 ```
 
