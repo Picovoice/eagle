@@ -1,5 +1,5 @@
 #
-# Copyright 2023-2025 Picovoice Inc.
+# Copyright 2023-2026 Picovoice Inc.
 #
 # You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 # file accompanying this source.
@@ -10,11 +10,24 @@
 #
 
 import os
-from ctypes import *
+from ctypes import (
+    POINTER,
+    Structure,
+    byref,
+    c_byte,
+    c_char_p,
+    c_float,
+    c_int,
+    c_int16,
+    c_int32,
+    c_void_p,
+    cast,
+    cdll
+)
 from enum import Enum
 from typing import (
-    Sequence,
-    Tuple
+    Optional,
+    Sequence
 )
 
 
@@ -161,20 +174,7 @@ class EagleProfile(object):
 
     @staticmethod
     def _to_bytes(ptr: c_void_p, size: int) -> bytes:
-        # noinspection PyTypeChecker
         return bytes(cast(ptr, POINTER(c_byte * size)).contents)
-
-
-class EagleProfilerEnrollFeedback(Enum):
-    """
-    Enumeration of possible enrollment feedback codes.
-    """
-
-    AUDIO_OK = 0
-    AUDIO_TOO_SHORT = 1
-    UNKNOWN_SPEAKER = 2
-    NO_VOICE_FOUND = 3
-    QUALITY_ISSUE = 4
 
 
 class EagleProfiler(object):
@@ -191,6 +191,8 @@ class EagleProfiler(object):
             access_key: str,
             model_path: str,
             device: str,
+            min_enrollment_chunks: int,
+            voice_threshold: float,
             library_path: str) -> None:
         """
         Constructor.
@@ -203,6 +205,11 @@ class EagleProfiler(object):
         of the target GPU. If set to`cpu`, the engine will run on the CPU with the default number of threads. To
         specify the number of threads, set this argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the
         desired number of threads.
+        :param min_enrollment_chunks: Minimum number of chunks to be processed before enroll returns 100%. The value
+        should be a number greater than or equal to 1. A higher number results in more accurate profiles at the cost of
+        needing more data to create the profile.
+        :param voice_threshold: Sensitivity threshold for detecting voice. The value should be a number within [0, 1]. A
+        higher threshold increases detection confidence values at the cost of potentially missing frames of voice.
         :param library_path: Absolute path to Eagle's dynamic library.
         """
 
@@ -214,6 +221,12 @@ class EagleProfiler(object):
 
         if not isinstance(device, str) or len(device) == 0:
             raise EagleInvalidArgumentError("`device` should be a non-empty string.")
+
+        if min_enrollment_chunks < 1:
+            raise EagleInvalidArgumentError("`min_enrollment_chunks` should be at least 1")
+
+        if voice_threshold < 0.0 or voice_threshold > 1.0:
+            raise EagleInvalidArgumentError("`voice_threshold` should be between 0 and 1")
 
         if not os.path.exists(library_path):
             raise EagleIOError("Could not find Eagle's dynamic library at `%s`." % library_path)
@@ -245,6 +258,8 @@ class EagleProfiler(object):
             c_char_p,
             c_char_p,
             c_char_p,
+            c_int32,
+            c_float,
             POINTER(POINTER(self.CEagleProfiler)),
         ]
         init_func.restype = PicovoiceStatuses
@@ -253,6 +268,8 @@ class EagleProfiler(object):
             access_key.encode("utf-8"),
             model_path.encode("utf-8"),
             device.encode("utf-8"),
+            min_enrollment_chunks,
+            voice_threshold,
             byref(self._eagle_profiler),
         )
         if status is not PicovoiceStatuses.SUCCESS:
@@ -277,22 +294,6 @@ class EagleProfiler(object):
             )
         self._profile_size = profile_size.value
 
-        enroll_min_audio_length_sample_func = library.pv_eagle_profiler_enroll_min_audio_length_samples
-        enroll_min_audio_length_sample_func.argtypes = [
-            POINTER(self.CEagleProfiler),
-            POINTER(c_int32),
-        ]
-        enroll_min_audio_length_sample_func.restype = PicovoiceStatuses
-
-        min_enroll_samples = c_int32()
-        status = enroll_min_audio_length_sample_func(self._eagle_profiler, byref(min_enroll_samples))
-        if status is not PicovoiceStatuses.SUCCESS:
-            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
-                message="Failed to get min audio length sample",
-                message_stack=self._get_error_stack(),
-            )
-        self._min_enroll_samples = min_enroll_samples.value
-
         self._delete_func = library.pv_eagle_profiler_delete
         self._delete_func.argtypes = [POINTER(self.CEagleProfiler)]
         self._delete_func.restype = None
@@ -301,11 +302,16 @@ class EagleProfiler(object):
         self._enroll_func.argtypes = [
             POINTER(self.CEagleProfiler),
             POINTER(c_int16),
-            c_int32,
-            POINTER(c_int),
             POINTER(c_float),
         ]
         self._enroll_func.restype = PicovoiceStatuses
+
+        self._flush_func = library.pv_eagle_profiler_flush
+        self._flush_func.argtypes = [
+            POINTER(self.CEagleProfiler),
+            POINTER(c_float),
+        ]
+        self._flush_func.restype = PicovoiceStatuses
 
         self._reset_func = library.pv_eagle_profiler_reset
         self._reset_func.argtypes = [POINTER(self.CEagleProfiler)]
@@ -320,14 +326,14 @@ class EagleProfiler(object):
 
         self._sample_rate = library.pv_sample_rate()
 
-        self._frame_length = library.pv_eagle_frame_length()
+        self._frame_length = library.pv_eagle_profiler_frame_length()
 
         version_func = library.pv_eagle_version
         version_func.argtypes = []
         version_func.restype = c_char_p
         self._version = version_func().decode("utf-8")
 
-    def enroll(self, pcm: Sequence[int]) -> Tuple[float, EagleProfilerEnrollFeedback]:
+    def enroll(self, pcm: Sequence[int]) -> float:
         """
         Enrolls a speaker. This function should be called multiple times with different utterances of the same speaker
         until `percentage` reaches `100.0`. Any further enrollment can be used to improve the speaker voice profile.
@@ -340,38 +346,48 @@ class EagleProfiler(object):
 
         :param pcm: Audio data. The audio needs to have a sample rate equal to `.sample_rate` and be
         16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
-        :return: The percentage of completeness of the speaker enrollment process along with the feedback code
-        corresponding to the last enrollment attempt:
-            - `AUDIO_OK`: The audio is good for enrollment.
-            - `AUDIO_TOO_SHORT`: Audio length is insufficient for enrollment,
-            i.e. it is shorter than`.min_enroll_samples`.
-            - `UNKNOWN_SPEAKER`: There is another speaker in the audio that is different from the speaker
-            being enrolled. Too much background noise may cause this error as well.
-            - `NO_VOICE_FOUND`: The audio does not contain any voice, i.e. it is silent or
-            has a low signal-to-noise ratio.
-            - `QUALITY_ISSUE`: The audio quality is too low for enrollment due to a bad microphone
-            or recording environment.
+        :return: The percentage of completeness of the speaker enrollment process.
         """
 
-        frame_type = c_int16 * len(pcm)
+        if len(pcm) != self.frame_length:
+            raise EagleInvalidArgumentError(
+                "Length of input frame %d does not match required frame length %d" % (len(pcm), self.frame_length)
+            )
+
+        frame_type = c_int16 * self._frame_length
         c_pcm = frame_type(*pcm)
 
-        feedback_code = c_int()
         percentage = c_float()
         status = self._enroll_func(
             self._eagle_profiler,
             c_pcm,
-            len(c_pcm),
-            byref(feedback_code),
             byref(percentage))
-        feedback = EagleProfilerEnrollFeedback(feedback_code.value)
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
                 message="Enrollment failed",
                 message_stack=self._get_error_stack(),
             )
 
-        return percentage.value, feedback
+        return percentage.value
+
+    def flush(self) -> float:
+        """
+        Marks the end of the audio stream, flushes internal state of the object,
+        and returns the percentage of enrollment completed.
+        :return: The percentage of completeness of the speaker enrollment process.
+        """
+
+        percentage = c_float()
+        status = self._flush_func(
+            self._eagle_profiler,
+            byref(percentage))
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message="Enrollment failed",
+                message_stack=self._get_error_stack(),
+            )
+
+        return percentage.value
 
     def export(self) -> EagleProfile:
         """
@@ -415,12 +431,12 @@ class EagleProfiler(object):
         self._delete_func(self._eagle_profiler)
 
     @property
-    def min_enroll_samples(self) -> int:
+    def frame_length(self) -> int:
         """
-        The minimum length of the input pcm required by `.enroll()`.
+        Number of audio samples per frame expected by EagleProfiler (i.e. length of the array passed into `.enroll()`)
         """
 
-        return self._min_enroll_samples
+        return self._frame_length
 
     @property
     def sample_rate(self) -> int:
@@ -468,8 +484,8 @@ class Eagle(object):
             access_key: str,
             model_path: str,
             device: str,
-            library_path: str,
-            speaker_profiles: Sequence[EagleProfile]) -> None:
+            voice_threshold: float,
+            library_path: str) -> None:
         """
         Constructor.
 
@@ -481,8 +497,9 @@ class Eagle(object):
         of the target GPU. If set to`cpu`, the engine will run on the CPU with the default number of threads. To
         specify the number of threads, set this argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the
         desired number of threads.
+        :param voice_threshold: Sensitivity threshold for detecting voice. The value should be a number within [0, 1]. A
+        higher threshold increases detection confidence values at the cost of potentially missing frames of voice.
         :param library_path: Absolute path to Eagle's dynamic library.
-        :param speaker_profiles: A list of EagleProfile objects. This can be constructed using `EagleProfiler`.
         """
 
         if len(access_key) == 0:
@@ -494,11 +511,11 @@ class Eagle(object):
         if not isinstance(device, str) or len(device) == 0:
             raise EagleInvalidArgumentError("`device` should be a non-empty string.")
 
+        if voice_threshold < 0.0 or voice_threshold > 1.0:
+            raise EagleInvalidArgumentError("`voice_threshold` should be between 0 and 1")
+
         if not os.path.exists(library_path):
             raise EagleIOError("Could not find Eagle's dynamic library at `%s`." % library_path)
-
-        if len(speaker_profiles) == 0:
-            raise EagleInvalidArgumentError("Eagle requires at least one speaker profile.")
 
         library = cdll.LoadLibrary(library_path)
 
@@ -527,22 +544,16 @@ class Eagle(object):
             c_char_p,
             c_char_p,
             c_char_p,
-            c_int32,
-            POINTER(c_void_p),
+            c_float,
             POINTER(POINTER(self.CEagle)),
         ]
         init_func.restype = PicovoiceStatuses
-
-        profile_bytes = (c_void_p * len(speaker_profiles))()
-        for i, profile in enumerate(speaker_profiles):
-            profile_bytes[i] = profile.handle
 
         status = init_func(
             access_key.encode("utf-8"),
             model_path.encode("utf-8"),
             device.encode("utf-8"),
-            len(speaker_profiles),
-            profile_bytes,
+            voice_threshold,
             byref(self._eagle),
         )
         if status is not PicovoiceStatuses.SUCCESS:
@@ -555,71 +566,87 @@ class Eagle(object):
         self._delete_func.argtypes = [POINTER(self.CEagle)]
         self._delete_func.restype = None
 
+        process_min_audio_length_samples_func = library.pv_eagle_process_min_audio_length_samples
+        process_min_audio_length_samples_func.argtypes = [
+            POINTER(self.CEagle),
+            POINTER(c_int32),
+        ]
+        process_min_audio_length_samples_func.restype = PicovoiceStatuses
+
+        min_process_samples = c_int32()
+        status = process_min_audio_length_samples_func(self._eagle, byref(min_process_samples))
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message="Failed to get min audio length sample",
+                message_stack=self._get_error_stack(),
+            )
+        self._min_process_samples = min_process_samples.value
+
         self._process_func = library.pv_eagle_process
         self._process_func.argtypes = [
             POINTER(self.CEagle),
             POINTER(c_int16),
-            POINTER(c_float),
+            c_int32,
+            POINTER(c_void_p),
+            c_int32,
+            POINTER(POINTER(c_float)),
         ]
         self._process_func.restype = PicovoiceStatuses
 
-        self._scores = (c_float * len(speaker_profiles))()
-
-        self._reset_func = library.pv_eagle_reset
-        self._reset_func.argtypes = [POINTER(self.CEagle)]
-        self._reset_func.restype = PicovoiceStatuses
+        self._scores_delete_func = library.pv_eagle_scores_delete
+        self._scores_delete_func.argtypes = [POINTER(c_float)]
 
         self._sample_rate = library.pv_sample_rate()
-
-        self._frame_length = library.pv_eagle_frame_length()
 
         version_func = library.pv_eagle_version
         version_func.argtypes = []
         version_func.restype = c_char_p
         self._version = version_func().decode("utf-8")
 
-    def process(self, pcm: Sequence[int]) -> Sequence[float]:
+    def process(self, pcm: Sequence[int], speaker_profiles: Sequence[EagleProfile]) -> Optional[Sequence[float]]:
         """
         Processes a frame of audio and returns a list of similarity scores for each speaker profile.
 
         :param pcm: A frame of audio samples. The number of samples per frame can be attained by calling
         `.frame_length`. The incoming audio needs to have a sample rate equal to `.sample_rate` and be 16-bit
         linearly-encoded. Eagle operates on single-channel audio.
-        :return: A list of similarity scores for each speaker profile. A higher score indicates that the voice
-        belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match.
+        :param speaker_profiles: A list of EagleProfile objects. This can be constructed using `EagleProfiler`.
+        :return: A list of similarity scores for each speaker profile or None. A higher score indicates that the voice
+        belongs to the corresponding speaker. The range is [0, 1] with 1 representing a perfect match. A result of None
+        indicates that there was not enough voice in the audio to recognize any speakers.
         """
 
-        if len(pcm) != self.frame_length:
-            raise EagleInvalidArgumentError(
-                "Length of input frame %d does not match required frame length %d" % (len(pcm), self.frame_length)
-            )
+        if len(speaker_profiles) == 0:
+            raise EagleInvalidArgumentError("Eagle requires at least one speaker profile.")
 
-        frame_type = c_int16 * self.frame_length
+        profile_bytes = (c_void_p * len(speaker_profiles))()
+        for i, profile in enumerate(speaker_profiles):
+            profile_bytes[i] = profile.handle
+
+        frame_type = c_int16 * len(pcm)
         pcm = frame_type(*pcm)
 
-        status = self._process_func(self._eagle, pcm, self._scores)
+        scores = POINTER(c_float)()
+        status = self._process_func(
+            self._eagle,
+            pcm,
+            len(pcm),
+            profile_bytes,
+            len(speaker_profiles),
+            byref(scores))
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
                 message="Process failed",
                 message_stack=self._get_error_stack(),
             )
 
-        # noinspection PyTypeChecker
-        return [float(score) for score in self._scores]
+        if scores is None:
+            return None
 
-    def reset(self) -> None:
-        """
-        Resets the internal state of the Eagle engine. It is best to call before processing a new sequence of audio
-        (e.g. a new voice interaction). This ensures that the accuracy of the engine is not affected by a change
-        in audio context.
-        """
+        result = [float(scores[i]) for i in range(len(speaker_profiles))]
+        self._scores_delete_func(scores)
 
-        status = self._reset_func(self._eagle)
-        if status is not PicovoiceStatuses.SUCCESS:
-            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
-                message="Reset failed",
-                message_stack=self._get_error_stack(),
-            )
+        return result
 
     def delete(self) -> None:
         """
@@ -629,20 +656,20 @@ class Eagle(object):
         self._delete_func(self._eagle)
 
     @property
+    def min_process_samples(self) -> int:
+        """
+        The minimum length of the input pcm required by `.process()`.
+        """
+
+        return self._min_process_samples
+
+    @property
     def sample_rate(self) -> int:
         """
         Audio sample rate accepted by Eagle.
         """
 
         return self._sample_rate
-
-    @property
-    def frame_length(self) -> int:
-        """
-        Number of audio samples per frame expected by Eagle (i.e. length of the array passed into `.process()`)
-        """
-
-        return self._frame_length
 
     @property
     def version(self) -> str:
@@ -700,7 +727,6 @@ __all__ = [
     "Eagle",
     "EagleProfile",
     "EagleProfiler",
-    "EagleProfilerEnrollFeedback",
     "EagleActivationError",
     "EagleActivationLimitError",
     "EagleActivationRefusedError",

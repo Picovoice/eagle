@@ -268,13 +268,17 @@ eagle_profiler = pveagle.create_profiler(access_key)
 Create a new speaker profile:
 
 ```python
-def get_next_enroll_audio_data():
+def get_next_enroll_audio_frame(frame_length):
+    pass
+
+def has_next_enroll_audio_frame(frame_length):
     pass
 
 
 percentage = 0.0
-while percentage < 100.0:
-    percentage, error = eagle_profiler.enroll(get_next_enroll_audio_data())
+while percentage < 100.0 and has_next_enroll_audio_frame(eagle_profiler.frame_length):
+    percentage = eagle_profiler.enroll(get_next_enroll_audio_frame(eagle_profiler.frame_length))
+percentage = eagle_profiler.flush()
 ```
 
 Export the speaker profile once enrollment is complete:
@@ -291,21 +295,21 @@ eagle_profiler.delete()
 
 #### Speaker Recognition
 
-Create an instance of the engine using the speaker profile exported before:
+Create an instance of the engine:
 
 ```python
 eagle = pveagle.create_recognizer(access_key, speaker_profile)
 ```
 
-Process incoming audio frames:
+Process audio with one or more speaker profiles from the `EagleProfiler`.
 
 ```python
-def get_next_audio_frame():
+def get_next_audio_chunk(num_samples):
     pass
 
 
 while True:
-    score = eagle.process(get_next_audio_frame())
+    scores = eagle.process(get_next_audio_chunk(eagle.min_process_samples), speaker_profiles)
 ```
 
 Finally, when done be sure to explicitly release the resources:

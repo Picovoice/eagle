@@ -1,5 +1,5 @@
 #
-#    Copyright 2023-2025 Picovoice Inc.
+#    Copyright 2023-2026 Picovoice Inc.
 #
 #    You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 #    file accompanying this source.
@@ -15,13 +15,16 @@ import struct
 import sys
 import unittest
 import wave
-from typing import Sequence
+from typing import (
+    Optional,
+    Sequence
+)
 
 from _eagle import (
     Eagle,
     EagleError,
+    EagleProfile,
     EagleProfiler,
-    EagleProfilerEnrollFeedback,
     list_hardware_devices
 )
 
@@ -42,6 +45,7 @@ class EagleTestCase(unittest.TestCase):
     device: str
     eagle: Eagle
     eagle_profiler: EagleProfiler
+    profile: EagleProfile
 
     @staticmethod
     def load_wav_resource(path: str) -> Sequence[int]:
@@ -56,20 +60,26 @@ class EagleTestCase(unittest.TestCase):
             model_path=default_model_path("../.."),
             device=cls.device,
             library_path=default_library_path("../.."),
+            min_enrollment_chunks=1,
+            voice_threshold=0.3
         )
 
+        fl = cls.eagle_profiler.frame_length
         for path in cls.ENROLL_PATHS:
             pcm = cls.load_wav_resource(path)
-            _ = cls.eagle_profiler.enroll(pcm)
+            for i in range(len(pcm) // fl):
+                _ = cls.eagle_profiler.enroll(pcm[i * fl:(i + 1) * fl])
+            _ = cls.eagle_profiler.flush()
 
-        profile = cls.eagle_profiler.export()
+        cls.profile = cls.eagle_profiler.export()
+        cls.eagle_profiler.reset()
 
         cls.eagle = Eagle(
             access_key=cls.access_key,
             model_path=default_model_path("../.."),
             device=cls.device,
             library_path=default_library_path("../.."),
-            speaker_profiles=[profile],
+            voice_threshold=0.3
         )
 
     @classmethod
@@ -78,37 +88,30 @@ class EagleTestCase(unittest.TestCase):
         cls.eagle_profiler.delete()
 
     def test_eagle_enrollment(self) -> None:
+        fl = self.eagle_profiler.frame_length
         percentage = 0.0
         for path in self.ENROLL_PATHS:
             pcm = self.load_wav_resource(path)
-            percentage, error = self.eagle_profiler.enroll(pcm)
-            self.assertEqual(error, EagleProfilerEnrollFeedback.AUDIO_OK)
+            for i in range(len(pcm) // fl):
+                _ = self.eagle_profiler.enroll(pcm[i * fl:(i + 1) * fl])
+            percentage = self.eagle_profiler.flush()
 
         self.assertGreater(percentage, 0)
         profile = self.eagle_profiler.export()
+        self.eagle_profiler.reset()
         self.assertGreater(profile.size, 0)
 
     def test_eagle_process(self) -> None:
         pcm = self.load_wav_resource(self.TEST_PATH)
-        num_frames = len(pcm) // self.eagle.frame_length
-        scores = []
-        for i in range(num_frames):
-            score = self.eagle.process(pcm=pcm[i * self.eagle.frame_length: (i + 1) * self.eagle.frame_length])
-            scores.append(score[0])
+        scores = self.eagle.process(pcm=pcm, speaker_profiles=[self.profile])
 
-        self.assertGreater(max(scores), 0.5)
-        self.eagle.reset()
+        self.assertGreater(scores[0], 0.5)
 
     def test_eagle_process_imposter(self) -> None:
         pcm = self.load_wav_resource(self.IMPOSTER_PATH)
-        num_frames = len(pcm) // self.eagle.frame_length
-        scores = []
-        for i in range(num_frames):
-            score = self.eagle.process(pcm=pcm[i * self.eagle.frame_length: (i + 1) * self.eagle.frame_length])
-            scores.append(score[0])
+        scores = self.eagle.process(pcm=pcm, speaker_profiles=[self.profile])
 
-        self.assertLess(max(scores), 0.5)
-        self.eagle.reset()
+        self.assertLess(scores[0], 0.5)
 
     def test_version(self) -> None:
         eagle_version = self.eagle.version
@@ -120,20 +123,17 @@ class EagleTestCase(unittest.TestCase):
         self.assertGreater(len(eagle_profile_version), 0)
 
     def test_frame_length(self) -> None:
-        self.assertGreater(self.eagle.frame_length, 0)
+        self.assertGreater(self.eagle_profiler.frame_length, 0)
 
     def test_message_stack(self):
-        relative_path = "../.."
-        profile = self.eagle_profiler.export()
-
         error = None
         try:
             eagle = Eagle(
                 access_key="invalid",
-                model_path=default_model_path(relative_path),
+                model_path=default_model_path("../.."),
                 device=self.device,
-                library_path=default_library_path(relative_path),
-                speaker_profiles=[profile],
+                library_path=default_library_path("../.."),
+                voice_threshold=0.3
             )
             self.assertIsNone(eagle)
         except EagleError as e:
@@ -145,10 +145,10 @@ class EagleTestCase(unittest.TestCase):
         try:
             eagle = Eagle(
                 access_key="invalid",
-                model_path=default_model_path(relative_path),
+                model_path=default_model_path("../.."),
                 device=self.device,
-                library_path=default_library_path(relative_path),
-                speaker_profiles=[profile],
+                library_path=default_library_path("../.."),
+                voice_threshold=0.3
             )
             self.assertIsNone(eagle)
         except EagleError as e:
@@ -156,13 +156,13 @@ class EagleTestCase(unittest.TestCase):
             self.assertListEqual(list(error), list(e.message_stack))
 
     def test_enroll_export_message_stack(self):
-        relative_path = "../.."
-
         profiler = EagleProfiler(
             access_key=self.access_key,
-            model_path=default_model_path(relative_path),
+            model_path=default_model_path("../.."),
             device=self.device,
-            library_path=default_library_path(relative_path),
+            library_path=default_library_path("../.."),
+            min_enrollment_chunks=1,
+            voice_threshold=0.3
         )
         test_pcm = [0] * 512
 
@@ -186,23 +186,20 @@ class EagleTestCase(unittest.TestCase):
         profiler._eagle_profiler = address
 
     def test_process_message_stack(self):
-        relative_path = "../.."
-        profile = self.eagle_profiler.export()
-
         eagle = Eagle(
             access_key=self.access_key,
-            model_path=default_model_path(relative_path),
+            model_path=default_model_path("../.."),
             device=self.device,
-            library_path=default_library_path(relative_path),
-            speaker_profiles=[profile],
+            library_path=default_library_path("../.."),
+            voice_threshold=0.3
         )
-        test_pcm = [0] * eagle.frame_length
+        test_pcm = [0] * eagle.min_process_samples
 
         address = eagle._eagle
         eagle._eagle = None
 
         try:
-            res = eagle.process(test_pcm)
+            res = eagle.process(test_pcm, speaker_profiles=[self.profile])
             self.assertEqual(len(res), -1)
         except EagleError as e:
             self.assertGreater(len(e.message_stack), 0)

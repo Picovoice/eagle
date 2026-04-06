@@ -1,5 +1,5 @@
 #
-#    Copyright 2023-2025 Picovoice Inc.
+#    Copyright 2023-2026 Picovoice Inc.
 #
 #    You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 #    file accompanying this source.
@@ -46,15 +46,20 @@ class EaglePerformanceTestCase(unittest.TestCase):
             access_key=self.access_key,
             model_path=default_model_path("../.."),
             device=self.device,
+            min_enrollment_chunks=1,
+            voice_threshold=0.3,
             library_path=default_library_path("../.."),
         )
 
         pcm = self.load_wav_resource(self.TEST_PATH)
+        num_frames = len(pcm) // eagle_profiler.frame_length
 
         perf_results = list()
         for i in range(self.num_test_iterations + 1):
             start = perf_counter()
-            _ = eagle_profiler.enroll(pcm)
+            num_frames = len(pcm) // eagle_profiler.frame_length
+            for n in range(num_frames):
+                _ = eagle_profiler.enroll(pcm[n * eagle_profiler.frame_length: (n + 1) * eagle_profiler.frame_length])
             if i > 0:
                 perf_results.append(perf_counter() - start)
 
@@ -70,12 +75,17 @@ class EaglePerformanceTestCase(unittest.TestCase):
             access_key=self.access_key,
             model_path=default_model_path("../.."),
             device=self.device,
+            min_enrollment_chunks=1,
+            voice_threshold=0.3,
             library_path=default_library_path("../.."),
         )
 
         for path in self.ENROLL_PATHS:
             pcm = self.load_wav_resource(path)
-            _ = eagle_profiler.enroll(pcm)
+            num_frames = len(pcm) // eagle_profiler.frame_length
+            for n in range(num_frames):
+                _ = eagle_profiler.enroll(pcm[n * eagle_profiler.frame_length: (n + 1) * eagle_profiler.frame_length])
+            _ = eagle_profiler.flush()
 
         profile = eagle_profiler.export()
 
@@ -84,19 +94,16 @@ class EaglePerformanceTestCase(unittest.TestCase):
             model_path=default_model_path("../.."),
             device=self.device,
             library_path=default_library_path("../.."),
-            speaker_profiles=[profile],
+            voice_threshold=0.3,
         )
 
         pcm = self.load_wav_resource(self.TEST_PATH)
 
-        num_frames = len(pcm) // eagle.frame_length
-
         perf_results = list()
         for _ in range(self.num_test_iterations + 1):
-            for n in range(num_frames):
-                start = perf_counter()
-                _ = eagle.process(pcm=pcm[n * eagle.frame_length: (n + 1) * eagle.frame_length])
-                perf_results.append(perf_counter() - start)
+            start = perf_counter()
+            _ = eagle.process(pcm, speaker_profiles=[profile])
+            perf_results.append(perf_counter() - start)
 
         eagle.delete()
 
