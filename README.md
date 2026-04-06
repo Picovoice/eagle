@@ -767,6 +767,10 @@ eagle.release()
 
 ## Releases
 
+### v3.0.0 - April 6th, 2026
+
+ - Improved engine performance
+
 ### v2.0.0 - December 5th, 2025
 
  - Improved engine performance
