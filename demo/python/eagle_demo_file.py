@@ -18,14 +18,6 @@ import wave
 
 import pveagle
 
-FEEDBACK_TO_DESCRIPTIVE_MSG = {
-    pveagle.EagleProfilerEnrollFeedback.AUDIO_OK: 'Good audio',
-    pveagle.EagleProfilerEnrollFeedback.AUDIO_TOO_SHORT: 'Insufficient audio length',
-    pveagle.EagleProfilerEnrollFeedback.UNKNOWN_SPEAKER: 'Different speaker in audio',
-    pveagle.EagleProfilerEnrollFeedback.NO_VOICE_FOUND: 'No voice found in audio',
-    pveagle.EagleProfilerEnrollFeedback.QUALITY_ISSUE: 'Low audio quality due to bad microphone or environment'
-}
-
 
 def read_file(file_name, sample_rate):
     with wave.open(file_name, mode="rb") as wav_file:
@@ -48,9 +40,8 @@ def read_file(file_name, sample_rate):
     return frames[::channels]
 
 
-def print_result(time, scores, labels):
-    result = 'time: %4.2f sec | scores -> ' % time
-    result += ', '.join('`%s`: %.2f' % (label, score) for label, score in zip(labels, scores))
+def print_result(scores, labels):
+    result = ', '.join('`%s`: %.2f' % (label, score) for label, score in zip(labels, scores))
     print(result)
 
 
@@ -76,6 +67,11 @@ def main():
         '--device',
         help='Device to run inference on (`best`, `cpu:{num_threads}` or `gpu:{gpu_index}`). '
              'Default: automatically selects best device for `pveagle`')
+    common_parser.add_argument(
+        '--voice_threshold',
+        help="Sensitivity threshold for detecting voice.",
+        type=float,
+        default=0.3)
 
     subparsers = parser.add_subparsers(dest='command')
 
@@ -89,6 +85,11 @@ def main():
         '--output_profile_path',
         required=True,
         help='Absolute path to save the speaker profile')
+    enroll.add_argument(
+        '--min_enrollment_chunks',
+        help='Minimum number of chunks to be processed before enroll returns 100',
+        type=int,
+        default=1)
 
     test = subparsers.add_parser('test', parents=[common_parser])
     test.add_argument(
@@ -121,6 +122,8 @@ def main():
                 access_key=args.access_key,
                 model_path=args.model_path,
                 device=args.device,
+                min_enrollment_chunks=args.min_enrollment_chunks,
+                voice_threshold=args.voice_threshold,
                 library_path=args.library_path)
         except pveagle.EagleError as e:
             print("Failed to initialize EagleProfiler: ", e)
@@ -132,10 +135,10 @@ def main():
             enroll_percentage = 0.0
             for audio_path in args.enroll_audio_paths:
                 audio = read_file(audio_path, eagle_profiler.sample_rate)
-                enroll_percentage, feedback = eagle_profiler.enroll(audio)
-                print('Enrolled audio file %s [Enrollment percentage: %.2f%% - Enrollment feedback: %s]'
-                      % (audio_path, enroll_percentage, FEEDBACK_TO_DESCRIPTIVE_MSG[feedback]))
-
+                for frame in range(len(audio) // eagle_profiler.frame_length):
+                    frame = audio[frame * eagle_profiler.frame_length:(frame + 1) * eagle_profiler.frame_length]
+                    _ = eagle_profiler.enroll(frame)
+                enroll_percentage = eagle_profiler.flush()
             if enroll_percentage < 100.0:
                 print('Failed to create speaker profile. Insufficient enrollment percentage: %.2f%%. '
                       'Please add more audio files for enrollment.' % enroll_percentage)
@@ -166,8 +169,8 @@ def main():
                 access_key=args.access_key,
                 model_path=args.model_path,
                 device=args.device,
-                library_path=args.library_path,
-                speaker_profiles=speaker_profiles)
+                voice_threshold=args.voice_threshold,
+                library_path=args.library_path)
         except pveagle.EagleActivationLimitError:
             print('AccessKey has reached its processing limit.')
         except pveagle.EagleError as e:
@@ -186,16 +189,11 @@ def main():
 
             try:
                 audio = read_file(args.test_audio_path, eagle.sample_rate)
-                num_frames = len(audio) // eagle.frame_length
-                frame_to_second = eagle.frame_length / eagle.sample_rate
-                for i in range(num_frames):
-                    frame = audio[i * eagle.frame_length:(i + 1) * eagle.frame_length]
-                    scores = eagle.process(frame)
-                    time = i * frame_to_second
-                    if csv_file is not None:
-                        result_writer.writerow([time, *scores])
-                    else:
-                        print_result(time, scores, speaker_labels)
+                scores = eagle.process(audio, speaker_profiles=speaker_profiles)
+                if csv_file is not None:
+                    result_writer.writerow([*scores])
+                else:
+                    print_result(scores, speaker_labels)
 
                 if csv_file is not None:
                     print('Test result is saved to %s' % args.csv_output_path)

@@ -1,3 +1,12 @@
+//
+//  Copyright 2023-2026 Picovoice Inc.
+//  You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
+//  file accompanying this source.
+//  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+//  an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+//  specific language governing permissions and limitations under the License.
+//
+
 import Foundation
 import PvEagle
 
@@ -119,29 +128,6 @@ public class EagleBase {
         default:
             let pvStatusString = String(cString: pv_status_to_string(status))
             return EagleError("\(pvStatusString): \(message)", messageStack)
-        }
-    }
-
-    /// Given a C pv_eagle_profiler_enroll_feedback_t enum value, return the equivalent Swift enum value.
-    ///
-    /// - Parameters:
-    ///   - status: C enum value.
-    /// - Returns: The equivalent Swift enum value.
-    internal func pvProfilerEnrollmentErrorToEnrollFeedback(
-            _ status: pv_eagle_profiler_enroll_feedback_t) -> EagleProfilerEnrollFeedback {
-        switch status {
-        case PV_EAGLE_PROFILER_ENROLL_FEEDBACK_AUDIO_OK:
-            return EagleProfilerEnrollFeedback.AUDIO_OK
-        case PV_EAGLE_PROFILER_ENROLL_FEEDBACK_AUDIO_TOO_SHORT:
-            return EagleProfilerEnrollFeedback.AUDIO_TOO_SHORT
-        case PV_EAGLE_PROFILER_ENROLL_FEEDBACK_UNKNOWN_SPEAKER:
-            return EagleProfilerEnrollFeedback.UNKNOWN_SPEAKER
-        case PV_EAGLE_PROFILER_ENROLL_FEEDBACK_NO_VOICE_FOUND:
-            return EagleProfilerEnrollFeedback.NO_VOICE_FOUND
-        case PV_EAGLE_PROFILER_ENROLL_FEEDBACK_QUALITY_ISSUE:
-            return EagleProfilerEnrollFeedback.QUALITY_ISSUE
-        default:
-            return EagleProfilerEnrollFeedback.AUDIO_OK
         }
     }
 
