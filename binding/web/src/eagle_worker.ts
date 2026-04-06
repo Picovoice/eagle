@@ -1,5 +1,5 @@
 /*
-  Copyright 2023-2025 Picovoice Inc.
+  Copyright 2023-2026 Picovoice Inc.
 
   You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
   file accompanying this source.
@@ -26,7 +26,7 @@ import { pvStatusToException } from "./eagle_errors";
 
 export class EagleWorker {
   private readonly _worker: Worker;
-  private readonly _frameLength: number;
+  private readonly _minProcessSamples: number;
   private readonly _sampleRate: number;
   private readonly _version: string;
 
@@ -39,12 +39,12 @@ export class EagleWorker {
 
   private constructor(
     worker: Worker,
-    frameLength: number,
+    minProcessSamples: number,
     sampleRate: number,
     version: string
   ) {
     this._worker = worker;
-    this._frameLength = frameLength;
+    this._minProcessSamples = minProcessSamples;
     this._sampleRate = sampleRate;
     this._version = version;
   }
@@ -52,8 +52,8 @@ export class EagleWorker {
   /**
    * Number of audio samples per frame expected by Eagle (i.e. length of the array passed into `.process()`)
    */
-  get frameLength(): number {
-    return this._frameLength;
+  get minProcessSamples(): number {
+    return this._minProcessSamples;
   }
 
   /**
@@ -125,20 +125,19 @@ export class EagleWorker {
    * Set to a different name to use multiple models across `eagle` instances.
    * @param model.forceWrite Flag to overwrite the model in storage even if it exists.
    * @param model.version Version of the model file. Increment to update the model file in storage.
-   * @param speakerProfiles One or more Eagle speaker profiles. These can be constructed using `EagleProfiler`.
    * @param options Optional configuration arguments.
    * @param options.device String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
    * suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU device. To select a specific
    * GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the target GPU. If set to
    * `cpu`, the engine will run on the CPU with the default number of threads. To specify the number of threads, set this
    * argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the desired number of threads.
+   * @param options.voiceThreshold Sensitivity threshold for detecting voice.
    *
    * @return An instance of the Eagle engine.
    */
   public static async create(
     accessKey: string,
     model: EagleModel,
-    speakerProfiles: EagleProfile[] | EagleProfile,
     options: EagleOptions = {}
   ): Promise<EagleWorker> {
     const customWritePath = model.customWritePath
@@ -159,7 +158,7 @@ export class EagleWorker {
               resolve(
                 new EagleWorker(
                   worker,
-                  event.data.frameLength,
+                  event.data.minProcessSamples,
                   event.data.sampleRate,
                   event.data.version
                 )
@@ -192,9 +191,6 @@ export class EagleWorker {
       command: 'init',
       accessKey: accessKey,
       modelPath: modelPath,
-      speakerProfiles: !Array.isArray(speakerProfiles)
-        ? [speakerProfiles]
-        : speakerProfiles,
       options: options,
       wasmSimd: this._wasmSimd,
       wasmSimdLib: this._wasmSimdLib,
@@ -212,11 +208,15 @@ export class EagleWorker {
    * @param pcm A frame of audio samples. The number of samples per frame can be attained by calling
    * `.frameLength`. The incoming audio needs to have a sample rate equal to `.sampleRate` and be 16-bit
    * linearly-encoded. Eagle operates on single-channel audio.
+   * @param speakerProfiles One or more Eagle speaker profiles. These can be constructed using `EagleProfiler`.
    *
    * @return A list of similarity scores for each speaker profile. A higher score indicates that the voice
    * belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match.
    */
-  public process(pcm: Int16Array): Promise<number[]> {
+  public process(
+    pcm: Int16Array,
+    speakerProfiles: EagleProfile[] | EagleProfile,
+  ): Promise<number[]> {
     const returnPromise: Promise<number[]> = new Promise((resolve, reject) => {
       this._worker.onmessage = (
         event: MessageEvent<EagleWorkerProcessResponse>
@@ -249,48 +249,9 @@ export class EagleWorker {
     this._worker.postMessage({
       command: 'process',
       inputFrame: pcm,
-    });
-
-    return returnPromise;
-  }
-
-  /**
-   * Resets the internal state of the engine.
-   * It is best to call before processing a new sequence of audio (e.g. a new voice interaction).
-   * This ensures that the accuracy of the engine is not affected by a change in audio context.
-   */
-  public async reset(): Promise<void> {
-    const returnPromise: Promise<void> = new Promise((resolve, reject) => {
-      this._worker.onmessage = (
-        event: MessageEvent<EagleWorkerResetResponse>
-      ): void => {
-        switch (event.data.command) {
-          case 'ok':
-            resolve();
-            break;
-          case 'failed':
-          case 'error':
-            reject(
-              pvStatusToException(
-                event.data.status,
-                event.data.shortMessage,
-                event.data.messageStack
-              )
-            );
-            break;
-          default:
-            reject(
-              pvStatusToException(
-                PvStatus.RUNTIME_ERROR,
-                // @ts-ignore
-                `Unrecognized command: ${event.data.command}`
-              )
-            );
-        }
-      };
-    });
-    this._worker.postMessage({
-      command: 'reset',
+      speakerProfiles: !Array.isArray(speakerProfiles)
+        ? [speakerProfiles]
+        : speakerProfiles,
     });
 
     return returnPromise;

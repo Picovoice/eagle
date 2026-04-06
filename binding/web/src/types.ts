@@ -1,5 +1,5 @@
 /*
-  Copyright 2023-2025 Picovoice Inc.
+  Copyright 2023-2026 Picovoice Inc.
 
   You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
   file accompanying this source.
@@ -31,14 +31,6 @@ export enum PvStatus {
  */
 export type EagleModel = PvModel;
 
-export enum EagleProfilerEnrollFeedback {
-  AUDIO_OK = 0,
-  AUDIO_TOO_SHORT,
-  UNKNOWN_SPEAKER,
-  NO_VOICE_FOUND,
-  QUALITY_ISSUE,
-}
-
 export type EagleProfile = {
   /** Buffer containing the speaker profile. */
   bytes: Uint8Array;
@@ -47,16 +39,17 @@ export type EagleProfile = {
 export type EagleOptions = {
   /** @defaultValue `best` */
   device?: string;
+  /** @defaultValue `0.3` */
+  voiceThreshold?: number;
 };
 
 export type EagleProfilerOptions = {
   /** @defaultValue `best` */
   device?: string;
-};
-
-export type EagleProfilerEnrollResult = {
-  feedback: EagleProfilerEnrollFeedback;
-  percentage: number;
+  /** @defaultValue `1` */
+  minEnrollmentChunks?: number;
+  /** @defaultValue `0.3` */
+  voiceThreshold?: number;
 };
 
 export type EagleProfilerWorkerInitRequest = {
@@ -76,6 +69,10 @@ export type EagleProfilerWorkerEnrollRequest = {
   inputFrame: Int16Array;
 };
 
+export type EagleProfilerWorkerFlushRequest = {
+  command: 'flush';
+};
+
 export type EagleProfilerWorkerExportRequest = {
   command: 'export';
 };
@@ -91,6 +88,7 @@ export type EagleProfilerWorkerReleaseRequest = {
 export type EagleProfilerWorkerRequest =
   | EagleProfilerWorkerInitRequest
   | EagleProfilerWorkerEnrollRequest
+  | EagleProfilerWorkerFlushRequest
   | EagleProfilerWorkerExportRequest
   | EagleProfilerWorkerResetRequest
   | EagleProfilerWorkerReleaseRequest;
@@ -106,7 +104,7 @@ export type EagleProfilerWorkerInitResponse =
   | EagleProfilerWorkerFailureResponse
   | {
       command: 'ok';
-      minEnrollSamples: number;
+      frameLength: number;
       sampleRate: number;
       version: string;
     };
@@ -115,7 +113,14 @@ export type EagleProfilerWorkerEnrollResponse =
   | EagleProfilerWorkerFailureResponse
   | {
       command: 'ok';
-      result: EagleProfilerEnrollResult;
+      result: number;
+    };
+
+export type EagleProfilerWorkerFlushResponse =
+  | EagleProfilerWorkerFailureResponse
+  | {
+      command: 'ok';
+      result: number;
     };
 
 export type EagleProfilerWorkerExportResponse =
@@ -140,6 +145,7 @@ export type EagleProfilerWorkerReleaseResponse =
 export type EagleProfilerWorkerResponse =
   | EagleProfilerWorkerInitResponse
   | EagleProfilerWorkerEnrollResponse
+  | EagleProfilerWorkerFlushResponse
   | EagleProfilerWorkerExportResponse
   | EagleProfilerWorkerResetResponse
   | EagleProfilerWorkerReleaseResponse;
@@ -148,7 +154,6 @@ export type EagleWorkerInitRequest = {
   command: 'init';
   accessKey: string;
   modelPath: string;
-  speakerProfiles: EagleProfile[];
   options: EagleOptions;
   wasmSimd: string;
   wasmSimdLib: string;
@@ -160,6 +165,7 @@ export type EagleWorkerInitRequest = {
 export type EagleWorkerProcessRequest = {
   command: 'process';
   inputFrame: Int16Array;
+  speakerProfiles: EagleProfile[];
 };
 
 export type EagleWorkerResetRequest = {
@@ -187,7 +193,7 @@ export type EagleWorkerInitResponse =
   | EagleWorkerFailureResponse
   | {
       command: 'ok';
-      frameLength: number;
+      minProcessSamples: number;
       sampleRate: number;
       version: string;
     };

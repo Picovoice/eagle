@@ -700,8 +700,6 @@ const eagleProfiler = new EagleProfiler(accessKey);
 Create a new speaker profile:
 
 ```typescript
-const { EnrollProgress } = require("@picovoice/eagle-node");
-
 function getAudioData(numSamples): Int16Array {
   // get audio frame of size `numSamples`
 }
@@ -751,7 +749,13 @@ function getAudioData(numSamples): Int16Array {
 
 while (true) {
   const audioData = getAudioData(eagle.minProcessSamples);
-  const scores: number[] = eagle.process(audioData, speakerProfile);
+  const scores: number[] | null = await eagle.process(
+    audioData.
+    speakerProfile
+  );
+  if (scores) {
+    // do something with the scores
+  }
 }
 ```
 
