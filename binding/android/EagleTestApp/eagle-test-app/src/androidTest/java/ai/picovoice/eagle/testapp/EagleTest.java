@@ -1,5 +1,5 @@
 /*
-    Copyright 2023-2025 Picovoice Inc.
+    Copyright 2023-2026 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is
     located in the "LICENSE" file accompanying this source.
@@ -32,8 +32,6 @@ import ai.picovoice.eagle.Eagle;
 import ai.picovoice.eagle.EagleException;
 import ai.picovoice.eagle.EagleProfile;
 import ai.picovoice.eagle.EagleProfiler;
-import ai.picovoice.eagle.EagleProfilerEnrollFeedback;
-import ai.picovoice.eagle.EagleProfilerEnrollResult;
 
 
 @RunWith(Enclosed.class)
@@ -55,7 +53,13 @@ public class EagleTest {
             for (String path : enrollPaths) {
                 File audioFile = new File(getAudioFilepath(path));
                 short[] pcm = readAudioFile(audioFile.getAbsolutePath());
-                eagleProfiler.enroll(pcm);
+                int numFrames = pcm.length / eagleProfiler.getFrameLength();
+                for (int i = 0; i < numFrames; i++) {
+                    eagleProfiler.enroll(Arrays.copyOfRange(
+                            pcm,
+                            i * eagleProfiler.getFrameLength(),
+                            (i + 1) * eagleProfiler.getFrameLength()));
+                }
             }
 
             profile = eagleProfiler.export();
@@ -140,7 +144,6 @@ public class EagleTest {
                         .setAccessKey("")
                         .setModelPath(defaultModelPath)
                         .setDevice(device)
-                        .setSpeakerProfile(profile)
                         .build(appContext);
             } catch (EagleException e) {
                 didFail = true;
@@ -156,7 +159,6 @@ public class EagleTest {
                 new Eagle.Builder()
                         .setModelPath(defaultModelPath)
                         .setDevice(device)
-                        .setSpeakerProfile(profile)
                         .build(appContext);
             } catch (EagleException e) {
                 didFail = true;
@@ -174,7 +176,6 @@ public class EagleTest {
                         .setAccessKey(accessKey)
                         .setModelPath(modelPath.getAbsolutePath())
                         .setDevice(device)
-                        .setSpeakerProfile(profile)
                         .build(appContext);
             } catch (EagleException e) {
                 didFail = true;
@@ -191,22 +192,6 @@ public class EagleTest {
                         .setAccessKey(accessKey)
                         .setModelPath(defaultModelPath)
                         .setDevice("cloud:9")
-                        .setSpeakerProfile(profile)
-                        .build(appContext);
-            } catch (EagleException e) {
-                didFail = true;
-            }
-
-            assertTrue(didFail);
-        }
-
-        @Test
-        public void testInitFailWithMissingSpeakerProfile() {
-            boolean didFail = false;
-            try {
-                new Eagle.Builder()
-                        .setAccessKey(accessKey)
-                        .setDevice(device)
                         .build(appContext);
             } catch (EagleException e) {
                 didFail = true;
@@ -220,7 +205,6 @@ public class EagleTest {
             Eagle eagle = new Eagle.Builder()
                     .setAccessKey(accessKey)
                     .setDevice(device)
-                    .setSpeakerProfile(profile)
                     .build(appContext);
 
             assertTrue(eagle.getVersion() != null && !eagle.getVersion().equals(""));
@@ -233,7 +217,6 @@ public class EagleTest {
             Eagle eagle = new Eagle.Builder()
                     .setAccessKey(accessKey)
                     .setDevice(device)
-                    .setSpeakerProfile(profile)
                     .build(appContext);
 
             assertTrue(eagle.getSampleRate() > 0);
@@ -246,22 +229,14 @@ public class EagleTest {
             Eagle eagle = new Eagle.Builder()
                     .setAccessKey(accessKey)
                     .setDevice(device)
-                    .setSpeakerProfile(profile)
                     .build(appContext);
 
             File audioFile = new File(getAudioFilepath(testPath));
             short[] pcm = readAudioFile(audioFile.getAbsolutePath());
-            int numFrames = pcm.length / eagle.getFrameLength();
-            List<Float> scores = new ArrayList<>();
-            for (int i = 0; i < numFrames; i++) {
-                float[] score = eagle.process(Arrays.copyOfRange(
-                        pcm,
-                        i * eagle.getFrameLength(), (i + 1) * eagle.getFrameLength())
-                );
-                scores.add(score[0]);
-            }
+            EagleProfile[] speakerProfiles = {profile};
+            float[] scores = eagle.process(pcm, speakerProfiles);
 
-            assertTrue(Collections.max(scores) > 0.5);
+            assertTrue(scores[0] > 0.5);
             eagle.delete();
         }
 
@@ -270,22 +245,14 @@ public class EagleTest {
             Eagle eagle = new Eagle.Builder()
                     .setAccessKey(accessKey)
                     .setDevice(device)
-                    .setSpeakerProfile(profile)
                     .build(appContext);
 
             File audioFile = new File(getAudioFilepath(imposterPath));
             short[] pcm = readAudioFile(audioFile.getAbsolutePath());
-            int numFrames = pcm.length / eagle.getFrameLength();
-            List<Float> scores = new ArrayList<>();
-            for (int i = 0; i < numFrames; i++) {
-                float[] score = eagle.process(Arrays.copyOfRange(
-                        pcm,
-                        i * eagle.getFrameLength(), (i + 1) * eagle.getFrameLength())
-                );
-                scores.add(score[0]);
-            }
+            EagleProfile[] speakerProfiles = {profile};
+            float[] scores = eagle.process(pcm, speakerProfiles);
 
-            assertTrue(Collections.max(scores) < 0.5);
+            assertTrue(scores[0] < 0.5);
             eagle.delete();
         }
 
@@ -296,7 +263,6 @@ public class EagleTest {
                 new Eagle.Builder()
                         .setAccessKey("invalid")
                         .setDevice(device)
-                        .setSpeakerProfile(profile)
                         .build(appContext);
             } catch (EagleException e) {
                 error = e.getMessageStack();
@@ -309,7 +275,6 @@ public class EagleTest {
                 new Eagle.Builder()
                         .setAccessKey("invalid")
                         .setDevice(device)
-                        .setSpeakerProfile(profile)
                         .build(appContext);
             } catch (EagleException e) {
                 for (int i = 0; i < error.length; i++) {

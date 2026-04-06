@@ -347,14 +347,14 @@ try {
 Create a new speaker profile:
 
 ```java
-public short[] getNextEnrollAudioData() {
-    // get audio data
+public short[] getNextAudioFrame() {
+    // get audio frame
 }
 
 EagleProfilerEnrollResult result = null;
 try {
     while (result != null && result.getPercentage() < 100.0) {
-        result = eagleProfiler.enroll(getNextEnrollAudioData());
+        result = eagleProfiler.enroll(getNextAudioFrame());
     }
 } catch (EagleException e) { }
 ```
@@ -375,7 +375,7 @@ eagleProfiler.delete();
 
 #### Speaker Recognition
 
-Create an instance of the engine using the speaker profile exported before:
+Create an instance of the engine:
 
 ```java
 import ai.picovoice.eagle.*;
@@ -385,7 +385,6 @@ final String accessKey = "${ACCESS_KEY}";
 try {
     Eagle eagle = new Eagle.Builder()
         .setAccessKey(accessKey)
-        .setSpeakerProfile(speakerProfile)
         .build();
 } catch (EagleException e) { }
 ```
@@ -393,14 +392,15 @@ try {
 Process incoming audio frames:
 
 ```java
-public short[] getNextAudioFrame() {
-    // get audio frame
+public short[] getNextProcessAudioData() {
+    // get audio sample
 }
 
-
 try {
+    EagleProfile[] speakerProfiles = {speakerProfile};
+
     while (true) {
-        float[] scores = eagle.process(getNextAudioFrame());
+        float[] scores = eagle.process(getNextProcessAudioData(), speakerProfiles);
     }
 } catch (EagleException e) { }
 ```
