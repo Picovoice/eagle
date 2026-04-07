@@ -10,6 +10,8 @@
 		02447A8D26D94F75004A6CE9 /* EagleDemoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02447A8C26D94F75004A6CE9 /* EagleDemoApp.swift */; };
 		02447A8F26D94F75004A6CE9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02447A8E26D94F75004A6CE9 /* ContentView.swift */; };
 		02447A9126D94F7C004A6CE9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 02447A9026D94F7C004A6CE9 /* Assets.xcassets */; };
+		3414A5E42F845FBE001F1FA6 /* Eagle in Frameworks */ = {isa = PBXBuildFile; productRef = 3414A5E32F845FBE001F1FA6 /* Eagle */; };
+		3414A5EA2F84607C001F1FA6 /* Eagle in Frameworks */ = {isa = PBXBuildFile; productRef = 3414A5E92F84607C001F1FA6 /* Eagle */; };
 		C76A41602703B17000DB57D6 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76A415F2703B17000DB57D6 /* ViewModel.swift */; };
 		E19F4D222CF51CB20097F2C5 /* Eagle in Frameworks */ = {isa = PBXBuildFile; productRef = E19F4D212CF51CB20097F2C5 /* Eagle */; };
 		E19F4D252CF51CC40097F2C5 /* ios_voice_processor in Frameworks */ = {isa = PBXBuildFile; productRef = E19F4D242CF51CC40097F2C5 /* ios_voice_processor */; };
@@ -32,7 +34,9 @@
 			files = (
 				E1F352FB2D00E8E30069B0E6 /* Eagle in Frameworks */,
 				E19F4D252CF51CC40097F2C5 /* ios_voice_processor in Frameworks */,
+				3414A5EA2F84607C001F1FA6 /* Eagle in Frameworks */,
 				E19F4D222CF51CB20097F2C5 /* Eagle in Frameworks */,
+				3414A5E42F845FBE001F1FA6 /* Eagle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,7 +116,7 @@
 			mainGroup = 02447A8026D94F74004A6CE9;
 			packageReferences = (
 				E19F4D232CF51CC40097F2C5 /* XCRemoteSwiftPackageReference "ios-voice-processor" */,
-				E1F352F92D00E8E30069B0E6 /* XCRemoteSwiftPackageReference "eagle" */,
+				3414A5E82F84607C001F1FA6 /* XCRemoteSwiftPackageReference "eagle" */,
 			);
 			productRefGroup = 02447A8A26D94F75004A6CE9 /* Products */;
 			projectDirPath = "";
@@ -271,7 +275,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = 65723695GD;
+				DEVELOPMENT_TEAM = QW8RJJCS4H;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = EagleDemo/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -279,7 +283,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = ai.picovoice.EagleDemo;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.picovoice.EagleDemo2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -293,7 +297,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = 65723695GD;
+				DEVELOPMENT_TEAM = QW8RJJCS4H;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = EagleDemo/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -301,7 +305,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = ai.picovoice.EagleDemo;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.picovoice.EagleDemo2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -331,14 +335,15 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		1E4229AF2ED53B530052E028 /* XCLocalSwiftPackageReference "../../../../eagle" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../../../eagle;
-		};
-/* End XCLocalSwiftPackageReference section */
-
 /* Begin XCRemoteSwiftPackageReference section */
+		3414A5E82F84607C001F1FA6 /* XCRemoteSwiftPackageReference "eagle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Picovoice/eagle";
+			requirement = {
+				kind = exactVersion;
+				version = 3.0.0;
+			};
+		};
 		E19F4D232CF51CC40097F2C5 /* XCRemoteSwiftPackageReference "ios-voice-processor" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Picovoice/ios-voice-processor";
@@ -358,6 +363,15 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		3414A5E32F845FBE001F1FA6 /* Eagle */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Eagle;
+		};
+		3414A5E92F84607C001F1FA6 /* Eagle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3414A5E82F84607C001F1FA6 /* XCRemoteSwiftPackageReference "eagle" */;
+			productName = Eagle;
+		};
 		E19F4D212CF51CB20097F2C5 /* Eagle */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Eagle;

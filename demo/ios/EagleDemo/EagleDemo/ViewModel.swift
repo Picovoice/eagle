@@ -33,7 +33,7 @@ class ViewModel: ObservableObject {
 
     private var profiles: [EagleProfile] = []
 
-    private var enrollPcmBuffer: [Int16] = []
+    private var processPcmBuffer: [Int16] = []
 
     @Published var scores: [Float] = []
     @Published var enrollPercentage: Float = 0
@@ -55,21 +55,6 @@ class ViewModel: ObservableObject {
         self.scores = []
         self.statusText = ViewModel.defaultStatusText
         self.state = UIState.INTRO
-    }
-
-    private func setEnrollFeedback(feedback: EagleProfilerEnrollFeedback) {
-        switch feedback {
-        case EagleProfilerEnrollFeedback.AUDIO_TOO_SHORT:
-            enrollFeedback = "Insufficient audio length"
-        case EagleProfilerEnrollFeedback.UNKNOWN_SPEAKER:
-            enrollFeedback = "Different speaker detected in audio"
-        case EagleProfilerEnrollFeedback.NO_VOICE_FOUND:
-            enrollFeedback = "Unable to detect voice in audio"
-        case EagleProfilerEnrollFeedback.QUALITY_ISSUE:
-            enrollFeedback = "Audio quality too low to use for enrollment"
-        default:
-            enrollFeedback = ""
-        }
     }
 
     private func initProfiler() {
@@ -104,25 +89,18 @@ class ViewModel: ObservableObject {
             guard let eagleProfiler = self.eagleProfiler else {
                 return
             }
-            self.enrollPcmBuffer.append(contentsOf: pcm)
+
             do {
-                let minEnrollSamples = try eagleProfiler.minEnrollSamples()
-                if self.enrollPcmBuffer.count >= minEnrollSamples {
-                    let enrollFrame = Array(self.enrollPcmBuffer[0..<minEnrollSamples])
-                    self.enrollPcmBuffer.removeFirst(minEnrollSamples)
-
-                    let (percentage, feedback) = try eagleProfiler.enroll(pcm: enrollFrame)
-                    if percentage >= 100.0 {
-                        try self.stopEnroll(export: true)
-                    }
-
-                    DispatchQueue.main.async {
-                        self.enrollPercentage = percentage
-                        self.setEnrollFeedback(feedback: feedback)
-                    }
-
-                    try self.appendToDumpFile(pcm: enrollFrame)
+                let percentage = try eagleProfiler.enroll(pcm: pcm)
+                if percentage >= 100.0 {
+                    try self.stopEnroll(export: true)
                 }
+
+                DispatchQueue.main.async {
+                    self.enrollPercentage = percentage
+                }
+
+                try self.appendToDumpFile(pcm: pcm)
             } catch {
                 self.errorMessage = "Failed to process pcm frames for enrollment."
                 try? self.stopEnroll()
@@ -137,7 +115,7 @@ class ViewModel: ObservableObject {
 
         do {
             try VoiceProcessor.instance.start(
-                frameLength: UInt32(512),
+                frameLength: UInt32(EagleProfiler.frameLength),
                 sampleRate: UInt32(EagleProfiler.sampleRate))
         } catch {
             errorMessage = "\(error)"
@@ -179,21 +157,34 @@ class ViewModel: ObservableObject {
 
     private func initEagle() {
         do {
-            try eagle = Eagle(accessKey: accessKey, speakerProfiles: profiles)
+            try eagle = Eagle(accessKey: accessKey)
             statusText = ""
 
             self.testErrorListener = VoiceProcessorErrorListener({ error in
                 self.errorMessage = "\(error)"
             })
             self.testListener = VoiceProcessorFrameListener({ pcm in
+                self.processPcmBuffer.append(contentsOf: pcm)
                 do {
-                    let profileScores = try self.eagle.process(pcm: pcm)
+                    let minProcessSamples = try self.eagle.minProcessSamples()
+                    if self.processPcmBuffer.count >= minProcessSamples {
+                        let processFrame = Array(self.processPcmBuffer[0..<minProcessSamples])
+                        self.processPcmBuffer.removeFirst(minProcessSamples)
 
-                    DispatchQueue.main.async {
-                        self.scores = profileScores
+                        let profileScores = try self.eagle.process(pcm: processFrame, speakerProfiles: self.profiles)
+
+                        if profileScores != nil {
+                            DispatchQueue.main.async {
+                                self.scores = profileScores!
+                            }
+                        } else {
+                            DispatchQueue.main.async {
+                                self.scores = Array(repeating: 0, count: self.profiles.count)
+                            }
+                        }
+
+                        try self.appendToDumpFile(pcm: processFrame)
                     }
-
-                    try self.appendToDumpFile(pcm: pcm)
                 } catch {
                     self.errorMessage = "Failed to process pcm frames for enrollment."
                     try? self.stopTest()
@@ -225,7 +216,7 @@ class ViewModel: ObservableObject {
 
         do {
             try VoiceProcessor.instance.start(
-                frameLength: UInt32(Eagle.frameLength),
+                frameLength: UInt32(EagleProfiler.frameLength),
                 sampleRate: UInt32(Eagle.sampleRate))
         } catch {
             throw EagleError(error.localizedDescription)

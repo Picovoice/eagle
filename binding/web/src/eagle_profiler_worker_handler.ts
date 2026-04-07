@@ -1,5 +1,5 @@
 /*
-  Copyright 2023-2025 Picovoice Inc.
+  Copyright 2023-2026 Picovoice Inc.
   You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
   file accompanying this source.
   Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
@@ -13,6 +13,7 @@
 import { EagleProfiler } from './eagle';
 import {
   EagleProfilerWorkerEnrollRequest,
+  EagleProfilerWorkerFlushRequest,
   EagleProfilerWorkerInitRequest,
   EagleProfilerWorkerRequest,
   PvStatus,
@@ -44,7 +45,7 @@ const initRequest = async (
     );
     return {
       command: 'ok',
-      minEnrollSamples: profiler.minEnrollSamples,
+      frameLength: profiler.frameLength,
       sampleRate: profiler.sampleRate,
       version: profiler.version,
     };
@@ -78,6 +79,40 @@ const enrollRequest = async (
   }
   try {
     const result = await profiler.enroll(request.inputFrame);
+    return {
+      command: 'ok',
+      result,
+    };
+  } catch (e: any) {
+    if (e instanceof EagleError) {
+      return {
+        command: 'error',
+        status: e.status,
+        shortMessage: e.shortMessage,
+        messageStack: e.messageStack
+      };
+    } else {
+      return {
+        command: 'error',
+        status: PvStatus.RUNTIME_ERROR,
+        shortMessage: e.message
+      };
+    }
+  }
+};
+
+const flushRequest = async (
+  request: EagleProfilerWorkerFlushRequest // eslint-disable-line
+): Promise<any> => {
+  if (profiler === null) {
+    return {
+      command: 'error',
+      status: PvStatus.INVALID_STATE,
+      shortMessage: 'Eagle profiler not initialized',
+    };
+  }
+  try {
+    const result = await profiler.flush();
     return {
       command: 'ok',
       result,
@@ -186,6 +221,9 @@ self.onmessage = async function (
       break;
     case 'enroll':
       self.postMessage(await enrollRequest(event.data));
+      break;
+    case 'flush':
+      self.postMessage(await flushRequest(event.data));
       break;
     case 'export': {
       const exportMsg = await exportRequest();

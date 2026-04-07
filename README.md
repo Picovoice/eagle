@@ -268,13 +268,17 @@ eagle_profiler = pveagle.create_profiler(access_key)
 Create a new speaker profile:
 
 ```python
-def get_next_enroll_audio_data():
+def get_next_enroll_audio_frame(frame_length):
+    pass
+
+def has_next_enroll_audio_frame(frame_length):
     pass
 
 
 percentage = 0.0
-while percentage < 100.0:
-    percentage, error = eagle_profiler.enroll(get_next_enroll_audio_data())
+while percentage < 100.0 and has_next_enroll_audio_frame(eagle_profiler.frame_length):
+    percentage = eagle_profiler.enroll(get_next_enroll_audio_frame(eagle_profiler.frame_length))
+percentage = eagle_profiler.flush()
 ```
 
 Export the speaker profile once enrollment is complete:
@@ -291,21 +295,21 @@ eagle_profiler.delete()
 
 #### Speaker Recognition
 
-Create an instance of the engine using the speaker profile exported before:
+Create an instance of the engine:
 
 ```python
 eagle = pveagle.create_recognizer(access_key, speaker_profile)
 ```
 
-Process incoming audio frames:
+Process audio with one or more speaker profiles from the `EagleProfiler`.
 
 ```python
-def get_next_audio_frame():
+def get_next_audio_chunk(num_samples):
     pass
 
 
 while True:
-    score = eagle.process(get_next_audio_frame())
+    scores = eagle.process(get_next_audio_chunk(eagle.min_process_samples), speaker_profiles)
 ```
 
 Finally, when done be sure to explicitly release the resources:
@@ -343,14 +347,14 @@ try {
 Create a new speaker profile:
 
 ```java
-public short[] getNextEnrollAudioData() {
-    // get audio data
+public short[] getNextAudioFrame() {
+    // get audio frame
 }
 
 EagleProfilerEnrollResult result = null;
 try {
     while (result != null && result.getPercentage() < 100.0) {
-        result = eagleProfiler.enroll(getNextEnrollAudioData());
+        result = eagleProfiler.enroll(getNextAudioFrame());
     }
 } catch (EagleException e) { }
 ```
@@ -371,7 +375,7 @@ eagleProfiler.delete();
 
 #### Speaker Recognition
 
-Create an instance of the engine using the speaker profile exported before:
+Create an instance of the engine:
 
 ```java
 import ai.picovoice.eagle.*;
@@ -381,7 +385,6 @@ final String accessKey = "${ACCESS_KEY}";
 try {
     Eagle eagle = new Eagle.Builder()
         .setAccessKey(accessKey)
-        .setSpeakerProfile(speakerProfile)
         .build();
 } catch (EagleException e) { }
 ```
@@ -389,14 +392,15 @@ try {
 Process incoming audio frames:
 
 ```java
-public short[] getNextAudioFrame() {
-    // get audio frame
+public short[] getNextProcessAudioData() {
+    // get audio sample
 }
 
-
 try {
+    EagleProfile[] speakerProfiles = {speakerProfile};
+
     while (true) {
-        float[] scores = eagle.process(getNextAudioFrame());
+        float[] scores = eagle.process(getNextProcessAudioData(), speakerProfiles);
     }
 } catch (EagleException e) { }
 ```
@@ -431,18 +435,14 @@ let eagleProfiler = try EagleProfiler(accessKey: accessKey)
 Create a new speaker profile:
 
 ```swift
-func get_next_enroll_audio_data(numSamples: Int) -> [Int16] {
+func get_next_audio_frame(frameLength: Int) -> [Int16] {
     // ...
 }
 
 do {
-    let numSamples = eagleProfiler.minEnrollSamples()
-
     var percentage = 0.0
-    var feedback: EagleProfilerEnrollFeedback?
-
     while (percentage < 100.0) {
-        (percentage, feedback) = try eagleProfiler.enroll(pcm: get_next_enroll_audio_data(numSamples: numSamples))
+        percentage = try eagleProfiler.enroll(pcm: get_next_audio_frame())
     }
 } catch { }
 ```
@@ -461,21 +461,21 @@ eagleProfiler.delete()
 
 #### Speaker Recognition
 
-Create an instance of the engine using the speaker profile exported before:
+Create an instance of the engine:
 
 ```swift
-let eagle = Eagle(accessKey: accessKey, speakerProfiles: [speakerProfile])
+let eagle = Eagle(accessKey: accessKey)
 ```
 
-Process incoming audio frames:
+Process incoming audio frames using the speaker profile exported before:
 
 ```swift
-func get_next_audio_frame() -> [Int16] {
+func get_next_process_audio_data(numSamples: Int) -> [Int16] {
     // ...
 }
 
 do {
-    let profileScores = try eagle.process(pcm: get_next_audio_frame())
+    let profileScores = try eagle.process(pcm: get_next_process_audio_data(eagle.minProcessSamples()), speakerProfiles: [speakerProfile])
 } catch { }
 ```
 
@@ -497,12 +497,16 @@ Build an instance of the profiler:
 const char *access_key = "${ACCESS_KEY}";
 const char *model_path = "${MODEL_PATH}";
 const char *device = "best";
+const int32_t min_enrollment_chunks = 1;
+const float voice_threshold = 0.3f;
 
 pv_eagle_profiler_t *eagle_profiler = NULL;
 pv_status_t status = pv_eagle_profiler_init(
             access_key,
             model_path,
             device,
+            min_enrollment_chunks,
+            voice_threshold,
             &eagle_profiler);
 if (status != PV_STATUS_SUCCESS) {
     // error handling logic
@@ -515,22 +519,27 @@ model file available under [lib/common](./lib/common).
 Use `eagle_profiler` to create a new speaker profile:
 
 ```c
-extern const int16_t *get_next_enroll_audio_frame(void);
-extern const int32_t get_next_enroll_audio_num_samples(void);
+extern const int16_t *get_next_enroll_audio_frame(int32_t frame_length);
+extern const bool has_next_enroll_audio_frame(int32_t frame_length);
+const int32_t frame_length = pv_eagle_profiler_frame_length();
 
 float enroll_percentage = 0.0f;
-pv_eagle_profiler_enroll_feedback_t feedback = PV_EAGLE_PROFILER_ENROLLMENT_ERROR_AUDIO_OK;
 
-while (enroll_percentage < 100.0f) {
+while (enroll_percentage < 100.0f && has_next_enroll_audio_frame(frame_length)) {
   status = pv_eagle_profiler_enroll(
           eagle_profiler,
-          get_next_enroll_audio_frame(),
-          get_next_enroll_audio_num_samples(),
-          &feedback,
+          get_next_enroll_audio_frame(frame_length),
           &enroll_percentage);
   if (status != PV_STATUS_SUCCESS) {
       // error handling logic
   }
+}
+
+status = pv_eagle_profiler_flush(
+        eagle_profiler,
+        &enroll_percentage);
+if (status != PV_STATUS_SUCCESS) {
+    // error handling logic
 }
 
 int32_t profile_size_bytes = 0;
@@ -552,7 +561,7 @@ pv_eagle_profiler_delete(eagle_profiler);
 
 #### Speaker Recognition
 
-Create an instance of the engine using the speaker profile exported before:
+Create an instance of the engine:
 
 ```c
 pv_eagle_t *eagle = NULL;
@@ -560,24 +569,29 @@ pv_status_t status = pv_eagle_init(
         access_key,
         model_path,
         device,
-        1,
-        (const void *const *) &speaker_profile,
+        voice_threshold,
         &eagle);
 if (status != PV_STATUS_SUCCESS) {
     // error handling logic
 }
 ```
 
-Now the `eagle` can be used to process incoming audio frames:
+Now the `eagle` can be used to process incoming audio frames using the speaker profile exported before:
 
 ```c
 extern const int16_t *get_next_audio_frame(void);
-const int32_t frame_length = pv_eagle_frame_length();
+extern const int32_t get_next_audio_num_samples(void);
 
-float score = 0.f;
+float *scores = NULL;
 while (true) {
-    const int16_t *pcm = get_next_audio_frame();
-    const pv_status_t status = pv_eagle_process(eagle, pcm, &score);
+    const int16_t *pcm = ;
+    const pv_status_t status = pv_eagle_process(
+            eagle,
+            get_next_audio_frame(),
+            get_next_audio_num_samples(),
+            &speaker_profile,
+            1,
+            &scores);
     if (status != PV_STATUS_SUCCESS) {
         // error handling logic
     }
@@ -587,6 +601,7 @@ while (true) {
 Finally, when done be sure to release the acquired resources:
 
 ```c
+pv_eagle_scores_delete(scores);
 pv_eagle_delete(handle);
 ```
 
@@ -614,7 +629,8 @@ const eagleProfiler = await EagleProfiler.create(
         eagleModel);
 ```
 
-Replace `${ACCESS_KEY}` with the AccessKey obtained from Picovoice Console, and the model options with the path to the model file available under [lib/common](./lib/common) or a base64 string of it.
+Replace `${ACCESS_KEY}` with the AccessKey obtained from Picovoice Console, and the model options with the path to the
+model file available under [lib/common](./lib/common) or a base64 string of it.
 
 Use `EagleProfiler` to create a new speaker profile:
 ```typescript
@@ -684,24 +700,21 @@ const eagleProfiler = new EagleProfiler(accessKey);
 Create a new speaker profile:
 
 ```typescript
-const { EnrollProgress } = require("@picovoice/eagle-node");
-
 function getAudioData(numSamples): Int16Array {
   // get audio frame of size `numSamples`
 }
 
-let percentage = 0;
-while (percentage < 100) {
-  const audioData = getAudioData(eagleProfiler.minEnrollSamples);
-
-  const result: EnrollProgress = await eagleProfiler.enroll(audioData);
-  if (result.feedback === EagleProfilerEnrollFeedback.NONE) {
-      // audio is good!
-  } else {
-      // feedback code will tell you why audio was not used in enrollment
-  }
-  percentage = result.percentage;
+function hasAudioData(numSamples): Boolean {
+  // check if there are any remaining samples in the stream
 }
+
+let percentage = 0;
+while (percentage < 100 && hasAudioData(eagleProfiler.frameLength)) {
+  const audioData = getAudioData(eagleProfiler.frameLength);
+  percentage = eagleProfiler.enroll(audioData);
+}
+
+percentage = eagleProfiler.flush();
 ```
 
 Export the speaker profile once enrollment is complete:
@@ -718,16 +731,16 @@ eagleProfiler.release();
 
 #### Speaker Recognition
 
-Create an instance of the engine using the speaker profile exported before:
+Create an instance of the engine:
 
 ```typescript
 const { Eagle } = require("@picovoice/eagle-node");
 
 const accessKey = "${ACCESS_KEY}"; // Obtained from the Picovoice Console (https://console.picovoice.ai/)
-const eagle = new Eagle(accessKey, speakerProfile);
+const eagle = new Eagle(accessKey);
 ```
 
-Process incoming audio frames:
+Process audio with one or more speaker profiles from the `EagleProfiler`:
 
 ```typescript
 function getAudioData(numSamples): Int16Array {
@@ -735,8 +748,14 @@ function getAudioData(numSamples): Int16Array {
 }
 
 while (true) {
-  const audioData = getAudioData(eagle.frameLength);
-  const scores: number[] = eagle.process(audioData);
+  const audioData = getAudioData(eagle.minProcessSamples);
+  const scores: number[] | null = await eagle.process(
+    audioData.
+    speakerProfile
+  );
+  if (scores) {
+    // do something with the scores
+  }
 }
 ```
 
@@ -747,6 +766,11 @@ eagle.release()
 ```
 
 ## Releases
+
+### v3.0.0 - April 6th, 2026
+
+ - Improved engine performance
+ - Improved the enrollment and recognition process
 
 ### v2.0.0 - December 5th, 2025
 

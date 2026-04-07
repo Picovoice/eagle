@@ -68,14 +68,12 @@ try {
 `EagleProfiler` is responsible for processing and enrolling PCM audio data, with the valid audio sample rate determined
 by `eagleProfiler.getSampleRate()`. The audio data must be 16-bit linearly-encoded and single-channel.
 
-When passing samples to `eagleProfiler.enroll()`, the number of samples must be at
-least `eagleProfiler.getMinEnrollSamples()` to ensure sufficient data for enrollment. The percentage value
-obtained from this process indicates the progress of enrollment, while the feedback value can be utilized to determine
-the status of the enrollment process.
+When passing samples to `eagleProfiler.enroll`, the number of samples must be equal to `eagleProfiler.frameLength`. The
+percentage value obtained from this process indicates the progress of enrollment.
 
 ```java
-public short[] getNextEnrollAudioData() {
-    // get audio data
+public short[] getNextAudioFrame() {
+    // get audio frame
 }
 
 EagleProfilerEnrollResult result = null;
@@ -88,8 +86,8 @@ try {
 
 After the percentage reaches 100%, the enrollment process is considered complete. While it is possible to continue
 providing additional audio data to the profiler to improve the accuracy of the voiceprint, it is not necessary to do so.
-Moreover, if the audio data submitted is unsuitable for enrollment, the feedback value will indicate the reason, and the
-enrollment progress will remain unchanged.
+Once all the audio from a single source has been submitted it is necessary to call `flush` before submitting any audio
+from another source.
 
 ```java
 try {
@@ -122,30 +120,35 @@ final String accessKey = "${ACCESS_KEY}";
 try {
     Eagle eagle = new Eagle.Builder()
         .setAccessKey(accessKey)
-        .setSpeakerProfile(speakerProfile)
         .build();
 } catch (EagleException e) { }
 ```
 
-When initialized, `eagle.getSampleRate()` specifies the valid sample rate for Eagle. The expected length of a frame, or the
-number of audio samples in an input array, is defined by `eagle.getFrameLength()`.
+When initialized, `eagle.getSampleRate()` specifies the valid sample rate for Eagle. The minimum length of a sample, or
+the minimum
+number of audio samples in an input array, is defined by `eagle.getMinProcessSamples()`.
 
 Like the profiler, Eagle is designed to work with single-channel audio that is encoded using 16-bit linear PCM.
 
 ```java
-public short[] getNextAudioFrame() {
-    // get audio frame
+public short[] getNextProcessAudioData() {
+    // get audio sample
 }
 
 try {
+    EagleProfile[] speakerProfiles = {speakerProfile};
+
     while (true) {
-        float[] scores = eagle.process(getNextAudioFrame());
+        float[] scores = eagle.process(getNextProcessAudioData(), speakerProfiles);
     }
 } catch (EagleException e) { }
 ```
 
-The return value `scores` represents the degree of similarity between the input audio frame and the enrolled speakers.
-This value is a floating-point number ranging from 0 to 1, with higher values indicating a greater degree of similarity.
+The return value `scores` will be null or be an array that contains floating-point numbers that indicate the similarity
+between the input audio frame and the enrolled speakers. Each value in the array corresponds to a specific enrolled
+speaker, maintaining the same order as the speaker profiles provided during initialization. The values in the array
+range from 0.0 to 1.0, where higher values indicate a stronger degree of similarity. A result of null indicates that
+there was not enough voice in the audio to recognize any speakers.
 
 Finally, when done be sure to explicitly release the resources:
 

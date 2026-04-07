@@ -1,5 +1,5 @@
 /*
-  Copyright 2024-2025 Picovoice Inc.
+  Copyright 2024-2026 Picovoice Inc.
   You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
   file accompanying this source.
   Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
@@ -7,22 +7,21 @@
   specific language governing permissions and limitations under the License.
 */
 
-export enum EagleProfilerEnrollFeedback {
-  NONE = "NONE",
-  AUDIO_TOO_SHORT = "AUDIO_TOO_SHORT",
-  UNKNOWN_SPEAKER = "UNKNOWN_SPEAKER",
-  NO_VOICE_FOUND = "NO_VOICE_FOUND",
-  QUALITY_ISSUE = "QUALITY_ISSUE",
-}
-
 export type EnrollProgress = {
   percentage: number;
-  feedback: EagleProfilerEnrollFeedback;
 };
 
 export type EagleInitOptions = {
   modelPath?: string;
   device?: string;
+  voiceThreshold?: number;
+};
+
+export type EagleProfilerInitOptions = {
+  modelPath?: string;
+  device?: string;
+  minEnrollmentChunks?: number;
+  voiceThreshold?: number;
 };
 
 export type EagleInputOptions = {
@@ -30,3 +29,4 @@ export type EagleInputOptions = {
 };
 
 export type EagleOptions = EagleInitOptions & EagleInputOptions;
+export type EagleProfilerOptions = EagleProfilerInitOptions & EagleInputOptions;

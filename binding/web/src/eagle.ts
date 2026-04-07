@@ -1,5 +1,5 @@
 /*
-  Copyright 2023-2025 Picovoice Inc.
+  Copyright 2023-2026 Picovoice Inc.
 
   You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
   file accompanying this source.
@@ -29,7 +29,6 @@ import {
   EagleModel,
   EagleOptions,
   EagleProfile,
-  EagleProfilerEnrollResult,
   EagleProfilerOptions,
   PvStatus
 } from './types';
@@ -44,20 +43,21 @@ type pv_eagle_profiler_init_type = (
   accessKey: number,
   modelPath: number,
   device: number,
+  min_enrollment_chunks,
+  voice_threshold: number,
   object: number
 ) => Promise<number>;
 type pv_eagle_profiler_delete_type = (object: number) => Promise<void>;
 type pv_eagle_profiler_enroll_type = (
   object: number,
   pcm: number,
-  numSamples: number,
-  feedback: number,
   percentage: number
 ) => Promise<number>;
-type pv_eagle_profiler_enroll_min_audio_length_samples_type = (
+type pv_eagle_profiler_flush_type = (
   object: number,
-  numSamples: number
-) => number;
+  percentage: number
+) => Promise<number>;
+type pv_eagle_profiler_frame_length_type = () => number;
 type pv_eagle_profiler_export_type = (
   object: number,
   speakerProfile: number
@@ -71,18 +71,25 @@ type pv_eagle_init_type = (
   accessKey: number,
   modelPath: number,
   device: number,
-  numSpeakers: number,
-  speakerProfiles: number,
+  voiceThreshold: number,
   object: number
 ) => Promise<number>;
 type pv_eagle_delete_type = (object: number) => Promise<void>;
 type pv_eagle_process_type = (
   object: number,
   pcm: number,
+  pcmLength: number,
+  speakerProfiles: number,
+  numSpeakers: number,
   scores: number
 ) => Promise<number>;
-type pv_eagle_reset_type = (object: number) => Promise<number>;
-type pv_eagle_frame_length_type = () => number;
+type pv_eagle_scores_delete_type = (
+  scores: number
+) => Promise<void>;
+type pv_eagle_process_min_audio_length_samples_type = (
+  object: number,
+  numSamples: number
+) => number;
 type pv_eagle_version_type = () => number;
 type pv_eagle_list_hardware_devices_type = (
   hardwareDevices: number,
@@ -103,10 +110,10 @@ type pv_free_error_stack_type = (messageStack: number) => void;
 type EagleModule = EmscriptenModule & {
   _pv_free: (address: number) => void;
 
-  _pv_eagle_profiler_enroll_min_audio_length_samples: pv_eagle_profiler_enroll_min_audio_length_samples_type
   _pv_eagle_profiler_export: pv_eagle_profiler_export_type
   _pv_eagle_profiler_export_size: pv_eagle_profiler_export_size_type
-  _pv_eagle_frame_length: pv_eagle_frame_length_type
+  _pv_eagle_profiler_frame_length: pv_eagle_profiler_frame_length_type
+  _pv_eagle_process_min_audio_length_samples: pv_eagle_process_min_audio_length_samples_type
   _pv_eagle_version: pv_eagle_version_type
   _pv_eagle_list_hardware_devices: pv_eagle_list_hardware_devices_type;
   _pv_eagle_free_hardware_devices: pv_eagle_free_hardware_devices_type;
@@ -133,33 +140,31 @@ type EagleBaseWasmOutput = {
 };
 
 type EagleProfilerWasmOutput = EagleBaseWasmOutput & {
-  minEnrollSamples: number;
+  frameLength: number;
   profileSize: number;
 
   objectAddress: number;
-  feedbackAddress: number;
   percentageAddress: number;
   profileAddress: number;
 
   pv_eagle_profiler_enroll: pv_eagle_profiler_enroll_type;
+  pv_eagle_profiler_flush: pv_eagle_profiler_flush_type;
   pv_eagle_profiler_reset: pv_eagle_profiler_reset_type;
   pv_eagle_profiler_delete: pv_eagle_profiler_delete_type;
 };
 
 type EagleWasmOutput = EagleBaseWasmOutput & {
-  frameLength: number;
-  numSpeakers: number;
+  minProcessSamples: number;
 
   objectAddress: number;
-  scoresAddress: number;
+  scoresAddressAddress: number;
 
   pv_eagle_process: pv_eagle_process_type;
-  pv_eagle_reset: pv_eagle_reset_type;
+  pv_eagle_scores_delete: pv_eagle_scores_delete_type;
   pv_eagle_delete: pv_eagle_delete_type;
 };
 
 const PV_STATUS_SUCCESS = 10000;
-const MAX_PCM_LENGTH_SEC = 60 * 15;
 
 class EagleBase {
   protected _module?: EagleModule;
@@ -365,38 +370,36 @@ class EagleBase {
  */
 export class EagleProfiler extends EagleBase {
   private readonly _pv_eagle_profiler_enroll: pv_eagle_profiler_enroll_type;
+  private readonly _pv_eagle_profiler_flush: pv_eagle_profiler_flush_type;
   private readonly _pv_eagle_profiler_reset: pv_eagle_profiler_reset_type;
   private readonly _pv_eagle_profiler_delete: pv_eagle_profiler_delete_type;
 
   private readonly _objectAddress: number;
-  private readonly _feedbackAddress: number;
   private readonly _percentageAddress: number;
 
-  private readonly _maxEnrollSamples: number;
-  private readonly _minEnrollSamples: number;
+  private readonly _frameLength: number;
   private readonly _profileSize: number;
 
   private constructor(handleWasm: EagleProfilerWasmOutput) {
     super(handleWasm);
 
-    this._minEnrollSamples = handleWasm.minEnrollSamples;
+    this._frameLength = handleWasm.frameLength;
     this._profileSize = handleWasm.profileSize;
-    this._maxEnrollSamples = MAX_PCM_LENGTH_SEC * this._sampleRate;
 
     this._pv_eagle_profiler_enroll = handleWasm.pv_eagle_profiler_enroll;
+    this._pv_eagle_profiler_flush = handleWasm.pv_eagle_profiler_flush;
     this._pv_eagle_profiler_reset = handleWasm.pv_eagle_profiler_reset;
     this._pv_eagle_profiler_delete = handleWasm.pv_eagle_profiler_delete;
 
     this._objectAddress = handleWasm.objectAddress;
-    this._feedbackAddress = handleWasm.feedbackAddress;
     this._percentageAddress = handleWasm.percentageAddress;
   }
 
   /**
-   * The minimum length of the input pcm required by `.enroll()`.
+   * The length of the input pcm required by `.enroll()`.
    */
-  get minEnrollSamples(): number {
-    return this._minEnrollSamples;
+  get frameLength(): number {
+    return this._frameLength;
   }
 
   /**
@@ -416,6 +419,8 @@ export class EagleProfiler extends EagleBase {
    * GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the target GPU. If set to
    * `cpu`, the engine will run on the CPU with the default number of threads. To specify the number of threads, set this
    * argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the desired number of threads.
+   * @param options.minEnrollmentChunks Minimum number of chunks to be processed before enroll returns 100%
+   * @param options.voiceThreshold Sensitivity threshold for detecting voice.
    *
    * @return An instance of the Eagle Profiler.
    */
@@ -441,7 +446,11 @@ export class EagleProfiler extends EagleBase {
       throw new EagleErrors.EagleInvalidArgumentError('Invalid AccessKey');
     }
 
-    let { device = "best" } = options;
+    let {
+      device = "best",
+      minEnrollmentChunks = 1, // eslint-disable-line
+      voiceThreshold = 0.3, // eslint-disable-line
+    } = options;
 
     const isSimd = await simd();
     if (!isSimd) {
@@ -470,6 +479,8 @@ export class EagleProfiler extends EagleBase {
             accessKey.trim(),
             modelPath.trim(),
             device,
+            minEnrollmentChunks,
+            voiceThreshold,
             sabDefined ? this._wasmPThread : this._wasmSimd,
             sabDefined ? this._wasmPThreadLib : this._wasmSimdLib,
             sabDefined ? createModulePThread : createModuleSimd
@@ -498,32 +509,22 @@ export class EagleProfiler extends EagleBase {
    * @param pcm Audio data for enrollment. The audio needs to have a sample rate equal to `.sampleRate` and be
    * 16-bit linearly-encoded. EagleProfiler operates on single-channel audio.
    *
-   * @return The percentage of completeness of the speaker enrollment process along with the feedback code
-   * corresponding to the last enrollment attempt:
-   *    - `AUDIO_OK`: The audio is good for enrollment.
-   *    - `AUDIO_TOO_SHORT`: Audio length is insufficient for enrollment,
-   *       i.e. it is shorter than`.min_enroll_samples`.
-   *    - `UNKNOWN_SPEAKER`: There is another speaker in the audio that is different from the speaker
-   *       being enrolled. Too much background noise may cause this error as well.
-   *    - `NO_VOICE_FOUND`: The audio does not contain any voice, i.e. it is silent or
-   *       has a low signal-to-noise ratio.
-   *    - `QUALITY_ISSUE`: The audio quality is too low for enrollment due to a bad microphone
-   *       or recording environment.
+   * @return The percentage of completeness of the speaker enrollment process.
    */
-  public async enroll(pcm: Int16Array): Promise<EagleProfilerEnrollResult> {
+  public async enroll(pcm: Int16Array): Promise<number> {
     if (!(pcm instanceof Int16Array)) {
       throw new EagleErrors.EagleInvalidArgumentError(
         "The argument 'pcm' must be provided as an Int16Array"
       );
     }
 
-    if (pcm.length > this._maxEnrollSamples) {
+    if (pcm.length !== this.frameLength) {
       throw new EagleErrors.EagleInvalidArgumentError(
-        `'pcm' size must be smaller than ${this._maxEnrollSamples}`
+        `'pcm' size must be equal to ${this.frameLength}`
       );
     }
 
-    return new Promise<EagleProfilerEnrollResult>((resolve, reject) => {
+    return new Promise<number>((resolve, reject) => {
       this._functionMutex
         .runExclusive(async () => {
           if (this._module === undefined) {
@@ -543,8 +544,6 @@ export class EagleProfiler extends EagleBase {
           const status = await this._pv_eagle_profiler_enroll(
             this._objectAddress,
             pcmAddress,
-            pcm.length,
-            this._feedbackAddress,
             this._percentageAddress
           );
           this._module._pv_free(pcmAddress);
@@ -566,18 +565,68 @@ export class EagleProfiler extends EagleBase {
             );
           }
 
-          const feedback =
-            this._module.HEAP32[
-              this._feedbackAddress / Int32Array.BYTES_PER_ELEMENT
-            ];
           const percentage =
             this._module.HEAPF32[
               this._percentageAddress / Float32Array.BYTES_PER_ELEMENT
             ];
 
-          return { feedback, percentage };
+          return percentage;
         })
-        .then((result: EagleProfilerEnrollResult) => {
+        .then((result: number) => {
+          resolve(result);
+        })
+        .catch((error: any) => {
+          reject(error);
+        });
+    });
+  }
+
+  /**
+   * Marks the end of the audio stream, flushes internal state of the object, and returns the percentage of enrollment
+   * completed.
+   *
+   * @return The percentage of completeness of the speaker enrollment process.
+   */
+  public async flush(): Promise<number> {
+    return new Promise<number>((resolve, reject) => {
+      this._functionMutex
+        .runExclusive(async () => {
+          if (this._module === undefined) {
+            throw new EagleErrors.EagleInvalidStateError(
+              'Attempted to call `.flush()` after release'
+            );
+          }
+
+          const status = await this._pv_eagle_profiler_flush(
+            this._objectAddress,
+            this._percentageAddress
+          );
+
+          if (status !== PV_STATUS_SUCCESS) {
+            const messageStack = await EagleProfiler.getMessageStack(
+              this._module._pv_get_error_stack,
+              this._module._pv_free_error_stack,
+              this._messageStackAddressAddressAddress,
+              this._messageStackDepthAddress,
+              this._module.HEAP32,
+              this._module.HEAPU8
+            );
+
+            throw pvStatusToException(
+              status,
+              'EagleProfiler flush failed',
+              messageStack
+            );
+          }
+
+          const percentage =
+            this._module.HEAPF32[
+              this._percentageAddress / Float32Array.BYTES_PER_ELEMENT
+            ];
+
+          return percentage;
+        })
+        .then((result: number) => {
           resolve(result);
         })
         .catch((error: any) => {
@@ -706,6 +755,8 @@ export class EagleProfiler extends EagleBase {
     accessKey: string,
     modelPath: string,
     device: string,
+    minEnrollmentChunks: number,
+    voiceThreshold: number,
     wasmBase64: string,
     wasmLibBase64: string,
     createModuleFunc: any
@@ -720,13 +771,19 @@ export class EagleProfiler extends EagleBase {
       this.wrapAsyncFunction(
         baseWasmOutput.module,
         'pv_eagle_profiler_init',
-        4
+        6
       );
     const pv_eagle_profiler_enroll: pv_eagle_profiler_enroll_type =
       this.wrapAsyncFunction(
         baseWasmOutput.module,
         'pv_eagle_profiler_enroll',
-        5
+        3
+      );
+    const pv_eagle_profiler_flush: pv_eagle_profiler_flush_type =
+      this.wrapAsyncFunction(
+        baseWasmOutput.module,
+        'pv_eagle_profiler_flush',
+        2
       );
 
     const pv_eagle_profiler_reset: pv_eagle_profiler_reset_type =
@@ -797,7 +854,9 @@ export class EagleProfiler extends EagleBase {
       accessKeyAddress,
       modelPathAddress,
       deviceAddress,
-      objectAddressAddress
+      minEnrollmentChunks,
+      voiceThreshold,
+      objectAddressAddress,
     );
     baseWasmOutput.module._pv_free(accessKeyAddress);
     baseWasmOutput.module._pv_free(modelPathAddress);
@@ -821,20 +880,8 @@ export class EagleProfiler extends EagleBase {
       ];
     baseWasmOutput.module._pv_free(objectAddressAddress);
 
-    const minEnrollSamplesAddress = baseWasmOutput.module._malloc(
-      Int32Array.BYTES_PER_ELEMENT
-    );
-    if (minEnrollSamplesAddress === 0) {
-      throw new EagleErrors.EagleOutOfMemoryError(
-        'malloc failed: Cannot allocate memory'
-      );
-    }
-
-    status =
-      baseWasmOutput.module._pv_eagle_profiler_enroll_min_audio_length_samples(
-        objectAddress,
-        minEnrollSamplesAddress
-      );
+    const frameLength =
+      baseWasmOutput.module._pv_eagle_profiler_frame_length();
     if (status !== PV_STATUS_SUCCESS) {
       const messageStack = await EagleProfiler.getMessageStack(
         baseWasmOutput.module._pv_get_error_stack,
@@ -851,12 +898,6 @@ export class EagleProfiler extends EagleBase {
         messageStack
       );
     }
-
-    const minEnrollSamples =
-      baseWasmOutput.module.HEAP32[
-        minEnrollSamplesAddress / Int32Array.BYTES_PER_ELEMENT
-      ];
-    baseWasmOutput.module._pv_free(minEnrollSamplesAddress);
 
     const profileSizeAddress = baseWasmOutput.module._malloc(
       Int32Array.BYTES_PER_ELEMENT
@@ -894,15 +935,6 @@ export class EagleProfiler extends EagleBase {
       ];
     baseWasmOutput.module._pv_free(profileSizeAddress);
 
-    const feedbackAddress = baseWasmOutput.module._malloc(
-      Int32Array.BYTES_PER_ELEMENT
-    );
-    if (feedbackAddress === 0) {
-      throw new EagleErrors.EagleOutOfMemoryError(
-        'malloc failed: Cannot allocate memory'
-      );
-    }
-
     const percentageAddress = baseWasmOutput.module._malloc(
       Int32Array.BYTES_PER_ELEMENT
     );
@@ -923,15 +955,15 @@ export class EagleProfiler extends EagleBase {
 
     return {
       ...baseWasmOutput,
-      minEnrollSamples: minEnrollSamples,
+      frameLength: frameLength,
       profileSize: profileSize,
 
       objectAddress: objectAddress,
-      feedbackAddress: feedbackAddress,
       percentageAddress: percentageAddress,
       profileAddress: profileAddress,
 
       pv_eagle_profiler_enroll: pv_eagle_profiler_enroll,
+      pv_eagle_profiler_flush: pv_eagle_profiler_flush,
       pv_eagle_profiler_reset: pv_eagle_profiler_reset,
       pv_eagle_profiler_delete: pv_eagle_profiler_delete,
     };
@@ -944,34 +976,32 @@ export class EagleProfiler extends EagleBase {
  */
 export class Eagle extends EagleBase {
   private readonly _pv_eagle_process: pv_eagle_process_type;
-  private readonly _pv_eagle_reset: pv_eagle_reset_type;
+  private readonly _pv_eagle_scores_delete: pv_eagle_scores_delete_type;
   private readonly _pv_eagle_delete: pv_eagle_delete_type;
 
   private readonly _objectAddress: number;
-  private readonly _scoresAddress: number;
+  private readonly _scoresAddressAddress: number;
 
-  private readonly _frameLength: number;
-  private readonly _numSpeakers: number;
+  private readonly _minProcessSamples: number;
 
   private constructor(handleWasm: EagleWasmOutput) {
     super(handleWasm);
 
-    this._frameLength = handleWasm.frameLength;
-    this._numSpeakers = handleWasm.numSpeakers;
+    this._minProcessSamples = handleWasm.minProcessSamples;
 
     this._pv_eagle_process = handleWasm.pv_eagle_process;
-    this._pv_eagle_reset = handleWasm.pv_eagle_reset;
+    this._pv_eagle_scores_delete = handleWasm.pv_eagle_scores_delete;
     this._pv_eagle_delete = handleWasm.pv_eagle_delete;
 
     this._objectAddress = handleWasm.objectAddress;
-    this._scoresAddress = handleWasm.scoresAddress;
+    this._scoresAddressAddress = handleWasm.scoresAddressAddress;
   }
 
   /**
    * Number of audio samples per frame expected by Eagle (i.e. length of the array passed into `.process()`)
    */
-  get frameLength(): number {
-    return this._frameLength;
+  get minProcessSamples(): number {
+    return this._minProcessSamples;
   }
 
   /**
@@ -985,20 +1015,19 @@ export class Eagle extends EagleBase {
    * Set to a different name to use multiple models across `eagle` instances.
    * @param model.forceWrite Flag to overwrite the model in storage even if it exists.
    * @param model.version Version of the model file. Increment to update the model file in storage.
-   * @param speakerProfiles One or more Eagle speaker profiles. These can be constructed using `EagleProfiler`.
    * @param options Optional configuration arguments.
    * @param options.device String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
    * suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU device. To select a specific
    * GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the target GPU. If set to
    * `cpu`, the engine will run on the CPU with the default number of threads. To specify the number of threads, set this
    * argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the desired number of threads.
+   * @param options.voiceThreshold Sensitivity threshold for detecting voice.
    *
    * @return An instance of the Eagle engine.
    */
   public static async create(
     accessKey: string,
     model: EagleModel,
-    speakerProfiles: EagleProfile[] | EagleProfile,
     options: EagleOptions = {}
   ): Promise<Eagle> {
     const customWritePath = model.customWritePath
@@ -1009,7 +1038,6 @@ export class Eagle extends EagleBase {
     return Eagle._init(
       accessKey,
       modelPath,
-      !Array.isArray(speakerProfiles) ? [speakerProfiles] : speakerProfiles,
       options
     );
   }
@@ -1017,20 +1045,16 @@ export class Eagle extends EagleBase {
   public static async _init(
     accessKey: string,
     modelPath: string,
-    speakerProfiles: EagleProfile[],
     options: EagleOptions = {}
   ): Promise<Eagle> {
     if (!isAccessKeyValid(accessKey)) {
       throw new EagleErrors.EagleInvalidArgumentError('Invalid AccessKey');
     }
 
-    if (!speakerProfiles || speakerProfiles.length === 0) {
-      throw new EagleErrors.EagleInvalidArgumentError(
-        'No speaker profiles provided'
-      );
-    }
-
-    let { device = "best" } = options;
+    let {
+      device = "best",
+      voiceThreshold = 0.3 // eslint-disable-line
+    } = options;
 
     const isSimd = await simd();
     if (!isSimd) {
@@ -1059,7 +1083,7 @@ export class Eagle extends EagleBase {
             accessKey.trim(),
             modelPath.trim(),
             device,
-            speakerProfiles,
+            voiceThreshold,
             sabDefined ? this._wasmPThread : this._wasmSimd,
             sabDefined ? this._wasmPThreadLib : this._wasmSimdLib,
             sabDefined ? createModulePThread : createModuleSimd
@@ -1076,29 +1100,41 @@ export class Eagle extends EagleBase {
   }
 
   /**
-   * Processes a frame of audio and returns a list of similarity scores for each speaker profile.
+   * Processes audio and returns a list of similarity scores for each speaker profile.
    *
-   * @param pcm A frame of audio samples. The number of samples per frame can be attained by calling
-   * `.frameLength`. The incoming audio needs to have a sample rate equal to `.sampleRate` and be 16-bit
+   * @param pcm Array of audio samples. The minimum number of samples per frame can be attained by calling
+   * `.minProcessSamples`. The incoming audio needs to have a sample rate equal to `.sampleRate` and be 16-bit
    * linearly-encoded. Eagle operates on single-channel audio.
+   * @param speakerProfiles One or more Eagle speaker profiles. These can be constructed using `EagleProfiler`.
    *
    * @return A list of similarity scores for each speaker profile. A higher score indicates that the voice
    * belongs to the corresponding speaker. The range is [0, 1] with 1.0 representing a perfect match.
    */
-  public async process(pcm: Int16Array): Promise<number[]> {
+  public async process(
+    pcm: Int16Array,
+    speakerProfiles: EagleProfile[] | EagleProfile,
+  ): Promise<number[] | null> {
     if (!(pcm instanceof Int16Array)) {
       throw new EagleErrors.EagleInvalidArgumentError(
         "The argument 'pcm' must be provided as an Int16Array"
       );
     }
 
-    if (pcm.length !== this._frameLength) {
+    if (pcm.length < this._minProcessSamples) {
       throw new EagleErrors.EagleInvalidArgumentError(
-        `Length of input frame (${pcm.length}) does not match required frame length (${this._frameLength})`
+        `Length of input sample (${pcm.length}) is not greater than minimum sample length (${this._minProcessSamples})`
       );
     }
 
-    return new Promise<number[]>((resolve, reject) => {
+    const profiles = !Array.isArray(speakerProfiles) ? [speakerProfiles] : speakerProfiles;
+
+    if (!profiles || profiles.length === 0) {
+      throw new EagleErrors.EagleInvalidArgumentError(
+        'No speaker profiles provided'
+      );
+    }
+
+    return new Promise<number[] | null>((resolve, reject) => {
       this._functionMutex
         .runExclusive(async () => {
           if (this._module === undefined) {
@@ -1116,11 +1152,46 @@ export class Eagle extends EagleBase {
             pcmAddress / Int16Array.BYTES_PER_ELEMENT
           );
 
+          const numSpeakers = profiles.length;
+          const profilesAddressAddress = this._module._malloc(
+            numSpeakers * Int32Array.BYTES_PER_ELEMENT
+          );
+          if (profilesAddressAddress === 0) {
+            throw new EagleErrors.EagleOutOfMemoryError(
+              'malloc failed: Cannot allocate memory'
+            );
+          }
+          const profilesAddressList: number[] = [];
+          for (const profile of profiles) {
+            const profileAddress = this._module._malloc(
+              profile.bytes.length * Uint8Array.BYTES_PER_ELEMENT
+            );
+            if (profileAddress === 0) {
+              throw new EagleErrors.EagleOutOfMemoryError(
+                'malloc failed: Cannot allocate memory'
+              );
+            }
+            this._module.HEAPU8.set(profile.bytes, profileAddress);
+            profilesAddressList.push(profileAddress);
+          }
+          this._module.HEAP32.set(
+            new Int32Array(profilesAddressList),
+            profilesAddressAddress / Int32Array.BYTES_PER_ELEMENT
+          );
+
           const status = await this._pv_eagle_process(
             this._objectAddress,
             pcmAddress,
-            this._scoresAddress
+            pcm.length,
+            profilesAddressAddress,
+            profiles.length,
+            this._scoresAddressAddress
           );
+
+          for (let i = 0; i < profiles.length; i++) {
+            this._module._pv_free(profilesAddressList[i]);
+          }
+          this._module._pv_free(profilesAddressAddress);
           this._module._pv_free(pcmAddress);
 
           if (status !== PV_STATUS_SUCCESS) {
@@ -1140,61 +1211,23 @@ export class Eagle extends EagleBase {
             );
           }
 
-          const scores: number[] = [];
-          for (let i = 0; i < this._numSpeakers; i++) {
-            scores.push(
-              this._module.HEAPF32[
-                this._scoresAddress / Float32Array.BYTES_PER_ELEMENT + i
-              ]
-            );
-          }
+          const scoresAddress = this._module.HEAP32[this._scoresAddressAddress / Int32Array.BYTES_PER_ELEMENT];
 
-          return scores;
+          if (scoresAddress) {
+            const scores: number[] = [];
+            for (let i = 0; i < profiles.length; i++) {
+              scores[i] = this._module.HEAPF32[(scoresAddress / Float32Array.BYTES_PER_ELEMENT) + i];
+            }
+            this._pv_eagle_scores_delete(scoresAddress);
+            this._module.HEAP32[this._scoresAddressAddress / Int32Array.BYTES_PER_ELEMENT] = 0;
+
+            return scores;
+          } else {
+            return null;
+          }
         })
-        .then((result: number[]) => {
+        .then((result: number[] | null) => {
           resolve(result);
-        })
-        .catch((error: any) => {
-          reject(error);
-        });
-    });
-  }
-
-  /**
-   * Resets the internal state of the engine.
-   * It is best to call before processing a new sequence of audio (e.g. a new voice interaction).
-   * This ensures that the accuracy of the engine is not affected by a change in audio context.
-   */
-  public async reset(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this._functionMutex
-        .runExclusive(async () => {
-          if (this._module === undefined) {
-            throw new EagleErrors.EagleInvalidStateError(
-              'Attempted to call `.reset` after release'
-            );
-          }
-
-          const status = await this._pv_eagle_reset(this._objectAddress);
-          if (status !== PV_STATUS_SUCCESS) {
-            const messageStack = await Eagle.getMessageStack(
-              this._module._pv_get_error_stack,
-              this._module._pv_free_error_stack,
-              this._messageStackAddressAddressAddress,
-              this._messageStackDepthAddress,
-              this._module.HEAP32,
-              this._module.HEAPU8
-            );
-
-            throw pvStatusToException(
-              status,
-              'Eagle reset failed',
-              messageStack
-            );
-          }
-        })
-        .then(() => {
-          resolve();
         })
         .catch((error: any) => {
           reject(error);
@@ -1342,7 +1375,7 @@ export class Eagle extends EagleBase {
     accessKey: string,
     modelPath: string,
     device: string,
-    speakerProfiles: EagleProfile[],
+    voiceThreshold: number,
     wasmBase64: string,
     wasmLibBase64: string,
     createModuleFunc: any
@@ -1356,16 +1389,16 @@ export class Eagle extends EagleBase {
     const pv_eagle_init: pv_eagle_init_type = this.wrapAsyncFunction(
       baseWasmOutput.module,
       'pv_eagle_init',
-      6
+      5
     );
     const pv_eagle_process: pv_eagle_process_type = this.wrapAsyncFunction(
       baseWasmOutput.module,
       'pv_eagle_process',
-      3
+      5
     );
-    const pv_eagle_reset: pv_eagle_reset_type = this.wrapAsyncFunction(
+    const pv_eagle_scores_delete: pv_eagle_scores_delete_type = this.wrapAsyncFunction(
       baseWasmOutput.module,
-      'pv_eagle_reset',
+      'pv_eagle_scores_delete',
       1
     );
     const pv_eagle_delete: pv_eagle_delete_type = this.wrapAsyncFunction(
@@ -1424,44 +1457,16 @@ export class Eagle extends EagleBase {
     }
     baseWasmOutput.module.HEAPU8[deviceAddress + device.length] = 0;
 
-    const numSpeakers = speakerProfiles.length;
-    const profilesAddressAddress = baseWasmOutput.module._malloc(
-      numSpeakers * Int32Array.BYTES_PER_ELEMENT
-    );
-    if (profilesAddressAddress === 0) {
-      throw new EagleErrors.EagleOutOfMemoryError(
-        'malloc failed: Cannot allocate memory'
-      );
-    }
-    const profilesAddressList: number[] = [];
-    for (const profile of speakerProfiles) {
-      const profileAddress = baseWasmOutput.module._malloc(
-        profile.bytes.length * Uint8Array.BYTES_PER_ELEMENT
-      );
-      if (profileAddress === 0) {
-        throw new EagleErrors.EagleOutOfMemoryError(
-          'malloc failed: Cannot allocate memory'
-        );
-      }
-      baseWasmOutput.module.HEAPU8.set(profile.bytes, profileAddress);
-      profilesAddressList.push(profileAddress);
-    }
-    baseWasmOutput.module.HEAP32.set(
-      new Int32Array(profilesAddressList),
-      profilesAddressAddress / Int32Array.BYTES_PER_ELEMENT
-    );
-    const status = await pv_eagle_init(
+    let status = await pv_eagle_init(
       accessKeyAddress,
       modelPathAddress,
       deviceAddress,
-      numSpeakers,
-      profilesAddressAddress,
+      voiceThreshold,
       objectAddressAddress
     );
     baseWasmOutput.module._pv_free(accessKeyAddress);
     baseWasmOutput.module._pv_free(modelPathAddress);
     baseWasmOutput.module._pv_free(deviceAddress);
-    baseWasmOutput.module._pv_free(profilesAddressAddress);
 
     if (status !== PV_STATUS_SUCCESS) {
       const messageStack = await Eagle.getMessageStack(
@@ -1482,26 +1487,58 @@ export class Eagle extends EagleBase {
       ];
     baseWasmOutput.module._pv_free(objectAddressAddress);
 
-    const scoresAddress = baseWasmOutput.module._malloc(
-      Float32Array.BYTES_PER_ELEMENT * numSpeakers
-    );
-    if (scoresAddress === 0) {
+    const scoresAddressAddress = baseWasmOutput.module._malloc(Int32Array.BYTES_PER_ELEMENT);
+    if (scoresAddressAddress === 0) {
       throw new EagleErrors.EagleOutOfMemoryError(
         'malloc failed: Cannot allocate memory'
       );
     }
 
-    const frameLength = baseWasmOutput.module._pv_eagle_frame_length();
+    const minProcessSamplesAddress = baseWasmOutput.module._malloc(
+      Int32Array.BYTES_PER_ELEMENT
+    );
+    if (minProcessSamplesAddress === 0) {
+      throw new EagleErrors.EagleOutOfMemoryError(
+        'malloc failed: Cannot allocate memory'
+      );
+    }
+
+    status =
+      baseWasmOutput.module._pv_eagle_process_min_audio_length_samples(
+        objectAddress,
+        minProcessSamplesAddress
+      );
+    if (status !== PV_STATUS_SUCCESS) {
+      const messageStack = await EagleProfiler.getMessageStack(
+        baseWasmOutput.module._pv_get_error_stack,
+        baseWasmOutput.module._pv_free_error_stack,
+        baseWasmOutput.messageStackAddressAddressAddress,
+        baseWasmOutput.messageStackDepthAddress,
+        baseWasmOutput.module.HEAP32,
+        baseWasmOutput.module.HEAPU8
+      );
+
+      throw pvStatusToException(
+        status,
+        'EagleProfiler failed to get min process audio length',
+        messageStack
+      );
+    }
+
+    const minProcessSamples =
+      baseWasmOutput.module.HEAP32[
+        minProcessSamplesAddress / Int32Array.BYTES_PER_ELEMENT
+      ];
+    baseWasmOutput.module._pv_free(minProcessSamplesAddress);
 
     return {
       ...baseWasmOutput,
-      frameLength: frameLength,
-      numSpeakers: numSpeakers,
+      minProcessSamples: minProcessSamples,
       objectAddress: objectAddress,
-      scoresAddress: scoresAddress,
+      scoresAddressAddress: scoresAddressAddress,
 
       pv_eagle_process: pv_eagle_process,
-      pv_eagle_reset: pv_eagle_reset,
+      pv_eagle_scores_delete: pv_eagle_scores_delete,
       pv_eagle_delete: pv_eagle_delete,
     };
   }

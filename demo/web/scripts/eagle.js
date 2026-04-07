@@ -38,18 +38,20 @@ window.onload = function () {
           return;
         }
 
-        try {
-          const result = await profiler.enroll(audioFrame);
-          updateSpeakerProgress(
-            speakerProfiles.length + 1,
-            result.feedback,
-            result.percentage,
-          );
-          percentage = result.percentage;
-        } catch (e) {
-          writeMessage(`Failed to enroll using '${f.name}'. Error: ${e}`);
-          return;
+        for (let j = 0; j + profiler.frameLength < audioFrame.length; j += profiler.frameLength) {
+          try {
+            percentage = await profiler.enroll(audioFrame.slice(j, j + profiler.frameLength));
+            updateSpeakerProgress(
+              speakerProfiles.length + 1,
+              percentage,
+            );
+          } catch (e) {
+            writeMessage(`Failed to enroll using '${f.name}'. Error: ${e}`);
+            return;
+          }
         }
+
+        percentage = await profiler.flush();
       }
 
       if (percentage < 100) {
@@ -99,54 +101,43 @@ const micEnrollEngine = {
   onmessage: async (event) => {
     switch (event.data.command) {
       case "process":
-        audioData.push(event.data.inputFrame);
-
         if (ENABLE_AUDIO_DUMP) {
           dumpAudio = dumpAudio.concat(event.data.inputFrame);
         }
 
-        if (audioData.length * 512 >= profiler.minEnrollSamples) {
-          let result;
+        let percentage = 0.0;
+        try {
+          percentage = await profiler.enroll(event.data.inputFrame);
+        } catch (e) {
+          writeMessage(`Failed to enroll. Error: ${e}`);
+          return;
+        }
+
+        updateSpeakerProgress(
+          speakerProfiles.length + 1,
+          percentage,
+        );
+        if (percentage === 100) {
+          await window.WebVoiceProcessor.WebVoiceProcessor.unsubscribe(
+            micEnrollEngine,
+          );
+          clearInterval(timer);
+          micEnrollStopUI();
 
           try {
-            const frames = new Int16Array(audioData.length * 512);
-            for (let i = 0; i < audioData.length; i++) {
-              frames.set(audioData[i], i * 512);
-            }
-            audioData = [];
-            result = await profiler.enroll(frames);
+            const profile = await profiler.export();
+            speakerProfiles.push(profile);
+            enrollSuccessUI();
+            writeMessage(
+              `Enrollment for Speaker ${speakerProfiles.length} complete! ` +
+                `You can begin testing or enroll another speaker.`,
+            );
           } catch (e) {
-            writeMessage(`Failed to enroll. Error: ${e}`);
-            return;
+            writeMessage(`Failed to enroll speaker. Error: ${e}`);
           }
 
-          updateSpeakerProgress(
-            speakerProfiles.length + 1,
-            result.feedback,
-            result.percentage,
-          );
-          if (result.percentage === 100) {
-            await window.WebVoiceProcessor.WebVoiceProcessor.unsubscribe(
-              micEnrollEngine,
-            );
-            clearInterval(timer);
-            micEnrollStopUI();
-
-            try {
-              const profile = await profiler.export();
-              speakerProfiles.push(profile);
-              enrollSuccessUI();
-              writeMessage(
-                `Enrollment for Speaker ${speakerProfiles.length} complete! ` +
-                  `You can begin testing or enroll another speaker.`,
-              );
-            } catch (e) {
-              writeMessage(`Failed to enroll speaker. Error: ${e}`);
-            }
-
-            if (ENABLE_AUDIO_DUMP) {
-              downloadDumpAudio("enroll.pcm");
-            }
+          if (ENABLE_AUDIO_DUMP) {
+            downloadDumpAudio("enroll.pcm");
           }
         }
         break;
@@ -195,31 +186,13 @@ function writeMessage(message) {
   document.getElementById("status").innerHTML = message;
 }
 
-function updateSpeakerProgress(speakerId, feedback, progress) {
-  const feedbackMsg = getFeedbackMessage(feedback);
-  console.log(progress, feedbackMsg);
-  document.getElementById(`speaker${speakerId}Feedback`).innerHTML =
-    ` ${feedbackMsg}`;
+function updateSpeakerProgress(speakerId, progress) {
+  console.log(progress);
   document.getElementById(`speaker${speakerId}Progress`).value = progress;
 }
 
 function updateSpeakerScore(speakerId, score) {
   document.getElementById(`speaker${speakerId}Progress`).value = score * 100;
-}
-
-function getFeedbackMessage(feedback) {
-  switch (feedback) {
-    case EagleWeb.EagleProfilerEnrollFeedback.AUDIO_TOO_SHORT:
-      return "Insufficient audio length";
-    case EagleWeb.EagleProfilerEnrollFeedback.UNKNOWN_SPEAKER:
-      return "Different speaker detected in audio";
-    case EagleWeb.EagleProfilerEnrollFeedback.NO_VOICE_FOUND:
-      return "Unable to detect voice in audio";
-    case EagleWeb.EagleProfilerEnrollFeedback.QUALITY_ISSUE:
-      return "Audio quality too low to use for enrollment";
-    default:
-      return "Enrolling speaker...";
-  }
 }
 
 function updateSpeakerTable() {
@@ -250,7 +223,6 @@ function createSpeakerRow(i, initialProgress) {
 function newEnrollmentUI() {
   updateSpeakerTable();
   document.getElementById("testContainer").style.display = "block";
-  document.getElementById("feedbackText").innerHTML = "";
   document
     .getElementById("speakersTable")
     .append(createSpeakerRow(speakerProfiles.length + 1, 0));
@@ -320,18 +292,34 @@ const micTestEngine = {
     let scores;
     switch (event.data.command) {
       case "process":
+        audioData.push(event.data.inputFrame);
+
         if (ENABLE_AUDIO_DUMP) {
           dumpAudio = dumpAudio.concat(event.data.inputFrame);
         }
-        try {
-          scores = await eagle.process(event.data.inputFrame);
-        } catch (e) {
-          writeMessage(`Failed to enroll. Error: ${e}`);
-          return;
-        }
 
-        for (let i = 0; i < scores.length; i++) {
-          updateSpeakerScore(i + 1, scores[i]);
+        if (audioData.length * 512 >= eagle.minProcessSamples) {
+          try {
+            const frames = new Int16Array(audioData.length * 512);
+            for (let i = 0; i < audioData.length; i++) {
+              frames.set(audioData[i], i * 512);
+            }
+            audioData = [];
+            scores = await eagle.process(frames, speakerProfiles);
+          } catch (e) {
+            writeMessage(`Failed to process. Error: ${e}`);
+            return;
+          }
+
+          if (scores) {
+            for (let i = 0; i < scores.length; i++) {
+              updateSpeakerScore(i + 1, scores[i]);
+            }
+          } else {
+            for (let i = 0; i < speakerProfiles.length; i++) {
+              updateSpeakerScore(i + 1, 0);
+            }
+          }
         }
         break;
     }
@@ -345,7 +333,6 @@ async function startEagle(accessKey) {
     eagle = await EagleWeb.EagleWorker.create(
       accessKey,
       eagleModel,
-      speakerProfiles,
     );
   } catch (e) {
     writeMessage(`Failed to initialize Eagle. Error: ${e}`);

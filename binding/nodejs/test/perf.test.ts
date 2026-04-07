@@ -51,10 +51,16 @@ describe('Performance', () => {
     const enrollPcm = loadPcm(WAV_PATH_SPEAKER_1_TEST_UTT);
 
     for (let i = 0; i < NUM_TEST_ITERATIONS + 1; i++) {
-      let start = Date.now();
-      profiler.enroll(enrollPcm);
-      if (i > 0) {
-        enrollPerfResults.push((Date.now() - start) / 1000);
+      for (
+        let j = 0;
+        j < enrollPcm.length - profiler.frameLength + 1;
+        j += profiler.frameLength
+      ) {
+        let start = Date.now();
+        profiler.enroll(enrollPcm.slice(j, j + profiler.frameLength));
+        if (i > 0) {
+          enrollPerfResults.push((Date.now() - start) / 1000);
+        }
       }
     }
 
@@ -76,29 +82,30 @@ describe('Performance', () => {
     const enrollPcm1 = loadPcm(WAV_PATH_SPEAKER_1_UTT_1);
     const enrollPcm2 = loadPcm(WAV_PATH_SPEAKER_1_UTT_2);
     for (const pcm of [enrollPcm1, enrollPcm2]) {
-      profiler.enroll(pcm);
+      for (
+        let j = 0;
+        j < pcm.length - profiler.frameLength + 1;
+        j += profiler.frameLength
+      ) {
+        profiler.enroll(pcm.slice(j, j + profiler.frameLength));
+      }
+      profiler.flush();
     }
 
     const profile = profiler.export();
     profiler.release();
 
-    const eagle = new Eagle(ACCESS_KEY, profile, {
+    const eagle = new Eagle(ACCESS_KEY, {
       device: DEVICE
     });
 
     const testPcm = loadPcm(WAV_PATH_SPEAKER_1_TEST_UTT);
     const processPerfResults: number[] = [];
     for (let i = 0; i < NUM_TEST_ITERATIONS + 1; i++) {
-      for (
-        let j = 0;
-        j < testPcm.length - eagle.frameLength + 1;
-        j += eagle.frameLength
-      ) {
-        let start = Date.now();
-        eagle.process(testPcm.slice(j, j + eagle.frameLength));
-        if (i > 0) {
-          processPerfResults.push((Date.now() - start) / 1000);
-        }
+      let start = Date.now();
+      eagle.process(testPcm, profile);
+      if (i > 0) {
+        processPerfResults.push((Date.now() - start) / 1000);
       }
     }
 

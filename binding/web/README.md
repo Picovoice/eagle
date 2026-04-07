@@ -93,9 +93,8 @@ const eagleProfiler = await EagleProfilerWorker.create(
 `EagleProfiler` is responsible for processing and enrolling PCM audio data, with the valid audio sample rate determined
 by `eagleProfiler.sampleRate`. The audio data must be 16-bit linearly-encoded and single-channel.
 
-When passing samples to `eagleProfiler.enroll`, the number of samples must be at
-least `eagleProfiler.minEnrollSamples` to ensure sufficient data for enrollment. The percentage value
-returned from this process indicates the progress of enrollment, while the feedback value can be utilized to determine the status of the enrollment process.
+When passing samples to `eagleProfiler.enroll`, the number of samples must be equal to `eagleProfiler.frameLength`. The
+percentage value returned from this process indicates the progress of enrollment.
 
 ```typescript
 function getAudioData(numSamples): Int16Array {
@@ -104,22 +103,14 @@ function getAudioData(numSamples): Int16Array {
 
 let percentage = 0;
 while (percentage < 100) {
-  const audioData = getAudioData(eagleProfiler.minEnrollSamples);
+  const audioData = getAudioData(eagleProfiler.frameLength);
 
-  const result: EagleProfilerEnrollResult = await eagleProfiler.enroll(audioData);
-  if (result.feedback === EagleProfilerEnrollFeedback.AUDIO_OK) {
-      // audio is good!
-  } else {
-      // feedback code will tell you why audio was not used in enrollment
-  }
-  percentage = result.percentage;
+  percentage = EagleProfilerEnrollResult = await eagleProfiler.enroll(audioData);
 }
 ```
 
 After the percentage reaches 100%, the enrollment process is considered complete. While it is possible to continue
 providing additional audio data to the profiler to improve the accuracy of the voiceprint, it is not necessary to do so.
-Moreover, if the audio data submitted is unsuitable for enrollment, the feedback value will indicate the reason, and the
-enrollment progress will remain unchanged.
 
 ```typescript
 const speakerProfile: EagleProfile = eagleProfiler.export();
@@ -141,26 +132,26 @@ eagleProfiler.terminate();
 
 ### Speaker Recognition
 
-Create an instance of the engine with one or more speaker profiles created by the `EagleProfiler`:
+Create an instance of the engine:
 
 ```typescript
 // Main thread
 const eagle = await Eagle.create(
         ${ACCESS_KEY},
-        eagleModel,
-        speakerProfile);
+        eagleModel);
 
 // or, on a worker thread
 const eagle = await EagleWorker.create(
         ${ACCESS_KEY},
-        eagleModel,
-        speakerProfile);
+        eagleModel);
 ```
 
 When initialized, `eagle.sampleRate` specifies the valid sample rate for Eagle. The expected length of a frame, or the
-number of audio samples in an input array, is defined by `eagle.frameLength`.
+minimum number of audio samples in an input array, is defined by `eagle.minProcessSamples`.
 
 Like the profiler, Eagle is designed to work with single-channel audio that is encoded using 16-bit linear PCM.
+
+Process the audio data with one or more speaker profiles created by the `EagleProfiler`:
 
 ```typescript
 function getAudioData(numSamples): Int16Array {
@@ -168,13 +159,20 @@ function getAudioData(numSamples): Int16Array {
 }
 
 while (true) {
-  const audioData = getAudioData(eagle.frameLength);
-  const scores: number[] = await eagle.process(audioData);
+  const audioData = getAudioData(eagle.minProcessSamples);
+  const scores: number[] | null = await eagle.process(
+    audioData,
+    speakerProfile
+  );
+  if (scores) {
+    // do something with the scores
+  }
 }
 ```
 
 The return value `scores` represents the degree of similarity between the input audio frame and the enrolled speakers.
 Each value is a floating-point number ranging from 0 to 1, with higher values indicating a greater degree of similarity.
+A return value of null indicates that there was not enough voice in the sample to detect a speaker.
 
 Finally, when done be sure to explicitly release the resources:
 
