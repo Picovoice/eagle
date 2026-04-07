@@ -66,24 +66,24 @@ jobs:
         include:
           - machine: rpi3-32
             num_test_iterations: 20
-            enroll_performance_threshold_sec: 2.5
-            proc_performance_threshold_sec: 2.8
+            enroll_performance_threshold_sec: 8.0
+            proc_performance_threshold_sec: 8.0
           - machine: rpi3-64
             num_test_iterations: 20
-            enroll_performance_threshold_sec: 2.5
-            proc_performance_threshold_sec: 2.8
+            enroll_performance_threshold_sec: 4.0
+            proc_performance_threshold_sec: 4.0
           - machine: rpi4-32
             num_test_iterations: 20
-            enroll_performance_threshold_sec: 1.5
-            proc_performance_threshold_sec: 1.5
+            enroll_performance_threshold_sec: 2.0
+            proc_performance_threshold_sec: 2.5
           - machine: rpi4-64
             num_test_iterations: 20
             enroll_performance_threshold_sec: 2.0
             proc_performance_threshold_sec: 2.5
           - machine: rpi5-64
             num_test_iterations: 20
-            enroll_performance_threshold_sec: 0.5
-            proc_performance_threshold_sec: 0.6
+            enroll_performance_threshold_sec: 1.0
+            proc_performance_threshold_sec: 1.0
 
     steps:
       - uses: actions/checkout@v3

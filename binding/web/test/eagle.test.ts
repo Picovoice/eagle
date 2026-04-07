@@ -42,12 +42,10 @@ const getScores = async (
   eagle,
   pcm,
   speakerProfiles
-): Promise<number[]> => {
-  return await eagle.process(
-    pcm,
-    speakerProfiles
-  );
-};
+): Promise<number[]> => await eagle.process(
+  pcm,
+  speakerProfiles
+);
 
 before(() => {
   cy.getFramesFromFile('audio_samples/speaker_1_utt_1.wav').then(

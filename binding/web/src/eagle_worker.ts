@@ -17,7 +17,6 @@ import {
   EagleWorkerProcessResponse,
   EagleWorkerInitResponse,
   EagleWorkerReleaseResponse,
-  EagleWorkerResetResponse,
   EagleProfile,
   PvStatus,
 } from './types';

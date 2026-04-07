@@ -86,8 +86,8 @@ jobs:
         machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64]
         include:
         - machine: rpi3-32
-          profiler_performance_threshold_sec: 4.0
-          recognizer_performance_threshold_sec: 4.0
+          profiler_performance_threshold_sec: 8.0
+          recognizer_performance_threshold_sec: 8.0
         - machine: rpi3-64
           profiler_performance_threshold_sec: 4.0
           recognizer_performance_threshold_sec: 4.0

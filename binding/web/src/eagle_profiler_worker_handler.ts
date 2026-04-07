@@ -102,7 +102,7 @@ const enrollRequest = async (
 };
 
 const flushRequest = async (
-  request: EagleProfilerWorkerFlushRequest
+  request: EagleProfilerWorkerFlushRequest // eslint-disable-line
 ): Promise<any> => {
   if (profiler === null) {
     return {

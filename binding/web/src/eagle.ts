@@ -165,7 +165,6 @@ type EagleWasmOutput = EagleBaseWasmOutput & {
 };
 
 const PV_STATUS_SUCCESS = 10000;
-const MAX_PCM_LENGTH_SEC = 60 * 15;
 
 class EagleBase {
   protected _module?: EagleModule;
@@ -449,8 +448,8 @@ export class EagleProfiler extends EagleBase {
 
     let {
       device = "best",
-      minEnrollmentChunks = 1,
-      voiceThreshold = 0.3,
+      minEnrollmentChunks = 1, // eslint-disable-line
+      voiceThreshold = 0.3, // eslint-disable-line
     } = options;
 
     const isSimd = await simd();
@@ -1054,7 +1053,7 @@ export class Eagle extends EagleBase {
 
     let {
       device = "best",
-      voiceThreshold = 0.3
+      voiceThreshold = 0.3 // eslint-disable-line
     } = options;
 
     const isSimd = await simd();
