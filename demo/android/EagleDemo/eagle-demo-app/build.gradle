@@ -68,6 +68,6 @@ dependencies {
     implementation 'com.google.android.material:material:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     // implementation 'ai.picovoice:eagle-android:3.0.1'
-    implementation files("../../Eagle/eagle/build/outputs/aar/eagle-release.aar")
+    implementation files("../../../../binding/android/Eagle/eagle/build/outputs/aar/eagle-release.aar")
     implementation 'ai.picovoice:android-voice-processor:1.0.2'
 }
