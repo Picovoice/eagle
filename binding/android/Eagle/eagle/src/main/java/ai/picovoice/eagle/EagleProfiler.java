@@ -217,7 +217,7 @@ public class EagleProfiler {
             return this;
         }
 
-        public Builder setVoiceThreshold(int voiceThreshold) {
+        public Builder setVoiceThreshold(float voiceThreshold) {
             this.voiceThreshold = voiceThreshold;
             return this;
         }
