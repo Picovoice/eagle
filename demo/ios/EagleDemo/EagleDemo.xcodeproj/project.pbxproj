@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -116,7 +116,7 @@
 			mainGroup = 02447A8026D94F74004A6CE9;
 			packageReferences = (
 				E19F4D232CF51CC40097F2C5 /* XCRemoteSwiftPackageReference "ios-voice-processor" */,
-				3414A5E82F84607C001F1FA6 /* XCRemoteSwiftPackageReference "eagle" */,
+				34C69F4C2FABBCDD00EB0773 /* XCLocalSwiftPackageReference "../../../../eagle" */,
 			);
 			productRefGroup = 02447A8A26D94F75004A6CE9 /* Products */;
 			projectDirPath = "";
@@ -334,6 +334,13 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		34C69F4C2FABBCDD00EB0773 /* XCLocalSwiftPackageReference "../../../../eagle" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../../../eagle;
+		};
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
 		3414A5E82F84607C001F1FA6 /* XCRemoteSwiftPackageReference "eagle" */ = {

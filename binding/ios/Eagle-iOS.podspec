@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
     s.name = 'Eagle-iOS'
     s.module_name = 'Eagle'
-    s.version = '3.0.0'
+    s.version = '3.0.1'
     s.license = {:type => 'Apache 2.0'}
     s.summary = 'iOS binding for Picovoice\'s Eagle speaker recognition engine'
     s.description =
