@@ -39,20 +39,34 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Setup Python virtualenv (*nix)
+      if: ${{ matrix.machine != 'pv-windows' && matrix.machine != 'pv-windows-igpu' && matrix.machine != 'pv-windows-arm64' }}
+      run: |
+        python3 -m venv .venv
+        . .venv/bin/activate
+        echo PATH=$PATH >> $GITHUB_ENV
+
+    - name: Setup Python virtualenv (windows)
+      if: ${{ matrix.machine == 'pv-windows' || matrix.machine == 'pv-windows-igpu' || matrix.machine == 'pv-windows-arm64' }}
+      run: |
+        python3 -m venv .venv --symlinks
+        .venv\Scripts\activate
+        echo PATH=$PATH >> $GITHUB_ENV
+
     - name: Pre-build dependencies
       run: python -m pip install --upgrade pip
 
     # ************** REMOVE AFTER RELEASE ********************
     - name: Build binding
       run: |
-        python3 -m pip install wheel setuptools
-        python3 setup.py sdist bdist_wheel
-        python3 -m pip install --force-reinstall dist/pveagle-3.0.1-py3-none-any.whl
+        python -m pip install wheel setuptools
+        python setup.py sdist bdist_wheel
+        python -m pip install --force-reinstall dist/pveagle-3.0.1-py3-none-any.whl
       working-directory: binding/python
     # ********************************************************
 
     - name: Install dependencies
-      run: pip install -r requirements.txt
+      run: python -m pip install -r requirements.txt
 
     - name: Test enroll
       run: >
@@ -88,6 +102,20 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Setup Python virtualenv (*nix)
+        if: ${{ matrix.machine != 'pv-windows' && matrix.machine != 'pv-windows-igpu' && matrix.machine != 'pv-windows-arm64' }}
+        run: |
+          python3 -m venv .venv
+          . .venv/bin/activate
+          echo PATH=$PATH >> $GITHUB_ENV
+
+      - name: Setup Python virtualenv (windows)
+        if: ${{ matrix.machine == 'pv-windows' || matrix.machine == 'pv-windows-igpu' || matrix.machine == 'pv-windows-arm64' }}
+        run: |
+          python3 -m venv .venv --symlinks
+          .venv\Scripts\activate
+          echo PATH=$PATH >> $GITHUB_ENV
+
       - name: Pre-build dependencies
         run: python3 -m pip install --upgrade pip
 
@@ -101,7 +129,7 @@ jobs:
       # ********************************************************
 
       - name: Install dependencies
-        run: pip3 install -r requirements.txt
+        run: python3 -m pip install -r requirements.txt
 
       - name: Test enroll
         run: >
