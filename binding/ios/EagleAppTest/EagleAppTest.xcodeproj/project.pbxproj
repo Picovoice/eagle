@@ -251,7 +251,7 @@
 			);
 			mainGroup = 1E0064BB27CEEA65006FF6E9;
 			packageReferences = (
-				3414A5E52F846076001F1FA6 /* XCRemoteSwiftPackageReference "eagle" */,
+				34C69F4D2FABE1F700EB0773 /* XCRemoteSwiftPackageReference "eagle" */,
 			);
 			productRefGroup = 1E0064C527CEEA65006FF6E9 /* Products */;
 			projectDirPath = "";
@@ -683,6 +683,14 @@
 			requirement = {
 				kind = exactVersion;
 				version = 3.0.0;
+			};
+		};
+		34C69F4D2FABE1F700EB0773 /* XCRemoteSwiftPackageReference "eagle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Picovoice/eagle";
+			requirement = {
+				kind = exactVersion;
+				version = 3.0.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
