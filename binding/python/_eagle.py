@@ -640,7 +640,7 @@ class Eagle(object):
                 message_stack=self._get_error_stack(),
             )
 
-        if scores is None:
+        if not scores:
             return None
 
         result = [float(scores[i]) for i in range(len(speaker_profiles))]

@@ -113,6 +113,12 @@ class EagleTestCase(unittest.TestCase):
 
         self.assertLess(scores[0], 0.5)
 
+    def test_eagle_process_silence(self) -> None:
+        pcm = [0] * self.eagle.min_process_samples
+        scores = self.eagle.process(pcm=pcm, speaker_profiles=[self.profile])
+
+        self.assertEqual(scores, None)
+
     def test_version(self) -> None:
         eagle_version = self.eagle.version
         self.assertIsInstance(eagle_version, str)

@@ -27,7 +27,7 @@ with open(os.path.join(os.path.dirname(__file__), "requirements.txt"), "r") as f
 
 setuptools.setup(
     name="pveagledemo",
-    version="3.0.1",
+    version="3.0.2",
     author="Picovoice",
     author_email="hello@picovoice.ai",
     description="Eagle Speaker Recognition Engine demos",
