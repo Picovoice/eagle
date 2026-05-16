@@ -111,7 +111,7 @@ public class Eagle: EagleBase {
     ///   was not enough voice in the audio to recognize any speakers.
     public func process(
         pcm: [Int16],
-        speakerProfiles: [EagleProfile],
+        speakerProfiles: [EagleProfile]
     ) throws -> [Float]? {
 
         if handle == nil {
