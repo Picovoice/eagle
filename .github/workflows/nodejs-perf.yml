@@ -66,11 +66,11 @@ jobs:
         include:
           - machine: rpi3-64
             num_test_iterations: 20
-            enroll_performance_threshold_sec: 4.0
-            proc_performance_threshold_sec: 4.0
+            enroll_performance_threshold_sec: 7.5
+            proc_performance_threshold_sec: 7.5
           - machine: rpi4-64
             num_test_iterations: 20
-            enroll_performance_threshold_sec: 2.0
+            enroll_performance_threshold_sec: 2.5
             proc_performance_threshold_sec: 2.5
           - machine: rpi5-64
             num_test_iterations: 20

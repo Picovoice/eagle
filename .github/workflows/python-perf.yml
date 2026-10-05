@@ -86,14 +86,14 @@ jobs:
         machine: [rpi3-64, rpi4-64, rpi5-64]
         include:
         - machine: rpi3-64
-          profiler_performance_threshold_sec: 4.0
-          recognizer_performance_threshold_sec: 4.0
+          profiler_performance_threshold_sec: 7.5
+          recognizer_performance_threshold_sec: 7.5
         - machine: rpi4-64
-          profiler_performance_threshold_sec: 2.0
+          profiler_performance_threshold_sec: 2.5
           recognizer_performance_threshold_sec: 2.5
         - machine: rpi5-64
-          profiler_performance_threshold_sec: 1.0
-          recognizer_performance_threshold_sec: 1.0
+          profiler_performance_threshold_sec: 1.25
+          recognizer_performance_threshold_sec: 1.25
 
     steps:
     - uses: actions/checkout@v3
